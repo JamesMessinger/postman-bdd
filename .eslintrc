@@ -10,9 +10,18 @@
     "responseCode":                     false,            // Postman global
     "responseHeaders":                  false,            // Postman global
     "tv4":                              false,            // Postman global
-    "chai":                             false,            // Chai.js
-    "assert":                           false,            // Chai.js
-    "expect":                           false,            // Chai.js
+    "_":                                false,            // Postman global
+    "globals":                          true,            // Postman global
+    "response":                         true,             // Postman BDD
+    "describe":                         true,             // Postman BDD
+    "it":                               true,             // Postman BDD
+    "before":                           true,             // Postman BDD
+    "after":                            true,             // Postman BDD
+    "beforeEach":                       true,             // Postman BDD
+    "afterEach":                        true,             // Postman BDD
+    "chai":                             true,             // Chai.js
+    "assert":                           true,             // Chai.js
+    "expect":                           true,             // Chai.js
   },
 
 
@@ -203,7 +212,7 @@
     "comma-spacing":                    2,                // enforce spacing before and after comma
     "comma-style":                     [2, "last"],       // enforce one true comma style (off by default)
     "computed-property-spacing":       [2, "never"],      // require or disallow space inside computed property square brackets
-    "consistent-this":                 [2, "me"],         // enforces consistent naming when capturing the current execution context (off by default)
+    "consistent-this":                 [0, "me"],         // enforces consistent naming when capturing the current execution context (off by default)
     "eol-last":                         2,                // enforce newline at the end of file, with no multiple empty lines
     "func-names":                       0,                // require function expressions to have a name (off by default)
     "func-style":                      [2, "declaration"],// enforces use of function declarations or expressions (off by default)
