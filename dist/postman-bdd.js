@@ -453,6 +453,8 @@ require('./bdd');
 // Allow users to set options
 module.exports = require('./options');
 
+Object._postmanBDD = {};
+
 // SuperAgent Response API
 Object._postmanBDD.response = require('./response');
 
