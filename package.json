@@ -44,7 +44,12 @@
     "coveralls": "^2.11.6",
     "eslint": "^1.10.3",
     "http-server": "^0.8.5",
+    "istanbul": "^0.4.2",
     "npm-check-updates": "^2.5.8",
     "version-bump-prompt": "^1.5.2"
+  },
+  "engines": {
+    "node": ">=4.0",
+    "npm": ">=2.0"
   }
 }
