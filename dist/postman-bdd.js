@@ -448,8 +448,8 @@ require('./bdd');
 module.exports = require('./options');
 
 // Chai
-var chai = require('chai');
-chai.should();
+global.chai = require('chai');
+global.chai.should();
 global.assert = chai.assert;
 global.expect = chai.expect;
 

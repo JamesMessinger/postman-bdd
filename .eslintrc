@@ -9,6 +9,7 @@
     "responseTime":                     false,            // Postman global
     "responseCode":                     false,            // Postman global
     "responseHeaders":                  false,            // Postman global
+    "chai":                             false,            // Chai.js
     "assert":                           false,            // Chai.js
     "expect":                           false,            // Chai.js
   },
