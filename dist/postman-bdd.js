@@ -354,7 +354,7 @@ var hooks = {};
  * @param {function} fn - The test suite to run
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
-global.describe = function it(title, fn) {
+describe = function(title, fn) {
   if (state.stack.length === 0) {
     // This is the first `describe` block in a new test script, so reset all state
     state.reset();
@@ -379,7 +379,7 @@ global.describe = function it(title, fn) {
  * @param {function} fn - The test to run
  * @returns {boolean} - The boolean result of the test
  */
-global.it = function it(title, fn) {
+it = function(title, fn) {
   hooks.beforeEach.run();
 
   var runnable = new Runnable('it', title, fn);
@@ -450,7 +450,6 @@ Hook.prototype.count = function() {
 };
 
 },{"./runnable":8,"./state":10}],5:[function(require,module,exports){
-(function (global){
 require('./_prelude');
 
 // Postman BDD
@@ -462,10 +461,6 @@ module.exports = require('./options');
 // SuperAgent Response API
 response = require('./response');
 
-console.log('This: ' + typeof this);
-console.log('Global: ' + typeof global);
-console.log('Window: ' + typeof window);
-
 // Chai
 chai = require('chai');
 chai.should();
@@ -475,8 +470,6 @@ expect = chai.expect;
 // Chai-HTTP Assertions
 var assertions = require('./assertions');
 chai.use(assertions);
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./_prelude":1,"./assertions":2,"./bdd":3,"./options":6,"./response":7,"chai":15}],6:[function(require,module,exports){
 'use strict';
