@@ -53,10 +53,10 @@ module.exports = function(chai, _) {
   function getCookie(obj, key) {
     if (obj.getCookie) return obj.getCookie(key);
 
-    var header = getHeader(this._obj, 'set-cookie');
+    var header = getHeader(obj, 'set-cookie');
 
     if (!header) {
-      header = (getHeader(this._obj, 'cookie') || '').split(';');
+      header = (getHeader(obj, 'cookie') || '').split(';');
     }
 
     /* eslint new-cap: 0 */
@@ -143,7 +143,7 @@ module.exports = function(chai, _) {
    */
   Assertion.addProperty('headers', function() {
     this.assert(
-      Object.keys(this._obj.headers).length > 0,
+      typeof this._obj.getHeader === 'function' || Object.keys(this._obj.headers || {}).length > 0,
       'expected #{this} to have headers or getHeader method',
       'expected #{this} to not have headers or getHeader method'
     );
@@ -447,6 +447,9 @@ require('./bdd');
 // Allow users to set options
 module.exports = require('./options');
 
+// SuperAgent Response API
+global.response = require('./response');
+
 // Chai
 global.chai = require('chai');
 global.chai.should();
@@ -459,7 +462,7 @@ chai.use(assertions);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./_prelude":1,"./assertions":2,"./bdd":3,"./options":6,"chai":15}],6:[function(require,module,exports){
+},{"./_prelude":1,"./assertions":2,"./bdd":3,"./options":6,"./response":7,"chai":15}],6:[function(require,module,exports){
 'use strict';
 
 var runtime = require('./runtime');
@@ -486,120 +489,333 @@ module.exports = {
 };
 
 },{"./runtime":9}],7:[function(require,module,exports){
-module.exports = Response;
-
 /**
- * Maps Postman's response data to SuperAgent's response API
+ * SuperAgent's Response API
  *
  * For more info, see:
  * https://visionmedia.github.io/superagent/#response-properties
  */
-function Response() {
-  this.text = getText();
-  this.body = getBody();
-  this.header = getHeaders();
-  this.time = getTime();
-  this.status = getStatus();
-  this.statusType = getStatusType();
+module.exports = Object.defineProperties({}, {
+  /**
+   * Returns the unparsed response body string
+   * @type {string}
+   */
+  text: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return typeof responseBody === 'string' ? responseBody : '';
+    }
+  },
 
-  // https://visionmedia.github.io/superagent/#response-status
-  this.info = this.statusType === 1;
-  this.ok = this.statusType === 2;
-  this.clientError = this.statusType === 4;
-  this.serverError = this.statusType === 5;
-  this.error = this.clientError || this.serverError;
-  this.accepted = this.status === 202;
-  this.noContent = this.status === 204 || this.status === 1223;
-  this.badRequest = this.status === 400;
-  this.unauthorized = this.status === 401;
-  this.notAcceptable = this.status === 406;
-  this.notFound = this.status === 404;
-  this.forbidden = this.status === 403;
+  /**
+   * The parsed response body.
+   * @type {object}
+   */
+  body: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      try {
+        return JSON.parse(this.text);
+      }
+      catch (e) {
+        return {};
+      }
+    }
+  },
 
-  // https://visionmedia.github.io/superagent/#response-content-type
-  var contentType = this.getHeader('content-type') || '';
-  this.type = getType(contentType);
-  this.charset = getCharset(contentType);
-}
+  /**
+   * The parsed response headers, with lowercased field names.
+   * @type {object}
+   */
+  headers: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return typeof responseHeaders === 'object' ? responseHeaders : {};
+    }
+  },
 
-/**
- * Returns the value of the given header.  Header names are case insensitive.
- */
-Response.prototype.getHeader = function(name) {
-  name = name.toLowerCase();
-  return getPostman().getResponseHeader(name) || this.header[name];
-};
+  /**
+   * The response time, in milliseconds
+   * @type {number}
+   */
+  time: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return typeof responseTime === 'number' ? responseTime : 0;
+    }
+  },
 
-/**
- * Returns the value of the given cookie.
- */
-Response.prototype.getCookie = function(name) {
-  return getPostman().getResponseCookie(name);
-};
+  /**
+   * Returns the value of the Content-Type header without the charset (e.g. "text/html")
+   * @type {string}
+   */
+  type: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      var contentType = this.getHeader('content-type') || '';
+      return contentType.split(';')[0];
+    }
+  },
 
-/**
- * Returns the unparsed response body string
- */
-function getText() {
-  return typeof responseBody === 'string' ? responseBody : '';
-}
+  /**
+   * Returns the value of the Content-Type header without the MIME type (e.g. "utf8")
+   * @type {string}
+   */
+  charset: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      var contentType = this.getHeader('content-type') || '';
+      var match = /charset=([a-zA-Z0-9_-]+)/i.exec(contentType);
+      if (!match) return '';
+      return match[1];
+    }
+  },
 
-/**
- * The parsed response body.
- */
-function getBody() {
-  var text = getText();
-  try {
-    return JSON.parse(text);
-  }
-  catch (e) {
-    return {};
-  }
-}
+  /**
+   * Returns the HTTP response status code
+   * @type {number}
+   */
+  status: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return typeof responseCode === 'object' ? responseCode.code : 0;
+    }
+  },
 
-/**
- * The parsed response headers, with lowercased field names.
- */
-function getHeaders() {
-  return typeof responseHeaders === 'object' ? responseHeaders : {};
-}
+  /**
+   * Returns the HTTP response status type (1, 2, 3, 4, or 5)
+   * @type {number}
+   */
+  statusType: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return Math.floor(this.status / 100);
+    }
+  },
 
-/**
- * The response time, in milliseconds
- */
-function getTime() {
-  return typeof responseTime === 'number' ? responseTime : 0;
-}
+  /**
+   * Indicates whether the response is an HTTP "info" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  info: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.statusType === 1;
+    }
+  },
 
-/**
- * Returns the value of the Content-Type header without the charset
- */
-function getType(contentType) {
-  return contentType.split(';')[0];
-}
+  /**
+   * Indicates whether the response is an HTTP "ok" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  ok: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.statusType === 2;
+    }
+  },
 
-/**
- * Returns the value of the Content-Type header without the charset
- */
-function getCharset(contentType) {
-  var match = /charset=([a-zA-Z0-9_-]+)/i.exec(contentType);
-  if (!match) return '';
-  return match[1];
-}
+  /**
+   * Indicates whether the response is an HTTP "client error" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  clientError: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.statusType === 4;
+    }
+  },
 
-/**
- * Returns the HTTP response status code
- */
-function getStatus() {
-  return typeof responseCode === 'object' ? responseCode.code : 0;
-}
+  /**
+   * Indicates whether the response is an HTTP "server error" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  serverError: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.statusType === 5;
+    }
+  },
 
-/**
- * Returns the HTTP response status type (1, 2, 3, 4, or 5)
- */
-function getStatusType() {
-  return Math.floor(getStatus() / 100);
-}
+  /**
+   * Indicates whether the response is an HTTP error status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  error: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.clientError || this.serverError;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "accepted" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  accepted: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 202;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "no content" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  noContent: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 204 || this.status === 1223;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "bad request" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  badRequest: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 400;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "unauthorized" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  unauthorized: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 401;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "not acceptable" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  notAcceptable: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 406;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "not found" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  notFound: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 404;
+    }
+  },
+
+  /**
+   * Indicates whether the response is an HTTP "forbidden" status
+   *
+   * https://visionmedia.github.io/superagent/#response-status
+   *
+   * @type {boolean}
+   */
+  forbidden: {
+    configurable: true,
+    enumerable: true,
+    get: function() {
+      return this.status === 403;
+    }
+  },
+
+
+  /**
+   * Returns the value of the given header.  Header names are case insensitive.
+   *
+   * https://visionmedia.github.io/superagent/#response-content-type
+   *
+   * @param {string} name
+   * @returns {?string}
+   */
+  getHeader: {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: function(name) {
+      name = name.toLowerCase();
+      return getPostman().getResponseHeader(name) || this.header[name];
+    }
+  },
+
+  /**
+   * Returns the value of the given cookie.
+   *
+   * @param {string} name
+   * @returns {?string}
+   */
+  getCookie: {
+    configurable: true,
+    enumerable: true,
+    writable: true,
+    value: function(name) {
+      return getPostman().getResponseCookie(name);
+    }
+  },
+});
+
 
 /**
  * Returns the `postman` global, or a proxy
@@ -790,21 +1006,12 @@ function getParentDocument() {
 }).call(this,require('_process'))
 
 },{"_process":52}],10:[function(require,module,exports){
-(function (global){
 'use strict';
-
-/* eslint no-undef:0 */
-var Response = require('./response');
 
 /**
  * Keeps track of the state for a single Postman test script.
  */
 var state = module.exports = {
-  /**
-   * The HTTP response
-   */
-  response: new Response(),
-
   /**
    * Postman's global `tests` variable.
    * All test results must be stored on this object as boolean properties
@@ -845,9 +1052,6 @@ var state = module.exports = {
   reset: function() {
     var me = this;
 
-    // Build a new Response object, based on the current values of the Postman globals
-    global.response = me.response = new Response();
-
     // If there are test results from a previous test,
     // then we know that Postman BDD is being re-used across multiple requests.
     // So instead of using Postman's global `tests` variable, we need to use a new object.
@@ -869,9 +1073,7 @@ state.stack.toString = function() {
   return this.map(function(r) { return r.title; }).join(' ');
 };
 
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{"./response":7}],11:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*!
  * assertion-error
  * Copyright(c) 2013 Jake Luer <jake@qualiancy.com>
