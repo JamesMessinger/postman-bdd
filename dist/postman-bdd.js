@@ -391,7 +391,6 @@ globals.register('it', function(title, fn) {
 },{"./globals":4,"./hook":5,"./runnable":9,"./state":11}],4:[function(require,module,exports){
 (function (global){
 var runtime = require('./runtime');
-var state = require('./state');
 var chai = require('chai');
 
 // Newman completely resets global state for each request,
@@ -427,13 +426,12 @@ module.exports = {
     });
 
     chai.should();
-    state.results = typeof tests === 'object' ? tests : {};
   }
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./runtime":10,"./state":11,"chai":16}],5:[function(require,module,exports){
+},{"./runtime":10,"chai":16}],5:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -973,7 +971,7 @@ Runnable.prototype.success = function(fullTitle) {
  * @param {string} [fullTitle] - The full title (including any parent Runnables)
  */
 Runnable.prototype.failure = function(err, fullTitle) {
-  options.log && console.error(err);
+  options.log && console.log(err);
 
   // If a debugger is attached, then break on errors
   if (options.debug) {
