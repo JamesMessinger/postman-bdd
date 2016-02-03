@@ -1,6 +1,6 @@
 {
   "name": "postman-bdd",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "BDD test framework for Postman and Newman",
   "keywords": [
     "rest",
@@ -36,8 +36,6 @@
     "/index.html",
     "/package.json"
   ],
-  "dependencies": {
-  },
-  "devDependencies": {
-  }
+  "dependencies": {},
+  "devDependencies": {}
 }
