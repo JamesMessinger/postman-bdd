@@ -451,8 +451,6 @@ Hook.prototype.count = function() {
 
 },{"./runnable":8,"./state":10}],5:[function(require,module,exports){
 (function (global){
-'use strict';
-
 require('./_prelude');
 
 // Postman BDD
@@ -462,17 +460,17 @@ require('./bdd');
 module.exports = require('./options');
 
 // SuperAgent Response API
-global.response = require('./response');
+response = require('./response');
 
 console.log('This: ' + typeof this);
 console.log('Global: ' + typeof global);
 console.log('Window: ' + typeof window);
 
 // Chai
-global.chai = require('chai');
-global.chai.should();
-global.assert = chai.assert;
-global.expect = chai.expect;
+chai = require('chai');
+chai.should();
+assert = chai.assert;
+expect = chai.expect;
 
 // Chai-HTTP Assertions
 var assertions = require('./assertions');
