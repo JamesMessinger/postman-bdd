@@ -446,14 +446,13 @@ Hook.prototype.count = function() {
 
 },{"./runnable":8,"./state":10}],5:[function(require,module,exports){
 require('./_prelude');
+Object._postmanBDD = {};
 
 // Postman BDD
 require('./bdd');
 
 // Allow users to set options
 module.exports = require('./options');
-
-Object._postmanBDD = {};
 
 // SuperAgent Response API
 Object._postmanBDD.response = require('./response');
