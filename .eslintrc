@@ -5,6 +5,7 @@
   "globals": {
     "tests":                            false,            // Postman's global `tests` variable
     "assert":                           false,            // Chai.js
+    "expect":                           false,            // Chai.js
   },
 
 
@@ -149,7 +150,7 @@
 
     ////////// Strict Mode //////////
 
-    "strict":                          [2, "global"],     // require or disallow the "use strict" pragma
+    "strict":                          [0, "global"],     // require or disallow the "use strict" pragma
 
 
     ////////// Variables //////////
@@ -241,7 +242,7 @@
     "one-var":                          0,                // allow just one var statement per function (off by default)
     "operator-assignment":             [2, "always"],     // require assignment operator shorthand where possible or prohibit it entirely (off by default)
     "operator-linebreak":              [2, "after"],      // require linebreaks to be placed before or after operators
-    "padded-blocks":                   [2, "never"],      // enforce padding within blocks (off by default)
+    "padded-blocks":                   [0, "never"],      // enforce padding within blocks (off by default)
     "quote-props":                     [2, "as-needed"],  // require quotes around object literal property names (off by default)
     "quotes":                          [2, "single"],     // specify whether double or single quotes should be used
     "require-jsdoc":                    0,                // require JSDoc comment
