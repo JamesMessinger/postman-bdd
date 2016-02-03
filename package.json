@@ -27,10 +27,10 @@
   "main": "lib/index.js",
   "scripts": {
     "lint": "eslint lib --fix",
-    "build": "npm run lint && npm run browserify",
+    "build": "npm run browserify",
     "browserify": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
     "start": "npm run build -- --watch & http-server -o -c-1",
-    "test": "istanbul cover tests",
+    "test": "npm run lint && istanbul cover tests",
     "test:node": "node tests",
     "upgrade": "ncu --upgradeAll && npm update",
     "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",

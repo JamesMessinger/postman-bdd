@@ -213,22 +213,32 @@ function detectNewman() {
 }
 
 function detectChromeApp() {
-  return process.browser;
+  // The Chrome App cannot access the parent document due cross-origin permissions
+  return process.browser && !getParentDocument();
 }
 
 function detectElectronApp() {
-  return process.browser;
+  // The Electron App is able to access the parent document
+  return process.browser && !!getParentDocument();
 }
 
 function detectRequestBuilder() {
-  return process.browser &&
-    window.parent && window.parent.document &&
-    typeof window.parent.document.querySelector === 'function' &&
-    !!window.parent.document.querySelector('#request-builder-view');
+  // We can only detect the Request Builder when running in the Electron App
+  return detectElectronApp() && window.parent.document.querySelector('.requester-builder');
 }
 
 function detectCollectionRunner() {
+  // In the Chrome App, we always default to Collection Runner mode
   return !detectRequestBuilder();
+}
+
+function getParentDocument() {
+  try {
+    return window.parent.document;
+  }
+  catch (err) {
+    return null;
+  }
 }
 
 }).call(this,require('_process'))
@@ -328,6 +338,8 @@ Runnable.prototype.failure = function(err, fullTitle) {
   state.results[fullTitle || this.title] = false;
   state.results[err.message] = false;
 
+  // If we're running in the Postman Request Builder, then re-throw the error.
+  // This will make it show-up in the Postman UI.
   if (postman.requestBuilder) {
     throw err;
   }
