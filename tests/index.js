@@ -3,6 +3,7 @@
 // Postman BDD
 var postmanBDD = require('../');
 postmanBDD.debug = false;
+postmanBDD.log = false;
 
 // Tests
 require('./specs/describe.spec.js');

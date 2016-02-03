@@ -35,8 +35,8 @@
     "build": "npm run browserify",
     "browserify": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
     "start": "npm run build -- --watch & http-server -o -c-1",
-    "test": "npm run lint && istanbul cover tests",
-    "test:node": "node tests",
+    "test": "npm run lint && istanbul cover tests && npm run newman",
+    "newman": "newman -c tests/newman/tests.json --html tests/newman/report.html",
     "upgrade": "ncu --upgradeAll && npm update",
     "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
@@ -53,6 +53,7 @@
     "eslint": "^1.10.3",
     "http-server": "^0.8.5",
     "istanbul": "^0.4.2",
+    "newman": "^2.0.0-beta.7",
     "npm-check-updates": "^2.5.8",
     "version-bump-prompt": "^1.5.2"
   },
