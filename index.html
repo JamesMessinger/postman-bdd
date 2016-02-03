@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Postman BDD</title>
+  </head>
+  <body>
+    <pre id="results"></pre>
+    <script>
+      var errored = false;
+      window.onerror = function(message, url, line, col, err) {
+        errored = true;
+        message = err ? err.stack || err.message : message;
+        document.getElementById('results').textContent += message + '\n\n';
+      };
+    </script>
+
+    <!-- Postman BDD -->
+    <script src="dist/postman-bdd.js"></script>
+
+    <!-- Tests -->
+    <script src="tests/specs/describe.spec.js"></script>
+    <script src="tests/specs/it.spec.js"></script>
+    <script src="tests/specs/before.spec.js"></script>
+    <script src="tests/specs/beforeEach.spec.js"></script>
+    <script src="tests/specs/after.spec.js"></script>
+    <script src="tests/specs/afterEach.spec.js"></script>
+
+    <script>
+      if (!errored) {
+        document.getElementById('results').textContent += 'All tests passed!';
+      }
+    </script>
+  </body>
+</html>

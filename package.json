@@ -1,0 +1,50 @@
+{
+  "name": "postman-bdd",
+  "version": "1.0.0",
+  "description": "BDD test framework for Postman and Newman",
+  "keywords": [
+    "rest",
+    "http",
+    "api",
+    "postman",
+    "newman",
+    "bdd",
+    "mocha",
+    "chai",
+    "test",
+    "testing"
+  ],
+  "author": {
+    "name": "James Messinger",
+    "url": "http://jamesmessinger.com"
+  },
+  "license": "MIT",
+  "homepage": "https://bigstickcarpet.github.io/postman-bdd",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BigstickCarpet/postman-bdd.git"
+  },
+  "main": "lib/index.js",
+  "scripts": {
+    "lint": "eslint lib --fix",
+    "build": "npm run lint && npm run browserify",
+    "browserify": "simplifyify lib/index.js --outfile dist/postman-bdd.js --bundle --debug --minify",
+    "start": "npm run build -- --watch & http-server -o -c-1",
+    "test": "istanbul cover tests",
+    "test:node": "node tests",
+    "upgrade": "ncu --upgradeAll && npm update",
+    "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",
+    "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
+  },
+  "dependencies": {
+    "chai": "^3.5.0",
+    "simplifyify": "^2.0.1"
+  },
+  "devDependencies": {
+    "coveralls": "^2.11.6",
+    "eslint": "^1.10.3",
+    "http-server": "^0.8.5",
+    "npm-check-updates": "^2.5.8",
+    "version-bump-prompt": "^1.5.2"
+  }
+}
