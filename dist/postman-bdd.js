@@ -353,10 +353,10 @@ var hooks = {};
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
 globals.register('describe', function(title, fn) {
-  globals.restore();
   if (state.stack.length === 0) {
     // This is the first `describe` block in a new test script, so reset all state
     state.reset();
+    globals.restore();
     hooks.before.run();
   }
 
@@ -391,22 +391,14 @@ globals.register('it', function(title, fn) {
 },{"./globals":4,"./hook":5,"./runnable":9,"./state":11}],4:[function(require,module,exports){
 (function (global){
 var runtime = require('./runtime');
+var state = require('./state');
 var chai = require('chai');
 
-var globalScope, globalValues, globalNames = [];
-
-if (runtime.newman) {
-  // Newman completely resets global state for each request,
-  // so we use Lodash (_) as a state bag, since it persists across requests
-  globalScope = this;
-  globalValues = _;
-}
-else {
-  // The Chrome App and Electron App already persist state across requests,
-  // So no need to use Lodash as a state bag
-  globalScope = global;
-  globalValues = global;
-}
+// Newman completely resets global state for each request,
+// so we use Lodash (_) as a state bag, since it persists across requests
+var globalNames = [];
+var globalValues = typeof _ === 'undefined' ? global : _;
+var globalScope = runtime.newman ? this : global;
 
 /**
  * Creates globals (such as `describe`, `it`, `beforeEach`, etc.) and ensures that they will
@@ -435,12 +427,13 @@ module.exports = {
     });
 
     chai.should();
+    state.results = typeof tests === 'object' ? tests : {};
   }
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"./runtime":10,"chai":16}],5:[function(require,module,exports){
+},{"./runtime":10,"./state":11,"chai":16}],5:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
