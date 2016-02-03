@@ -1,0 +1,43 @@
+{
+  "name": "postman-bdd",
+  "version": "1.0.1",
+  "description": "BDD test framework for Postman and Newman",
+  "keywords": [
+    "rest",
+    "http",
+    "api",
+    "postman",
+    "newman",
+    "bdd",
+    "mocha",
+    "chai",
+    "superagent",
+    "supertest",
+    "test",
+    "testing"
+  ],
+  "authors": [
+    {
+      "name": "James Messinger",
+      "homepage": "http://jamesmessinger.com"
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://bigstickcarpet.github.io/postman-bdd",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BigstickCarpet/postman-bdd.git"
+  },
+  "main": "dist/postman-bdd.js",
+  "ignore": [
+    "/lib",
+    "/tests",
+    "/.*",
+    "/index.html",
+    "/package.json"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+  }
+}
