@@ -336,10 +336,10 @@ var hooks = {};
 
 ['before', 'after', 'beforeEach', 'afterEach'].forEach(function(name) {
   var hook = hooks[name] = new Hook(name);
-  globals[name] = hook.push.bind(hook);
-  globals[name].pop = hook.pop.bind(hook);
-  globals[name].clear = hook.clear.bind(hook);
-  globals[name].count = hook.count.bind(hook);
+  Object._postmanBDD[name] = hook.push.bind(hook);
+  Object._postmanBDD[name].pop = hook.pop.bind(hook);
+  Object._postmanBDD[name].clear = hook.clear.bind(hook);
+  Object._postmanBDD[name].count = hook.count.bind(hook);
 });
 
 /**
@@ -351,7 +351,7 @@ var hooks = {};
  * @param {function} fn - The test suite to run
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
-globals.describe = function(title, fn) {
+Object._postmanBDD.describe = function(title, fn) {
   if (state.stack.length === 0) {
     // This is the first `describe` block in a new test script, so reset all state
     state.reset();
@@ -376,7 +376,7 @@ globals.describe = function(title, fn) {
  * @param {function} fn - The test to run
  * @returns {boolean} - The boolean result of the test
  */
-globals.it = function(title, fn) {
+Object._postmanBDD.it = function(title, fn) {
   hooks.beforeEach.run();
 
   var runnable = new Runnable('it', title, fn);
@@ -454,17 +454,17 @@ require('./bdd');
 module.exports = require('./options');
 
 // SuperAgent Response API
-globals.response = require('./response');
+Object._postmanBDD.response = require('./response');
 
 // Chai
-globals.chai = require('chai');
-globals.chai.should();
-globals.assert = globals.chai.assert;
-globals.expect = globals.chai.expect;
+Object._postmanBDD.chai = require('chai');
+Object._postmanBDD.chai.should();
+Object._postmanBDD.assert = Object._postmanBDD.chai.assert;
+Object._postmanBDD.expect = Object._postmanBDD.chai.expect;
 
 // Chai-HTTP Assertions
 var assertions = require('./assertions');
-globals.chai.use(assertions);
+Object._postmanBDD.chai.use(assertions);
 
 },{"./_prelude":1,"./assertions":2,"./bdd":3,"./options":6,"./response":7,"chai":15}],6:[function(require,module,exports){
 'use strict';
