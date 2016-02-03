@@ -330,8 +330,6 @@ module.exports = function(chai, _) {
 
 },{"cookiejar":44,"is-ip":51,"qs":54,"url":63}],3:[function(require,module,exports){
 (function (global){
-'use strict';
-
 var Runnable = require('./runnable');
 var Hook = require('./hook');
 var state = require('./state');
