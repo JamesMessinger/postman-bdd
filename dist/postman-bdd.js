@@ -38,9 +38,15 @@ module.exports = function(chai, _) {
    * @returns {String|Undefined}
    */
   function getHeader(obj, key) {
-    if (key) key = key.toLowerCase();
-    if (obj.headers) return obj.headers[key];
     if (obj.getHeader) return obj.getHeader(key);
+
+    key = key.toLowerCase();
+    var keys = Object.keys(obj.headers);
+    for (var i = 0; i < keys.length; i++) {
+      if (keys[i].toLowerCase() === key) {
+        return obj.headers[keys[i]];
+      }
+    }
   }
 
   /**
