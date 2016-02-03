@@ -209,19 +209,19 @@ module.exports = {
 
 
 function detectNewman() {
-  return typeof process === 'object';
+  return !process.browser;
 }
 
 function detectChromeApp() {
-  return detectBrowser();
+  return process.browser;
 }
 
 function detectElectronApp() {
-  return detectBrowser();
+  return process.browser;
 }
 
 function detectRequestBuilder() {
-  return detectBrowser() &&
+  return process.browser &&
     window.parent && window.parent.document &&
     typeof window.parent.document.querySelector === 'function' &&
     !!window.parent.document.querySelector('#request-builder-view');
@@ -229,10 +229,6 @@ function detectRequestBuilder() {
 
 function detectCollectionRunner() {
   return !detectRequestBuilder();
-}
-
-function detectBrowser() {
-  return typeof window === 'object';
 }
 
 }).call(this,require('_process'))
