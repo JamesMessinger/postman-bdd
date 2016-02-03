@@ -1,6 +1,6 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** !
- * Postman BDD v1.2.0
+ * Postman BDD v1.3.0
  *
  * @link https://github.com/BigstickCarpet/postman-bdd
  * @license MIT
@@ -841,7 +841,6 @@ var postmanProxy = {
 },{}],8:[function(require,module,exports){
 'use strict';
 
-var runtime = require('./runtime');
 var state = require('./state');
 var options = require('./options');
 
@@ -878,9 +877,6 @@ function Runnable(type, title, fn) {
  * to {@link State.results}, so it can be returned to the Postman Collection Runner.
  * If an error DOES occur, then the result is `false`, and the result is ALWAYS added to
  * {@link State.results}, even for hooks and test suites.
- *
- * NOTE: When running in the Postman Request Builder, errors are THROWN rather than being
- * captured as boolean values.  This way, the error appears in the Postman UI.
  */
 Runnable.prototype.run = function run() {
   state.counters[this.type]++;
@@ -932,15 +928,9 @@ Runnable.prototype.failure = function(err, fullTitle) {
   this.error = err;
   state.results[fullTitle || this.title] = false;
   state.results[err.message] = false;
-
-  // If we're running in the Postman Request Builder, then re-throw the error.
-  // This will make it show-up in the Postman UI.
-  if (runtime.requestBuilder) {
-    throw err;
-  }
 };
 
-},{"./options":6,"./runtime":9,"./state":10}],9:[function(require,module,exports){
+},{"./options":6,"./state":10}],9:[function(require,module,exports){
 (function (process,global){
 'use strict';
 
