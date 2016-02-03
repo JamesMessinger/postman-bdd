@@ -333,6 +333,7 @@ var Runnable = require('./runnable');
 var Hook = require('./hook');
 var state = require('./state');
 var hooks = {};
+Object._postmanBDD = Object._postmanBDD || {};
 
 ['before', 'after', 'beforeEach', 'afterEach'].forEach(function(name) {
   var hook = hooks[name] = new Hook(name);
@@ -446,7 +447,6 @@ Hook.prototype.count = function() {
 
 },{"./runnable":8,"./state":10}],5:[function(require,module,exports){
 require('./_prelude');
-Object._postmanBDD = {};
 
 // Postman BDD
 require('./bdd');
