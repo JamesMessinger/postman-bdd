@@ -790,6 +790,7 @@ function getParentDocument() {
 }).call(this,require('_process'))
 
 },{"_process":52}],10:[function(require,module,exports){
+(function (global){
 'use strict';
 
 /* eslint no-undef:0 */
@@ -844,7 +845,8 @@ var state = module.exports = {
   reset: function() {
     var me = this;
 
-    me.response = new Response();
+    // Build a new Response object, based on the current values of the Postman globals
+    global.response = me.response = new Response();
 
     // If there are test results from a previous test,
     // then we know that Postman BDD is being re-used across multiple requests.
@@ -866,6 +868,8 @@ var state = module.exports = {
 state.stack.toString = function() {
   return this.map(function(r) { return r.title; }).join(' ');
 };
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./response":7}],11:[function(require,module,exports){
 /*!
