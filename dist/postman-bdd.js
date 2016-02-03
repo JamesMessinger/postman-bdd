@@ -329,7 +329,6 @@ module.exports = function(chai, _) {
 };
 
 },{"cookiejar":44,"is-ip":51,"qs":54,"url":63}],3:[function(require,module,exports){
-(function (global){
 var Runnable = require('./runnable');
 var Hook = require('./hook');
 var state = require('./state');
@@ -337,10 +336,10 @@ var hooks = {};
 
 ['before', 'after', 'beforeEach', 'afterEach'].forEach(function(name) {
   var hook = hooks[name] = new Hook(name);
-  global[name] = hook.push.bind(hook);
-  global[name].pop = hook.pop.bind(hook);
-  global[name].clear = hook.clear.bind(hook);
-  global[name].count = hook.count.bind(hook);
+  globals[name] = hook.push.bind(hook);
+  globals[name].pop = hook.pop.bind(hook);
+  globals[name].clear = hook.clear.bind(hook);
+  globals[name].count = hook.count.bind(hook);
 });
 
 /**
@@ -352,7 +351,7 @@ var hooks = {};
  * @param {function} fn - The test suite to run
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
-describe = function(title, fn) {
+globals.describe = function(title, fn) {
   if (state.stack.length === 0) {
     // This is the first `describe` block in a new test script, so reset all state
     state.reset();
@@ -377,7 +376,7 @@ describe = function(title, fn) {
  * @param {function} fn - The test to run
  * @returns {boolean} - The boolean result of the test
  */
-it = function(title, fn) {
+globals.it = function(title, fn) {
   hooks.beforeEach.run();
 
   var runnable = new Runnable('it', title, fn);
@@ -386,8 +385,6 @@ it = function(title, fn) {
   hooks.afterEach.run();
   return runnable.result;
 };
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
 },{"./hook":4,"./runnable":8,"./state":10}],4:[function(require,module,exports){
 'use strict';
@@ -457,17 +454,17 @@ require('./bdd');
 module.exports = require('./options');
 
 // SuperAgent Response API
-response = require('./response');
+globals.response = require('./response');
 
 // Chai
-chai = require('chai');
-chai.should();
-assert = chai.assert;
-expect = chai.expect;
+globals.chai = require('chai');
+globals.chai.should();
+globals.assert = globals.chai.assert;
+globals.expect = globals.chai.expect;
 
 // Chai-HTTP Assertions
 var assertions = require('./assertions');
-chai.use(assertions);
+globals.chai.use(assertions);
 
 },{"./_prelude":1,"./assertions":2,"./bdd":3,"./options":6,"./response":7,"chai":15}],6:[function(require,module,exports){
 'use strict';
