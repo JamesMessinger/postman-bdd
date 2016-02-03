@@ -100,7 +100,6 @@ module.exports = function(chai, _) {
    * @param {String} header key (case insensitive)
    * @param {String|RegExp} header value (optional)
    * @name header
-   * @api public
    */
   Assertion.addMethod('header', function(key, value) {
     var header = getHeader(this._obj, key);
@@ -139,7 +138,6 @@ module.exports = function(chai, _) {
    * expect(req).to.have.headers;
    *
    * @name headers
-   * @api public
    */
   Assertion.addProperty('headers', function() {
     this.assert(
@@ -157,7 +155,6 @@ module.exports = function(chai, _) {
    * expect('2001:0db8:85a3:0000:0000:8a2e:0370:7334').to.be.an.ip;
    *
    * @name ip
-   * @api public
    */
   Assertion.addProperty('ip', function() {
     this.assert(
@@ -178,7 +175,6 @@ module.exports = function(chai, _) {
    * @name json
    * @name html
    * @name text
-   * @api public
    */
   function checkContentType(name) {
     var val = contentTypes[name];
@@ -207,7 +203,6 @@ module.exports = function(chai, _) {
    * expect(res).to.redirect;
    *
    * @name redirect
-   * @api public
    */
   Assertion.addProperty('redirect', function() {
     var redirectCodes = [301, 302, 303];
@@ -232,9 +227,7 @@ module.exports = function(chai, _) {
    *
    * @param {String} location url
    * @name redirectTo
-   * @api public
    */
-
   Assertion.addMethod('redirectTo', function(destination) {
     var redirects = this._obj.redirects;
 
@@ -266,7 +259,6 @@ module.exports = function(chai, _) {
    * @param {String} parameter name
    * @param {String} parameter value
    * @name param
-   * @api public
    */
   Assertion.addMethod('param', function(name, value) {
     var assertion = new Assertion();
@@ -289,8 +281,7 @@ module.exports = function(chai, _) {
    *
    * @param {String} parameter name
    * @param {String} parameter value
-   * @name param
-   * @api public
+   * @name cookie
    */
   Assertion.addMethod('cookie', function(key, value) {
     var cookie = getCookie(this._obj, key);
@@ -312,6 +303,23 @@ module.exports = function(chai, _) {
       );
     }
   });
+
+  /**
+   * Asserts that the object matches the given JSON schema
+   *
+   * @example:
+   * expect(req.body).to.have.scheam(myJsonSchema);
+   *
+   * @param {object} The JSON schema to validate against
+   * @name schema
+   */
+  chai.Assertion.addMethod('schema', function(schema) {
+    var valid = tv4.validate(this._obj, schema);
+    if (!valid) {
+      throw tv4.error;
+    }
+  });
+
 };
 
 },{"cookiejar":44,"is-ip":51,"qs":54,"url":63}],3:[function(require,module,exports){
