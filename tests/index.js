@@ -1,5 +1,8 @@
+'use strict';
+
 // Postman BDD
-require('../');
+var postmanBDD = require('../');
+postmanBDD.debug = false;
 
 // Tests
 require('./specs/describe.spec.js');
