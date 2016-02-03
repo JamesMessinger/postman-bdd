@@ -333,14 +333,14 @@ var Runnable = require('./runnable');
 var Hook = require('./hook');
 var state = require('./state');
 var hooks = {};
-Object._postmanBDD = Object._postmanBDD || {};
+_._postmanBDD = _._postmanBDD || {};
 
 ['before', 'after', 'beforeEach', 'afterEach'].forEach(function(name) {
   var hook = hooks[name] = new Hook(name);
-  Object._postmanBDD[name] = hook.push.bind(hook);
-  Object._postmanBDD[name].pop = hook.pop.bind(hook);
-  Object._postmanBDD[name].clear = hook.clear.bind(hook);
-  Object._postmanBDD[name].count = hook.count.bind(hook);
+  _._postmanBDD[name] = hook.push.bind(hook);
+  _._postmanBDD[name].pop = hook.pop.bind(hook);
+  _._postmanBDD[name].clear = hook.clear.bind(hook);
+  _._postmanBDD[name].count = hook.count.bind(hook);
 });
 
 /**
@@ -352,7 +352,7 @@ Object._postmanBDD = Object._postmanBDD || {};
  * @param {function} fn - The test suite to run
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
-Object._postmanBDD.describe = function(title, fn) {
+_._postmanBDD.describe = function(title, fn) {
   if (state.stack.length === 0) {
     // This is the first `describe` block in a new test script, so reset all state
     state.reset();
@@ -377,7 +377,7 @@ Object._postmanBDD.describe = function(title, fn) {
  * @param {function} fn - The test to run
  * @returns {boolean} - The boolean result of the test
  */
-Object._postmanBDD.it = function(title, fn) {
+_._postmanBDD.it = function(title, fn) {
   hooks.beforeEach.run();
 
   var runnable = new Runnable('it', title, fn);
@@ -455,17 +455,17 @@ require('./bdd');
 module.exports = require('./options');
 
 // SuperAgent Response API
-Object._postmanBDD.response = require('./response');
+_._postmanBDD.response = require('./response');
 
 // Chai
-Object._postmanBDD.chai = require('chai');
-Object._postmanBDD.chai.should();
-Object._postmanBDD.assert = Object._postmanBDD.chai.assert;
-Object._postmanBDD.expect = Object._postmanBDD.chai.expect;
+_._postmanBDD.chai = require('chai');
+_._postmanBDD.chai.should();
+_._postmanBDD.assert = _._postmanBDD.chai.assert;
+_._postmanBDD.expect = _._postmanBDD.chai.expect;
 
 // Chai-HTTP Assertions
 var assertions = require('./assertions');
-Object._postmanBDD.chai.use(assertions);
+_._postmanBDD.chai.use(assertions);
 
 },{"./_prelude":1,"./assertions":2,"./bdd":3,"./options":6,"./response":7,"chai":15}],6:[function(require,module,exports){
 'use strict';
