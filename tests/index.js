@@ -11,5 +11,6 @@ require('./specs/before.spec.js');
 require('./specs/beforeEach.spec.js');
 require('./specs/after.spec.js');
 require('./specs/afterEach.spec.js');
+require('./specs/assertions.spec.js');
 
 console.log('All tests passed');
