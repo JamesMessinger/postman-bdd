@@ -328,7 +328,7 @@ module.exports = function(chai, _) {
 
 };
 
-},{"cookiejar":44,"is-ip":51,"qs":54,"url":63}],3:[function(require,module,exports){
+},{"cookiejar":44,"is-ip":51,"qs":53,"url":62}],3:[function(require,module,exports){
 var Runnable = require('./runnable');
 var Hook = require('./hook');
 var runtime = require('./runtime');
@@ -931,7 +931,7 @@ Runnable.prototype.failure = function(err, fullTitle) {
 };
 
 },{"./options":6,"./state":10}],9:[function(require,module,exports){
-(function (process,global){
+(function (global){
 'use strict';
 
 /**
@@ -971,17 +971,17 @@ module.exports = {
 
 
 function detectNewman() {
-  return !process.browser && !global.process;
+  return !detectBrowser() && !global.process;
 }
 
 function detectChromeApp() {
   // The Chrome App cannot access the parent document due cross-origin permissions
-  return process.browser && !getParentDocument();
+  return detectBrowser() && !getParentDocument();
 }
 
 function detectElectronApp() {
   // The Electron App is able to access the parent document
-  return process.browser && !!getParentDocument();
+  return detectBrowser() && !!getParentDocument();
 }
 
 function detectRequestBuilder() {
@@ -994,6 +994,10 @@ function detectCollectionRunner() {
   return !detectRequestBuilder();
 }
 
+function detectBrowser() {
+  return typeof window === 'object';
+}
+
 function getParentDocument() {
   try {
     return window.parent.document;
@@ -1003,9 +1007,9 @@ function getParentDocument() {
   }
 }
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"_process":52}],10:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
 /**
@@ -7164,7 +7168,7 @@ module.exports = function (obj, types) {
   }
 };
 
-},{"./flag":27,"assertion-error":11,"type-detect":61}],27:[function(require,module,exports){
+},{"./flag":27,"assertion-error":11,"type-detect":60}],27:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -7588,7 +7592,7 @@ module.exports = function hasProperty(name, obj) {
   return name in obj;
 };
 
-},{"type-detect":61}],36:[function(require,module,exports){
+},{"type-detect":60}],36:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>
@@ -7720,7 +7724,7 @@ exports.addChainableMethod = require('./addChainableMethod');
 
 exports.overwriteChainableMethod = require('./overwriteChainableMethod');
 
-},{"./addChainableMethod":23,"./addMethod":24,"./addProperty":25,"./expectTypes":26,"./flag":27,"./getActual":28,"./getMessage":30,"./getName":31,"./getPathInfo":32,"./getPathValue":33,"./hasProperty":35,"./inspect":37,"./objDisplay":38,"./overwriteChainableMethod":39,"./overwriteMethod":40,"./overwriteProperty":41,"./test":42,"./transferFlags":43,"deep-eql":45,"type-detect":61}],37:[function(require,module,exports){
+},{"./addChainableMethod":23,"./addMethod":24,"./addProperty":25,"./expectTypes":26,"./flag":27,"./getActual":28,"./getMessage":30,"./getName":31,"./getPathInfo":32,"./getPathValue":33,"./hasProperty":35,"./inspect":37,"./objDisplay":38,"./overwriteChainableMethod":39,"./overwriteMethod":40,"./overwriteProperty":41,"./test":42,"./transferFlags":43,"deep-eql":45,"type-detect":60}],37:[function(require,module,exports){
 // This is (almost) directly from Node.js utils
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
 
@@ -9150,99 +9154,6 @@ ip.v6 = function (str) {
 };
 
 },{"ip-regex":50}],52:[function(require,module,exports){
-// shim for using process in browser
-
-var process = module.exports = {};
-var queue = [];
-var draining = false;
-var currentQueue;
-var queueIndex = -1;
-
-function cleanUpNextTick() {
-    draining = false;
-    if (currentQueue.length) {
-        queue = currentQueue.concat(queue);
-    } else {
-        queueIndex = -1;
-    }
-    if (queue.length) {
-        drainQueue();
-    }
-}
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    var timeout = setTimeout(cleanUpNextTick);
-    draining = true;
-
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        while (++queueIndex < len) {
-            if (currentQueue) {
-                currentQueue[queueIndex].run();
-            }
-        }
-        queueIndex = -1;
-        len = queue.length;
-    }
-    currentQueue = null;
-    draining = false;
-    clearTimeout(timeout);
-}
-
-process.nextTick = function (fun) {
-    var args = new Array(arguments.length - 1);
-    if (arguments.length > 1) {
-        for (var i = 1; i < arguments.length; i++) {
-            args[i - 1] = arguments[i];
-        }
-    }
-    queue.push(new Item(fun, args));
-    if (queue.length === 1 && !draining) {
-        setTimeout(drainQueue, 0);
-    }
-};
-
-// v8 likes predictible objects
-function Item(fun, array) {
-    this.fun = fun;
-    this.array = array;
-}
-Item.prototype.run = function () {
-    this.fun.apply(null, this.array);
-};
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
-},{}],53:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.0 by @mathias */
 ;(function(root) {
@@ -9780,7 +9691,7 @@ process.umask = function() { return 0; };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],54:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 'use strict';
 
 var Stringify = require('./stringify');
@@ -9791,7 +9702,7 @@ module.exports = {
     parse: Parse
 };
 
-},{"./parse":55,"./stringify":56}],55:[function(require,module,exports){
+},{"./parse":54,"./stringify":55}],54:[function(require,module,exports){
 'use strict';
 
 var Utils = require('./utils');
@@ -9957,7 +9868,7 @@ module.exports = function (str, opts) {
     return Utils.compact(obj);
 };
 
-},{"./utils":57}],56:[function(require,module,exports){
+},{"./utils":56}],55:[function(require,module,exports){
 'use strict';
 
 var Utils = require('./utils');
@@ -10089,7 +10000,7 @@ module.exports = function (object, opts) {
     return keys.join(delimiter);
 };
 
-},{"./utils":57}],57:[function(require,module,exports){
+},{"./utils":56}],56:[function(require,module,exports){
 'use strict';
 
 var hexTable = (function () {
@@ -10253,7 +10164,7 @@ exports.isBuffer = function (obj) {
     return !!(obj.constructor && obj.constructor.isBuffer && obj.constructor.isBuffer(obj));
 };
 
-},{}],58:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -10339,7 +10250,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],59:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -10426,15 +10337,15 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],60:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":58,"./encode":59}],61:[function(require,module,exports){
+},{"./decode":57,"./encode":58}],60:[function(require,module,exports){
 arguments[4][47][0].apply(exports,arguments)
-},{"./lib/type":62,"dup":47}],62:[function(require,module,exports){
+},{"./lib/type":61,"dup":47}],61:[function(require,module,exports){
 /*!
  * type-detect
  * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
@@ -10570,7 +10481,7 @@ Library.prototype.test = function(obj, type) {
   }
 };
 
-},{}],63:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -11304,7 +11215,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":64,"punycode":53,"querystring":60}],64:[function(require,module,exports){
+},{"./util":63,"punycode":52,"querystring":59}],63:[function(require,module,exports){
 'use strict';
 
 module.exports = {
