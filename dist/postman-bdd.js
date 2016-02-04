@@ -1,6 +1,6 @@
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 /** !
- * Postman BDD v1.4.0
+ * Postman BDD v1.4.1
  *
  * @link https://github.com/BigstickCarpet/postman-bdd
  * @license MIT
@@ -9155,7 +9155,7 @@ ip.v6 = function (str) {
 
 },{"ip-regex":50}],52:[function(require,module,exports){
 (function (global){
-/*! https://mths.be/punycode v1.4.0 by @mathias */
+/*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
 
 	/** Detect free variables */
@@ -9891,7 +9891,7 @@ var internals = {
     encode: true
 };
 
-internals.stringify = function (object, prefix, generateArrayPrefix, strictNullHandling, skipNulls, encode, filter, sort) {
+internals.stringify = function (object, prefix, generateArrayPrefix, strictNullHandling, skipNulls, encode, filter, sort, allowDots) {
     var obj = object;
     if (typeof filter === 'function') {
         obj = filter(prefix, obj);
@@ -9936,9 +9936,9 @@ internals.stringify = function (object, prefix, generateArrayPrefix, strictNullH
         }
 
         if (Array.isArray(obj)) {
-            values = values.concat(internals.stringify(obj[key], generateArrayPrefix(prefix, key), generateArrayPrefix, strictNullHandling, skipNulls, encode, filter));
+            values = values.concat(internals.stringify(obj[key], generateArrayPrefix(prefix, key), generateArrayPrefix, strictNullHandling, skipNulls, encode, filter, sort, allowDots));
         } else {
-            values = values.concat(internals.stringify(obj[key], prefix + '[' + key + ']', generateArrayPrefix, strictNullHandling, skipNulls, encode, filter));
+            values = values.concat(internals.stringify(obj[key], prefix + (allowDots ? '.' + key : '[' + key + ']'), generateArrayPrefix, strictNullHandling, skipNulls, encode, filter, sort, allowDots));
         }
     }
 
@@ -9953,6 +9953,7 @@ module.exports = function (object, opts) {
     var skipNulls = typeof options.skipNulls === 'boolean' ? options.skipNulls : internals.skipNulls;
     var encode = typeof options.encode === 'boolean' ? options.encode : internals.encode;
     var sort = typeof options.sort === 'function' ? options.sort : null;
+    var allowDots = typeof options.allowDots === 'undefined' ? false : options.allowDots;
     var objKeys;
     var filter;
     if (typeof options.filter === 'function') {
@@ -9994,7 +9995,7 @@ module.exports = function (object, opts) {
             continue;
         }
 
-        keys = keys.concat(internals.stringify(obj[key], key, generateArrayPrefix, strictNullHandling, skipNulls, encode, filter, sort));
+        keys = keys.concat(internals.stringify(obj[key], key, generateArrayPrefix, strictNullHandling, skipNulls, encode, filter, sort, allowDots));
     }
 
     return keys.join(delimiter);

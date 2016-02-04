@@ -1,6 +1,6 @@
 {
   "name": "postman-bdd",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "BDD test framework for Postman and Newman",
   "keywords": [
     "rest",
@@ -46,7 +46,7 @@
     "chai": "^3.5.0",
     "cookiejar": "^2.0.6",
     "is-ip": "^1.0.0",
-    "qs": "^6.0.2",
+    "qs": "^6.1.0",
     "simplifyify": "^2.0.1"
   },
   "devDependencies": {
