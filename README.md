@@ -22,7 +22,7 @@ Example
 
 Installation
 --------------------------
-To install Postman BDD in Postman, just create a `GET` request to [`http://bigstickcarpet.github.io/postman-bdd/dist/postman-bdd.js`](dist/postman-bdd.js) or [`http://bigstickcarpet.github.io/postman-bdd/dist/postman-bdd.min.js`](dist/postman-bdd.min.js).  I recommend the unminified version, since it's easier to debug.
+To install Postman BDD in Postman, just create a `GET` request to [`https://raw.githubusercontent.com/BigstickCarpet/postman-bdd/master/dist/postman-bdd.js`](dist/postman-bdd.js) or [`https://raw.githubusercontent.com/BigstickCarpet/postman-bdd/master/dist/postman-bdd.min.js`](dist/postman-bdd.min.js).  I recommend the unminified version, since it's easier to debug.
 
 Go to the "Tests" tab of this request, and add the following script:
 
