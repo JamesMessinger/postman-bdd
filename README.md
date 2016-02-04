@@ -32,7 +32,6 @@ postman.setGlobalVariable('postmanBDD', responseBody);
 ```
 
 ![Postman BDD Installation](docs/install.gif)
-```
 
 
 Usage
