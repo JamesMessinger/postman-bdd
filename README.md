@@ -71,13 +71,13 @@ Advanced Usage
 --------------------------
 Postman BDD supports more advanced features too.  I'll add documentation for them soon, but here's a little teaser :)
 
-- Simple debugging - When a debugger is attached, Postman BDD will automatically pause when a test fails so you can debug it.
+- **Simple debugging** - When a debugger is attached, Postman BDD will automatically pause when a test fails so you can debug it.
 
-- Nested `describe` blocks - In standard BDD pattern, you can nest `describe` blocks to logically group your tests
+- **Nested `describe` blocks** - In standard BDD pattern, you can nest `describe` blocks to logically group your tests
 
-- Hooks - Postman BDD supports all the standard BDD hooks: `before`, `after`, `beforeEach`, and `afterEach`, so you can reuse tests across multiple requests in your REST API.
+- **Hooks** - Postman BDD supports all the standard BDD hooks: `before`, `after`, `beforeEach`, and `afterEach`, so you can reuse tests across multiple requests in your REST API.
 
-- JSON Schema Validation - Postman BDD includes an assertion `response.body.should.have.schema(someJsonSchema)`, which allows you to validate your API's responses against a [JSON Schema](https://spacetelescope.github.io/understanding-json-schema/basics.html).  This is especially great if you've already built a [Swagger schema](http://editor.swagger.io) for your API.
+- **JSON Schema Validation** - Postman BDD includes an assertion `response.body.should.have.schema(someJsonSchema)`, which allows you to validate your API's responses against a [JSON Schema](https://spacetelescope.github.io/understanding-json-schema/basics.html).  This is especially great if you've already built a [Swagger schema](http://editor.swagger.io) for your API.
 
 
 
