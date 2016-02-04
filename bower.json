@@ -30,6 +30,7 @@
   },
   "main": "dist/postman-bdd.js",
   "ignore": [
+    "/docs",
     "/lib",
     "/tests",
     "/.*",
