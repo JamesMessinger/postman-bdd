@@ -14,6 +14,13 @@ Postman BDD
 
 This project is a port of [Chai HTTP](https://github.com/chaijs/chai-http) that runs in the [Postman REST Client](http://getpostman.com).  The API is exactly the same, but instead of using `chai.request("http://my-server.com")`, you can use the Postman GUI to build and send your HTTP request.
 
+- **[Usage](#usage)**
+- **[Advanced Usage](#advanced-usage)**
+- **[API Documentation](#api-documentation)**
+- **[Running tests in bulk](#running-tests-in-bulk)**
+- **[Running tests from the command line](#running-tests-from-the-command-line)**
+- **[Debugging tests](#debugging-tests)**
+
 
 Example
 --------------------------
@@ -22,7 +29,7 @@ Example
 
 Installation
 --------------------------
-To install Postman BDD in Postman, just create a `GET` request to [`https://raw.githubusercontent.com/BigstickCarpet/postman-bdd/master/dist/postman-bdd.js`](dist/postman-bdd.js) or [`https://raw.githubusercontent.com/BigstickCarpet/postman-bdd/master/dist/postman-bdd.min.js`](dist/postman-bdd.min.js).  I recommend the unminified version, since it's easier to debug.
+To install Postman BDD in Postman, just create a `GET` request to [`postman-bdd.js`](http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.js) or [`postman-bdd.min.js`](http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js).  (The latter is a smaller download, the former is easier to debug)
 
 Go to the "Tests" tab of this request, and add the following script:
 
@@ -80,7 +87,6 @@ Postman BDD supports more advanced features too.  I'll add documentation for the
 - **JSON Schema Validation** - Postman BDD includes an assertion `response.body.should.have.schema(someJsonSchema)`, which allows you to validate your API's responses against a [JSON Schema](https://spacetelescope.github.io/understanding-json-schema/basics.html).  This is especially great if you've already built a [Swagger schema](http://editor.swagger.io) for your API.
 
 
-
 API Documentation
 --------------------------
 The Postman BDD API is identical to [Chai HTTP's API](https://github.com/chaijs/chai-http#assertions), which is in-turn based on [SuperAgent's API](https://visionmedia.github.io/superagent/#response-properties).
@@ -101,6 +107,29 @@ response.should.have.header('content-type', 'application/json');
 ```
 
 Other assertsions you can do include `response.should.be.html`, `response.should.have.status(200)`, and `response.should.redirectTo("http://example.com")`
+
+
+Running tests in bulk
+--------------------------
+The normal Postman UI allows you to test individual requests one-by-one and see the results.  That's great for debugging a specific endpoint or scenario, but if you want to run _all_ of your tests, then you'll want to use Postman's Collection Runner.  To do that, click the "_Runner_" button in the header bar.
+
+Select the collection you want to run, and any other options that you want &mdash; such as an [environment](http://www.getpostman.com/docs/environments), a [data file](http://www.getpostman.com/docs/multiple_instances), or the number of iterations to run.  Then click the "_Start Test_" button.  You'll see the test results on the right-hand side, as well as a pass/fail summary at the top.  You can also click the "info" icon for any request to see detailed test results for that request.
+
+![Postman Runner example](docs/postman-runner.gif)
+
+
+Running tests from the command line
+--------------------------
+Postman has a command-line test runner called [Newman](http://www.getpostman.com/docs/newman_intro).  If you prefer the CLI instead of a GUI, then this the tool for you.  It's also ideal for [continuous-integration](https://en.wikipedia.org/wiki/Continuous_integration) and [continuous-delivery](https://en.wikipedia.org/wiki/Continuous_delivery) testing.  Just like the Collection Runner, you can run your entire suite of tests, or just a single folder.  You can load data from a file, and even write the test results to an output file in various formats (JSON, XML, HTML)
+
+![Newman](docs/newman.gif)
+
+
+Debugging tests
+--------------------------
+Postman is actually an HTML-based application, running in an embedded Chrome browser instance.  So you canuse Chrome's built-in developer tools to debug.  On Windows, press `F12` to open the developer tools.  On Mac, press `cmd`+`alt`+`i`.
+
+> **Note:** You may need to [enable debugging for packed apps](http://blog.getpostman.com/2014/01/27/enabling-chrome-developer-tools-inside-postman/) first
 
 
 
