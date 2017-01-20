@@ -20,12 +20,12 @@
     "name": "James Messinger",
     "url": "http://jamesmessinger.com"
   },
-  "license": "MIT",
   "homepage": "https://bigstickcarpet.github.io/postman-bdd",
   "repository": {
     "type": "git",
     "url": "https://github.com/BigstickCarpet/postman-bdd.git"
   },
+  "license": "MIT",
   "main": "lib/index.js",
   "browser": {
     "querystring": "qs"
@@ -37,29 +37,24 @@
     "test": "node test && npm run newman && npm run lint",
     "newman": "newman -c test/newman/tests.json --html test/newman/report.html",
     "cover": "istanbul cover test",
-    "upgrade": "ncu --upgradeAll && npm update",
+    "upgrade": "npm-check -u",
     "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
   },
-  "dependencies": {
+  "devDependencies": {
     "chai": "^3.5.0",
     "cookiejar": "^2.0.6",
-    "is-ip": "^1.0.0",
-    "qs": "^6.1.0",
-    "simplifyify": "^2.0.1"
-  },
-  "devDependencies": {
     "coveralls": "^2.11.6",
     "eslint": "^3.13.1",
     "eslint-config-modular": "^2.0.1",
-    "http-server": "^0.8.5",
+    "http-server": "^0.9.0",
+    "is-ip": "^2.0.0",
     "istanbul": "^0.4.2",
-    "newman": "^2.0.0-beta.7",
-    "npm-check-updates": "^2.5.8",
-    "version-bump-prompt": "^1.5.2"
+    "newman": "^3.4.2",
+    "npm-check": "^5.4.0",
+    "qs": "^6.1.0",
+    "simplifyify": "^3.2.1",
+    "version-bump-prompt": "^3.0.1"
   },
-  "engines": {
-    "node": ">=4.0",
-    "npm": ">=2.0"
-  }
+  "dependencies": {}
 }
