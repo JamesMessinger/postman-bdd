@@ -35,7 +35,7 @@
     "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
     "test": "node test && npm run newman && npm run lint",
     "newman": "newman -c test/newman/tests.json --html test/newman/report.html",
-    "cover": "istanbul cover test",
+    "cover": "istanbul cover test && npm run newman",
     "start": "npm run build -- --watch & http-server -o -c-1",
     "upgrade": "npm-check -u",
     "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",
@@ -43,6 +43,7 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
+    "codacy-coverage": "^2.0.0",
     "cookiejar": "^2.0.6",
     "coveralls": "^2.11.6",
     "eslint": "^3.13.1",
