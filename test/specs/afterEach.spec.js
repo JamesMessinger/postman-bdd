@@ -1,12 +1,12 @@
-(function() {
+(function () {
   'use strict';
 
   var result, i;
 
 
   afterEach();   // AfterEach called with no args
-  result = describe('AfterEach', function() {
-    it('passes', function() {});
+  result = describe('AfterEach', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'AfterEach passes': true,
@@ -17,8 +17,8 @@
 
 
   afterEach('called without a function');
-  result = describe('AfterEach', function() {
-    it('passes', function() {});
+  result = describe('AfterEach', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'AfterEach passes': true,
@@ -28,9 +28,9 @@
   afterEach.pop();
 
 
-  afterEach('caleld with an empty function', function() {});
-  result = describe('AfterEach', function() {
-    it('passes', function() {});
+  afterEach('caleld with an empty function', function () {});
+  result = describe('AfterEach', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'AfterEach passes': true
@@ -38,11 +38,11 @@
   afterEach.pop();
 
 
-  afterEach('throws an error', function() {
+  afterEach('throws an error', function () {
     throw new Error('BOOM!');
   });
-  result = describe('AfterEach', function() {
-    it('passes', function() {});
+  result = describe('AfterEach', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'AfterEach passes': true,
@@ -52,12 +52,12 @@
   afterEach.pop();
 
 
-  afterEach('does some assertions', function() {
+  afterEach('does some assertions', function () {
     assert(true);
     assert.equal('hello', 'hello');
   });
-  result = describe('AfterEach', function() {
-    it('passes', function() {});
+  result = describe('AfterEach', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'AfterEach passes': true
@@ -65,11 +65,11 @@
   afterEach.pop();
 
 
-  afterEach('fails an assertion', function() {
+  afterEach('fails an assertion', function () {
     assert.ok(0);
   });
-  result = describe('AfterEach', function() {
-    it('still runs tests', function() {});
+  result = describe('AfterEach', function () {
+    it('still runs tests', function () {});
   });
   result.should.deep.equal({
     'AfterEach still runs tests': true,
@@ -80,26 +80,26 @@
 
 
   i = 0;
-  afterEach('runs first', function() {
+  afterEach('runs first', function () {
     assert.equal(++i, 2);
   });
-  afterEach('runs second', function() {
+  afterEach('runs second', function () {
     assert.equal(++i, 3);
   });
-  afterEach('runs third', function() {
+  afterEach('runs third', function () {
     assert.equal(++i, 4);
   });
-  result = describe('AfterEach', function() {
-    it('runs in order', function() {
+  result = describe('AfterEach', function () {
+    it('runs in order', function () {
       assert.equal(++i, 1);
     });
 
-    it('runs after each test', function() {
+    it('runs after each test', function () {
       i = 0;
       assert.equal(++i, 9999);
     });
 
-    it('runs even after a test fails', function() {
+    it('runs even after a test fails', function () {
       assert.equal(++i, 5);
       i = 1;
     });
@@ -116,17 +116,17 @@
 
 
   i = 0;
-  afterEach('runs first', function() {
+  afterEach('runs first', function () {
     assert.equal(++i, 2);
   });
-  afterEach('fails an assertion', function() {
+  afterEach('fails an assertion', function () {
     assert.equal(++i, 9999);
   });
-  afterEach('runs third', function() {
+  afterEach('runs third', function () {
     assert.equal(++i, 4);
   });
-  result = describe('AfterEach', function() {
-    it('runs in order', function() {
+  result = describe('AfterEach', function () {
+    it('runs in order', function () {
       assert.equal(++i, 1);
     });
   });
@@ -141,31 +141,31 @@
 
 
   i = 0;
-  afterEach('runs after each test', function() {
+  afterEach('runs after each test', function () {
     assert.equal(++i % 2, 0);
   });
-  result = describe('AfterEach', function() {
-    it('should run once', function() {
+  result = describe('AfterEach', function () {
+    it('should run once', function () {
       assert.equal(++i, 1);
     });
 
-    it('should run again', function() {
+    it('should run again', function () {
       assert.equal(++i, 3);
     });
 
-    describe(function() {
-      it('should run for a test in a nested describe block', function() {
+    describe(function () {
+      it('should run for a test in a nested describe block', function () {
         assert.equal(++i, 5);
       });
 
-      describe(function() {
-        it('should run for this one too', function() {
+      describe(function () {
+        it('should run for this one too', function () {
           assert.equal(++i, 7);
         });
       });
     });
 
-    it('should run for this test as well', function() {
+    it('should run for this test as well', function () {
       assert.equal(++i, 9);
     });
   });

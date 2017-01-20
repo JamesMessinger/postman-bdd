@@ -1,4 +1,4 @@
-(function() {
+(function () {
   'use strict';
 
   var result;
@@ -18,15 +18,15 @@
   });
 
 
-  result = describe(function() {}); // Describe called with no name
+  result = describe(function () {}); // Describe called with no name
   result.should.be.empty;
 
 
-  result = describe('Describe called with no tests', function() {});
+  result = describe('Describe called with no tests', function () {});
   result.should.be.empty;
 
 
-  result = describe('Error in describe block', function() {
+  result = describe('Error in describe block', function () {
     throw new Error('BOOM!');
   });
   result.should.deep.equal({

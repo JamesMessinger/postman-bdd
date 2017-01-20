@@ -1,10 +1,10 @@
-(function() {
+(function () {
   'use strict';
 
   var result;
 
 
-  result = describe('It called with no args', function() {
+  result = describe('It called with no args', function () {
     it();
   });
   result.should.deep.equal({
@@ -13,7 +13,7 @@
   });
 
 
-  result = describe('It', function() {
+  result = describe('It', function () {
     it('called without a function');
   });
   result.should.deep.equal({
@@ -22,16 +22,16 @@
   });
 
 
-  result = describe('It', function() {
-    it('called with empty function', function() {});
+  result = describe('It', function () {
+    it('called with empty function', function () {});
   });
   result.should.deep.equal({
     'It called with empty function': true
   });
 
 
-  result = describe('It', function() {
-    it('throws an error', function() {
+  result = describe('It', function () {
+    it('throws an error', function () {
       throw new Error('BOOM!');
     });
   });
@@ -41,8 +41,8 @@
   });
 
 
-  result = describe('It', function() {
-    it('does some assertions', function() {
+  result = describe('It', function () {
+    it('does some assertions', function () {
       assert(true);
       assert.ok(42);
       assert.equal('hello', 'hello');
@@ -55,8 +55,8 @@
   });
 
 
-  result = describe('It', function() {
-    it('fails an assertion', function() {
+  result = describe('It', function () {
+    it('fails an assertion', function () {
       assert.equal('hello', 'world');
     });
   });
@@ -66,17 +66,17 @@
   });
 
 
-  result = describe('It', function() {
-    it('does some assertions', function() {
+  result = describe('It', function () {
+    it('does some assertions', function () {
       assert(true);
       assert.ok(42);
     });
 
-    it('does some more assertions', function() {
+    it('does some more assertions', function () {
       assert.equal('hello', 'world');
     });
 
-    it(function() {
+    it(function () {
       assert(true);
     });
   });

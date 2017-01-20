@@ -1,11 +1,11 @@
-(function() {
+(function () {
   'use strict';
 
   var result, i;
 
 
   after();   // After called with no args
-  result = describe('After', function() {});
+  result = describe('After', function () {});
   result.should.deep.equal({
     'after #1': false,
     'this.fn is not a function': false
@@ -14,7 +14,7 @@
 
 
   after('called without a function');
-  result = describe('After', function() {});
+  result = describe('After', function () {});
   result.should.deep.equal({
     'called without a function': false,
     'this.fn is not a function': false
@@ -22,9 +22,9 @@
   after.pop();
 
 
-  after('caleld with an empty function', function() {});
-  result = describe('After', function() {
-    it('passes', function() {});
+  after('caleld with an empty function', function () {});
+  result = describe('After', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'After passes': true
@@ -32,10 +32,10 @@
   after.pop();
 
 
-  after('throws an error', function() {
-      throw new Error('BOOM!');
+  after('throws an error', function () {
+    throw new Error('BOOM!');
   });
-  result = describe('After', function() {});
+  result = describe('After', function () {});
   result.should.deep.equal({
     'throws an error': false,
     'BOOM!': false
@@ -43,12 +43,12 @@
   after.pop();
 
 
-  after('does some assertions', function() {
+  after('does some assertions', function () {
     assert(true);
     assert.equal('hello', 'hello');
   });
-  result = describe('After', function() {
-    it('passes', function() {});
+  result = describe('After', function () {
+    it('passes', function () {});
   });
   result.should.deep.equal({
     'After passes': true
@@ -56,10 +56,10 @@
   after.pop();
 
 
-  after('fails an assertion', function() {
+  after('fails an assertion', function () {
     assert.ok(0);
   });
-  result = describe('After', function() {});
+  result = describe('After', function () {});
   result.should.deep.equal({
     'fails an assertion': false,
     'expected 0 to be truthy': false
@@ -67,11 +67,11 @@
   after.pop();
 
 
-  after('fails an assertion', function() {
+  after('fails an assertion', function () {
     assert.ok(0);
   });
-  result = describe('After', function() {
-    it('still runs tests', function() {});
+  result = describe('After', function () {
+    it('still runs tests', function () {});
   });
   result.should.deep.equal({
     'After still runs tests': true,
@@ -82,17 +82,17 @@
 
 
   i = 0;
-  after('runs first', function() {
+  after('runs first', function () {
     assert.equal(++i, 2);
   });
-  after('runs second', function() {
+  after('runs second', function () {
     assert.equal(++i, 3);
   });
-  after('runs third', function() {
+  after('runs third', function () {
     assert.equal(++i, 4);
   });
-  result = describe('After', function() {
-    it('runs in order', function() {
+  result = describe('After', function () {
+    it('runs in order', function () {
       assert.equal(++i, 1);
     });
   });
@@ -105,17 +105,17 @@
 
 
   i = 0;
-  after('runs first', function() {
+  after('runs first', function () {
     assert.equal(++i, 2);
   });
-  after('fails an assertion', function() {
+  after('fails an assertion', function () {
     assert.equal(++i, 9999);
   });
-  after('runs third', function() {
+  after('runs third', function () {
     assert.equal(++i, 4);
   });
-  result = describe('After', function() {
-    it('runs in order', function() {
+  result = describe('After', function () {
+    it('runs in order', function () {
       assert.equal(++i, 1);
     });
   });
@@ -130,31 +130,31 @@
 
 
   i = 0;
-  after('only runs after root-level describes', function() {
+  after('only runs after root-level describes', function () {
     assert.equal(++i, 6);
   });
-  result = describe('After', function() {
-    it('should not have run yet', function() {
+  result = describe('After', function () {
+    it('should not have run yet', function () {
       assert.equal(++i, 1);
     });
 
-    it('still should not have run', function() {
+    it('still should not have run', function () {
       assert.equal(++i, 2);
     });
 
-    describe(function() {
-      it('should not have run for a nested describe block', function() {
+    describe(function () {
+      it('should not have run for a nested describe block', function () {
         assert.equal(++i, 3);
       });
 
-      describe(function() {
-        it('should not have run for this one either', function() {
+      describe(function () {
+        it('should not have run for this one either', function () {
           assert.equal(++i, 4);
         });
       });
     });
 
-    it('should not run after the nested describe blocks', function() {
+    it('should not run after the nested describe blocks', function () {
       assert.equal(++i, 5);
     });
   });
