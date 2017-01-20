@@ -8,6 +8,9 @@ language: node_js
 matrix:
   include:
     - node_js: 4
+    - node_js: 5
+    - node_js: 6
+    - node_js: 7
 
 script:
   - npm run lint
