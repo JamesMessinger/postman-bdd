@@ -22,20 +22,23 @@
       "homepage": "http://jamesmessinger.com"
     }
   ],
-  "license": "MIT",
   "homepage": "https://bigstickcarpet.github.io/postman-bdd",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/BigstickCarpet/postman-bdd.git"
   },
   "main": "dist/postman-bdd.js",
   "ignore": [
-    "/docs",
+    "/bower_components",
+    "/dist/*.test.js",
     "/lib",
     "/test",
     "/.*",
-    "/index.html",
-    "/package.json"
+    "/*.js",
+    "/*.json",
+    "/*.txt",
+    "/*.yml"
   ],
   "dependencies": {},
   "devDependencies": {}
