@@ -5,7 +5,7 @@ var postmanBDD = require('../');
 postmanBDD.debug = false;
 postmanBDD.log = false;
 
-// Tests
+// Test Specs
 require('./specs/describe.spec.js');
 require('./specs/it.spec.js');
 require('./specs/before.spec.js');

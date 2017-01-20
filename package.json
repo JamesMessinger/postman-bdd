@@ -32,12 +32,11 @@
   },
   "scripts": {
     "lint": "eslint lib --fix",
-    "build": "npm run browserify",
-    "browserify": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
-    "server": "http-server -o -c-1",
-    "start": "npm run build -- --watch & npm run server",
-    "test": "npm run lint && istanbul cover tests && npm run newman",
-    "newman": "newman -c tests/newman/tests.json --html tests/newman/report.html",
+    "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
+    "start": "npm run build -- --watch & http-server -o -c-1",
+    "test": "node test && npm run newman && npm run lint",
+    "newman": "newman -c test/newman/tests.json --html test/newman/report.html",
+    "cover": "istanbul cover test",
     "upgrade": "ncu --upgradeAll && npm update",
     "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"

@@ -32,7 +32,7 @@
   "ignore": [
     "/docs",
     "/lib",
-    "/tests",
+    "/test",
     "/.*",
     "/index.html",
     "/package.json"
