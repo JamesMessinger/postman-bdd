@@ -38,7 +38,7 @@
     "cover": "istanbul cover test && npm run newman",
     "start": "npm run build -- --watch & http-server -o -c-1",
     "upgrade": "npm-check -u",
-    "bump": "bump --prompt --grep lib/_prelude.js dist/* --tag --push --all",
+    "bump": "bump --prompt --grep dist/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
   },
   "devDependencies": {
