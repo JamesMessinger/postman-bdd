@@ -51,7 +51,8 @@
   },
   "devDependencies": {
     "coveralls": "^2.11.6",
-    "eslint": "^1.10.3",
+    "eslint": "^3.13.1",
+    "eslint-config-modular": "^2.0.1",
     "http-server": "^0.8.5",
     "istanbul": "^0.4.2",
     "newman": "^2.0.0-beta.7",
