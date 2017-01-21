@@ -1,0 +1,16 @@
+{
+  "id": "d6144580-999b-22d5-8d39-512bc313789c",
+  "name": "Postman BDD (GitHub)",
+  "values": [
+    {
+      "key": "postman_bdd_path",
+      "value": "http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.js",
+      "type": "text",
+      "enabled": true
+    }
+  ],
+  "timestamp": 1484946386003,
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2017-01-20T21:06:35.568Z",
+  "_postman_exported_using": "Postman/4.9.3"
+}

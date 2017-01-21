@@ -1,0 +1,114 @@
+{
+	"variables": [],
+	"info": {
+		"name": "Postman BDD",
+		"_postman_id": "d49b90ac-097b-9a91-14d1-f363c1b66147",
+		"description": "",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Install Postman BDD",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// \"install\" Postman BDD",
+							"postman.setGlobalVariable('postmanBDD', responseBody);",
+							""
+						]
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"// If the \"postman_bdd_path\" environment variable is set, then we'll use it.",
+							"// Otherwise, we'll default to the published version",
+							"if (!environment.postman_bdd_path) {",
+							"    postman.setGlobalVariable('postman_bdd_path', 'http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js');",
+							"}",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "{{postman_bdd_path}}",
+				"method": "GET",
+				"header": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache",
+						"description": ""
+					}
+				],
+				"body": {},
+				"description": "Downloads [Postman BDD](https://github.com/BigstickCarpet/postman-bdd) and then \"installs\" it by setting a global variable\n"
+			},
+			"response": []
+		},
+		{
+			"name": "Chai HTTP Assertions",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"eval(globals.postmanBDD);",
+							"",
+							"chai.Assertion.addMethod('dateString', function() {",
+							"  var dateStringPattern = /^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d+)?Z$/i;",
+							"  var value = chai.util.flag(this, 'object');",
+							"  var negate = chai.util.flag(this, 'negate');",
+							"  if (negate) {",
+							"      value.should.not.match(dateStringPattern);",
+							"  }",
+							"  else {",
+							"      value.should.match(dateStringPattern);",
+							"  }",
+							"});",
+							"",
+							"describe('Chai HTTP assertions', function() {",
+							"    it('should detect content type', function() {",
+							"        response.should.be.json;",
+							"        response.should.not.be.text;",
+							"        response.should.not.be.html;",
+							"    });",
+							"    ",
+							"    it('should parse the body', function() {",
+							"        response.text.should.be.a('string').with.length.above(100);",
+							"        response.body.should.be.an('object');",
+							"        response.body.url.should.equal('https://httpbin.org/get');",
+							"    });",
+							"    ",
+							"    it('should parse headers', function() {",
+							"        response.should.have.header('content-length');",
+							"        response.should.have.header('content-type', 'application/json');",
+							"    });",
+							"    ",
+							"    it('should support custom assertions', function() {",
+							"       ('2016-04-22T05:30:00.123Z').should.be.a.dateString();",
+							"       ('hello world').should.not.be.a.dateString();",
+							"    });",
+							"});",
+							""
+						]
+					}
+				}
+			],
+			"request": {
+				"url": "https://httpbin.org/get",
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"description": ""
+			},
+			"response": []
+		}
+	]
+}

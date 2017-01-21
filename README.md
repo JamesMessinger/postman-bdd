@@ -150,7 +150,13 @@ To build/test the project locally on your computer:
 `npm test`
 
 4. __Start the local web server__<br>
-`npm start` (then browse to [http://localhost:8080/](http://bigstickcarpet.com/postman-bdd/index.html)
+`npm start` (then browse to [http://localhost:8080/](http://localhost:8080)
+
+5. __Run Postman__<br>
+Download it [here](http://getpostman.com/apps) (it's free)
+
+5. __Run the Postman BDD Collection__<br>
+Import the [Postman BDD Collection](test/newman/postman_bdd_collection.json), and then use the [Postman BDD (localhost) Environment](test/newman/postman_bdd_localhost_environment.json) or the [Postman BDD (GitHub) Environment](test/newman/postman_bdd_github_environment.json) to run the collection.
 
 
 License

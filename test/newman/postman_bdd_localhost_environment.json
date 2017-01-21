@@ -1,0 +1,16 @@
+{
+  "id": "5f878bcd-9689-3eaf-9f0c-1ee1c939d126",
+  "name": "Postman BDD (localhost)",
+  "values": [
+    {
+      "key": "postman_bdd_path",
+      "value": "http://localhost:8080/dist/postman-bdd.js",
+      "type": "text",
+      "enabled": true
+    }
+  ],
+  "timestamp": 1484946330655,
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2017-01-20T21:06:57.662Z",
+  "_postman_exported_using": "Postman/4.9.3"
+}
