@@ -8,6 +8,7 @@ extends:
   - modular/browser
   - modular/node
   - modular/es5
+  - modular/test
 
 globals:
   # BDD globals
