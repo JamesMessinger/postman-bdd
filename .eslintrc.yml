@@ -8,3 +8,29 @@ extends:
   - modular/browser
   - modular/node
   - modular/es5
+
+globals:
+  # BDD globals
+  describe: true
+  it: true
+  before: true
+  after: true
+  beforeEach: true
+  afterEach: true
+
+  # Chai.js globals
+  chai: true
+  assert: true
+  expect: true
+
+  # SuperAgent globals
+  response: true
+
+  # Postman globals
+  postman: false
+  tests: false
+  tv4: false
+  responseBody: false
+  responseCode: false
+  responseHeaders: false
+  responseTime: false

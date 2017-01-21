@@ -1,16 +1,13 @@
 extends:
   - modular/test
 
-env:
-  jquery: true
-
 globals:
-  env: false
-  mock: false
-  employeeJSON: false
-  projectJSON: false
+  postmanBDD: true
+  tests: true
 
 rules:
+  # Require "use strict" pragmas inside function closures
+  # so that test specs can be safely used in a web browser
   strict:
     - error
     - function

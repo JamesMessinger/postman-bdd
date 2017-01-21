@@ -1,9 +1,13 @@
-'use strict';
+// Disable "strict mode" for this file,
+// so we can define variables with global scope
+/* eslint strict:off */
 
 // Postman BDD
-var postmanBDD = require('../');
-postmanBDD.debug = false;
-postmanBDD.log = false;
+postmanBDD = require('../');
+postmanBDD.logLevel = 'silent';
+
+// Postman's `tests` global
+tests = {};
 
 // Test Specs
 require('./specs/describe.spec.js');
