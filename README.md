@@ -2,6 +2,7 @@ Postman BDD
 ============================
 #### BDD test framework for Postman and Newman
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ac55fea9e51b4f29ac83c4cd7ed30020)](https://www.codacy.com/app/jamesmessinger/postman-bdd?utm_source=github.com&utm_medium=referral&utm_content=BigstickCarpet/postman-bdd&utm_campaign=badger)
 [![Build Status](https://api.travis-ci.org/BigstickCarpet/postman-bdd.svg)](https://travis-ci.org/BigstickCarpet/postman-bdd)
 [![Dependencies](https://david-dm.org/BigstickCarpet/postman-bdd.svg)](https://david-dm.org/BigstickCarpet/postman-bdd)
 [![Coverage Status](https://coveralls.io/repos/BigstickCarpet/postman-bdd/badge.svg?branch=master&service=github)](https://coveralls.io/r/BigstickCarpet/postman-bdd)
