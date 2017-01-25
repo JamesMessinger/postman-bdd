@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v1.4.2 (January 20th 2017)
+ * Postman BDD v1.5.0 (January 25th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -7,13 +7,6 @@
  * @license MIT
  */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-/**
- * This module is based on chai-http
- * https://github.com/chaijs/chai-http
- *
- * Copyright(c) 2011-2012 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
 'use strict';
 
 var isIP = require('is-ip');
@@ -21,7 +14,16 @@ var qs = require('qs');
 var url = require('url');
 var Cookie = require('cookiejar');
 
-module.exports = function (chai, _) {
+module.exports = chaiHttp;
+
+/**
+ * This module is based on chai-http
+ * https://github.com/chaijs/chai-http
+ *
+ * Copyright(c) 2011-2012 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+function chaiHttp (chai, _) {
   var Assertion = chai.Assertion;
 
   var contentTypes = {
@@ -270,7 +272,15 @@ module.exports = function (chai, _) {
     var assertion = new Assertion();
     _.transferFlags(this, assertion);
     assertion._obj = qs.parse(url.parse(this._obj.url).query);
-    assertion.property.apply(assertion, arguments);
+
+    if (arguments.length === 1) {
+      // Assert that query param exists
+      assertion.property(name);
+    }
+    else {
+      // Assert that the query param exists and has the specified value
+      assertion.property(name, value);
+    }
   });
 
   /**
@@ -325,23 +335,77 @@ module.exports = function (chai, _) {
       throw tv4.error;
     }
   });
-
-};
+}
 
 },{"cookiejar":46,"is-ip":47,"qs":50,"url":62}],2:[function(require,module,exports){
+'use strict';
+
 var Runnable = require('./runnable');
 var Hook = require('./hook');
-var runtime = require('./runtime');
-var state = require('./state');
-var hooks = {};
+var State = require('./state');
 
-['before', 'after', 'beforeEach', 'afterEach'].forEach(function (name) {
-  var hook = hooks[name] = new Hook(name);
-  runtime.global[name] = hook.push.bind(hook);
-  runtime.global[name].pop = hook.pop.bind(hook);
-  runtime.global[name].clear = hook.clear.bind(hook);
-  runtime.global[name].count = hook.count.bind(hook);
-});
+module.exports = PostmanBDD;
+
+/**
+ * The Postman BDD runtime
+ */
+function PostmanBDD () {
+  var state = this.state = new State();
+
+  this.hooks = {
+    before: new Hook('before', state),
+    after: new Hook('after', state),
+    beforeEach: new Hook('beforeEach', state),
+    afterEach: new Hook('afterEach', state),
+  };
+
+  this.before = PostmanBDD.prototype.before.bind(this);
+  this.after = PostmanBDD.prototype.after.bind(this);
+  this.beforeEach = PostmanBDD.prototype.beforeEach.bind(this);
+  this.afterEach = PostmanBDD.prototype.afterEach.bind(this);
+  this.describe = PostmanBDD.prototype.describe.bind(this);
+  this.it = PostmanBDD.prototype.it.bind(this);
+}
+
+/**
+ * Registers a function to be called before any tests for a request.
+ *
+ * @param {string} [title] - Optinoal title for this hook
+ * @param {function} fn - The hook to run
+ */
+PostmanBDD.prototype.before = function (title, fn) {
+  this.hooks.before.push(title, fn);
+};
+
+/**
+ * Registers a function to be called after all tests for a request.
+ *
+ * @param {string} [title] - Optinoal title for this hook
+ * @param {function} fn - The hook to run
+ */
+PostmanBDD.prototype.after = function (title, fn) {
+  this.hooks.after.push(title, fn);
+};
+
+/**
+ * Registers a function to be called before each test.
+ *
+ * @param {string} [title] - Optinoal title for this hook
+ * @param {function} fn - The hook to run
+ */
+PostmanBDD.prototype.beforeEach = function (title, fn) {
+  this.hooks.beforeEach.push(title, fn);
+};
+
+/**
+ * Registers a function to be called after each test.
+ *
+ * @param {string} [title] - Optinoal title for this hook
+ * @param {function} fn - The hook to run
+ */
+PostmanBDD.prototype.afterEach = function (title, fn) {
+  this.hooks.afterEach.push(title, fn);
+};
 
 /**
  * Runs a test suite.
@@ -352,20 +416,18 @@ var hooks = {};
  * @param {function} fn - The test suite to run
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
-describe = function (title, fn) {
-  if (state.stack.length === 0) {
-    // This is the first `describe` block in a new test script, so reset all state
-    state.reset();
-    hooks.before.run();
-  }
+PostmanBDD.prototype.describe = function (title, fn) {
+  this.oneTimeInitialization();
 
-  var runnable = new Runnable('describe', title, fn);
+  var runnable = new Runnable('describe', this.state, title, fn);
   runnable.run();
 
-  if (state.stack.length === 0) {
-    hooks.after.run();
+  if (this.state.isFinished()) {
+    // This is a top-level `describe` block, so run any `after` hooks
+    this.hooks.after.run();
   }
-  return state.results;
+
+  return this.state.results;
 };
 
 /**
@@ -377,29 +439,46 @@ describe = function (title, fn) {
  * @param {function} fn - The test to run
  * @returns {boolean} - The boolean result of the test
  */
-it = function (title, fn) {
-  hooks.beforeEach.run();
+PostmanBDD.prototype.it = function (title, fn) {
+  this.oneTimeInitialization();
+  this.hooks.beforeEach.run();
 
-  var runnable = new Runnable('it', title, fn);
+  var runnable = new Runnable('it', this.state, title, fn);
   runnable.run();
 
-  hooks.afterEach.run();
+  this.hooks.afterEach.run();
   return runnable.result;
 };
 
-},{"./hook":3,"./runnable":7,"./runtime":8,"./state":9}],3:[function(require,module,exports){
+/**
+ * Inititializes state and runs `before` hooks before the first Runnable
+ * in a new test script.
+ */
+PostmanBDD.prototype.oneTimeInitialization = function () {
+  if (!this.state.isStarted()) {
+    // This is the first Runnable in a new test script,
+    // so reset all state and run any `before` hooks
+    this.hooks.before.run();
+  }
+};
+
+
+},{"./hook":3,"./runnable":8,"./state":9}],3:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
-var state = require('./state');
 
 module.exports = Hook;
 
 /**
  * A hook is a list of runnables to run before/after a `describe` or `it` block.
+ *
+ * @param {string} type - The type of the hook (e.g. "before", "afterEach", etc)
+ * @param {State} state - An object containing the state of the current test script
  */
-function Hook (name) {
-  this.name = name;
+function Hook (type, state) {
+  this.type = type;
+  this.state = state;
   this.runnables = [];
 }
 
@@ -408,7 +487,7 @@ function Hook (name) {
  */
 Hook.prototype.run = function () {
   // Don't run if we're already in a hook
-  if (!state.inAHook()) {
+  if (!this.state.inAHook()) {
     this.runnables.forEach(function (runnable) {
       runnable.run();
     });
@@ -419,428 +498,407 @@ Hook.prototype.run = function () {
  * Adds a new runnable for this hook
  */
 Hook.prototype.push = function (title, fn) {
-  var runnable = new Runnable(this.name, title, fn);
+  var runnable = new Runnable(this.type, this.state, title, fn);
   runnable.isHook = true;
   this.runnables.push(runnable);
 };
 
-/**
- * Removes the last runnable from this hook
- */
-Hook.prototype.pop = function () {
-  this.runnables.pop();
-};
+},{"./runnable":8}],4:[function(require,module,exports){
+// Disable "strict mode" for this file,
+// so we can define variables with global scope
+/* eslint strict:off */
 
-/**
- * Removes all runnables from this hook
- */
-Hook.prototype.clear = function () {
-  this.runnables = [];
-};
-
-/**
- * Returns the number of runnables for this hook
- */
-Hook.prototype.count = function () {
-  return this.runnables.length;
-};
-
-},{"./runnable":7,"./state":9}],4:[function(require,module,exports){
-// Postman BDD
-require('./bdd');
-
-// Allow users to set options
-module.exports = require('./options');
-
-// SuperAgent Response API
-response = require('./response');
-
-// Chai
-chai = require('chai');
-assert = chai.assert;
-expect = chai.expect;
-chai.should();
-
-// Chai-HTTP Assertions
+var PostmanBDD = require('./bdd');
+var SuperAgent = require('./response');
 var assertions = require('./assertions');
-chai.use(assertions);
+var options = require('./options');
+var log = require('./log');
 
-},{"./assertions":1,"./bdd":2,"./options":5,"./response":6,"chai":10}],5:[function(require,module,exports){
+// Expose the Postman BDD options
+module.exports = options;
+
+// Expose a `reset()` method for testing purposes
+module.exports.reset = initPostmanBDD;
+
+// Initialize Postman BDD
+initPostmanBDD();
+
+/**
+ * Defines (or redefines) all Postman BDD globals
+ */
+function initPostmanBDD () {
+  log.info('Using Postman BDD');
+  initBDD();
+  initSuperAgent();
+  initChai();
+}
+
+/**
+ * Defines (or redefines) BDD globals
+ */
+function initBDD () {
+  var postmanBDD = new PostmanBDD();
+  before = postmanBDD.before;
+  after = postmanBDD.after;
+  beforeEach = postmanBDD.beforeEach;
+  afterEach = postmanBDD.afterEach;
+  describe = postmanBDD.describe;
+  it = postmanBDD.it;
+}
+
+/**
+ * Defines (or redefines) SuperAgent globals
+ */
+function initSuperAgent () {
+  var superAgent = new SuperAgent();
+  response = superAgent.response;
+}
+
+/**
+ * Defines (or redefines) Chai.js globals
+ */
+function initChai () {
+  chai = require('chai');
+  assert = chai.assert;
+  expect = chai.expect;
+  chai.should();
+
+  // Chai-HTTP Assertions
+  chai.use(assertions);
+}
+
+},{"./assertions":1,"./bdd":2,"./log":5,"./options":6,"./response":7,"chai":10}],5:[function(require,module,exports){
 'use strict';
 
-var runtime = require('./runtime');
+var options = require('./options');
+
+var levels = ['silent', 'error', 'warn', 'info', 'debug'];
+
+var log = module.exports = {
+  /**
+   * Determines whether the given logging level is enabled
+   *
+   * @param {string} level
+   * @returns {boolean}
+   */
+  isEnabled: function (level) {
+    return levels.indexOf(options.logLevel) >= levels.indexOf(level);
+  },
+};
+
+levels.forEach(function (level) {
+  log[level] = function () {
+    if (this.isEnabled(level)) {
+      var logMethod = console.log;
+      if (typeof console[level] === 'function') {
+        logMethod = console[level];
+      }
+
+      logMethod.apply(console, arguments);
+    }
+  };
+});
+
+},{"./options":6}],6:[function(require,module,exports){
+'use strict';
 
 module.exports = {
   /**
-   * If you have a debugger attached (Node.js debugger, browser dev tools, IDE, etc.),
-   * then the debugger will automatically pause whenever an assertion fails.
-   * This is a great way to easily find and fix failing tests in Postman.
+   * The logging level (silent, error, warn, info, debug)
    *
-   * To disable this feature, set this option to false.
+   * @type {string}
    */
-  debug: true,
-
-  /**
-   * When running in a GUI environment (Postman Chrome App or Electron app),
-   * console logging is enabled by default.
-   *
-   * When running in a terminal environment (Newman), console logging is disabled by default.
-   *
-   * Either way, you can override the default behavior by setting this option to true/false.
-   */
-  log: !runtime.newman,
+  logLevel: 'warn',
 };
 
-},{"./runtime":8}],6:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
+'use strict';
+
 /**
  * SuperAgent's Response API
  *
  * For more info, see:
  * https://visionmedia.github.io/superagent/#response-properties
  */
-module.exports = Object.defineProperties({}, {
-  /**
-   * Returns the unparsed response body string
-   * @type {string}
-   */
-  text: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return typeof responseBody === 'string' ? responseBody : '';
-    }
-  },
+module.exports = function SuperAgent () {
+  var superAgent = this;
 
-  /**
-   * The parsed response body.
-   * @type {object}
-   */
-  body: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
+  superAgent.response = {
+    /**
+     * Returns the value of the given header.  Header names are case insensitive.
+     *
+     * https://visionmedia.github.io/superagent/#response-content-type
+     *
+     * @param {string} name
+     * @returns {?string}
+     */
+    getHeader: function (name) {
+      name = name.toLowerCase();
+      return getResponseHeader(name) || superAgent.response.header[name];
+    },
+
+    /**
+     * Returns the value of the given cookie.
+     *
+     * @param {string} name
+     * @returns {?string}
+     */
+    getCookie: function (name) {
+      return getResponseCookie(name);
+    },
+  };
+
+  defineProperties(superAgent.response, {
+    /**
+     * Returns the HTTP response status code
+     * @type {number}
+     */
+    status: function () {
+      return typeof responseCode === 'object' ? responseCode.code : 0;
+    },
+
+    /**
+     * Returns the HTTP response status type (1, 2, 3, 4, or 5)
+     * @type {number}
+     */
+    statusType: function () {
+      return Math.floor(superAgent.response.status / 100);
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "info" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    info: function () {
+      return superAgent.response.statusType === 1;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "ok" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    ok: function () {
+      return superAgent.response.statusType === 2;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "client error" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    clientError: function () {
+      return superAgent.response.statusType === 4;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "server error" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    serverError: function () {
+      return superAgent.response.statusType === 5;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP error status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    error: function () {
+      return superAgent.response.clientError || superAgent.response.serverError;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "accepted" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    accepted: function () {
+      return superAgent.response.status === 202;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "no content" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    noContent: function () {
+      return superAgent.response.status === 204 || superAgent.response.status === 1223;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "bad request" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    badRequest: function () {
+      return superAgent.response.status === 400;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "unauthorized" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    unauthorized: function () {
+      return superAgent.response.status === 401;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "not acceptable" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    notAcceptable: function () {
+      return superAgent.response.status === 406;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "not found" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    notFound: function () {
+      return superAgent.response.status === 404;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "forbidden" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    forbidden: function () {
+      return superAgent.response.status === 403;
+    },
+
+    /**
+     * Returns the unparsed response body string
+     * @type {string}
+     */
+    text: function () {
+      return typeof responseBody === 'string' ? responseBody : '';
+    },
+
+    /**
+     * The parsed response body.
+     * @type {object}
+     */
+    body: function () {
       try {
-        return JSON.parse(this.text);
+        return JSON.parse(superAgent.response.text);
       }
       catch (e) {
         return {};
       }
-    }
-  },
+    },
 
-  /**
-   * The parsed response headers, with lowercased field names.
-   * @type {object}
-   */
-  headers: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
+    /**
+     * The parsed response headers, with lowercased field names.
+     * @type {object}
+     */
+    headers: function () {
       return typeof responseHeaders === 'object' ? responseHeaders : {};
-    }
-  },
+    },
 
-  /**
-   * The response time, in milliseconds
-   * @type {number}
-   */
-  time: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
+    /**
+     * The response time, in milliseconds
+     * @type {number}
+     */
+    time: function () {
       return typeof responseTime === 'number' ? responseTime : 0;
-    }
-  },
+    },
 
-  /**
-   * Returns the value of the Content-Type header without the charset (e.g. "text/html")
-   * @type {string}
-   */
-  type: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      var contentType = this.getHeader('content-type') || '';
+    /**
+     * Returns the value of the Content-Type header without the charset (e.g. "text/html")
+     * @type {string}
+     */
+    type: function () {
+      var contentType = superAgent.response.getHeader('content-type') || '';
       return contentType.split(';')[0];
-    }
-  },
+    },
 
-  /**
-   * Returns the value of the Content-Type header without the MIME type (e.g. "utf8")
-   * @type {string}
-   */
-  charset: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      var contentType = this.getHeader('content-type') || '';
+    /**
+     * Returns the value of the Content-Type header without the MIME type (e.g. "utf8")
+     * @type {string}
+     */
+    charset: function () {
+      var contentType = superAgent.response.getHeader('content-type') || '';
       var match = /charset=([a-zA-Z0-9_-]+)/i.exec(contentType);
       if (!match) { return ''; }
       return match[1];
-    }
-  },
-
-  /**
-   * Returns the HTTP response status code
-   * @type {number}
-   */
-  status: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return typeof responseCode === 'object' ? responseCode.code : 0;
-    }
-  },
-
-  /**
-   * Returns the HTTP response status type (1, 2, 3, 4, or 5)
-   * @type {number}
-   */
-  statusType: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return Math.floor(this.status / 100);
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "info" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  info: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.statusType === 1;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "ok" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  ok: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.statusType === 2;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "client error" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  clientError: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.statusType === 4;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "server error" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  serverError: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.statusType === 5;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP error status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  error: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.clientError || this.serverError;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "accepted" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  accepted: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 202;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "no content" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  noContent: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 204 || this.status === 1223;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "bad request" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  badRequest: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 400;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "unauthorized" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  unauthorized: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 401;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "not acceptable" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  notAcceptable: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 406;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "not found" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  notFound: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 404;
-    }
-  },
-
-  /**
-   * Indicates whether the response is an HTTP "forbidden" status
-   *
-   * https://visionmedia.github.io/superagent/#response-status
-   *
-   * @type {boolean}
-   */
-  forbidden: {
-    configurable: true,
-    enumerable: true,
-    get: function () {
-      return this.status === 403;
-    }
-  },
-
-
-  /**
-   * Returns the value of the given header.  Header names are case insensitive.
-   *
-   * https://visionmedia.github.io/superagent/#response-content-type
-   *
-   * @param {string} name
-   * @returns {?string}
-   */
-  getHeader: {
-    configurable: true,
-    enumerable: true,
-    writable: true,
-    value: function (name) {
-      name = name.toLowerCase();
-      return getPostman().getResponseHeader(name) || this.header[name];
-    }
-  },
-
-  /**
-   * Returns the value of the given cookie.
-   *
-   * @param {string} name
-   * @returns {?string}
-   */
-  getCookie: {
-    configurable: true,
-    enumerable: true,
-    writable: true,
-    value: function (name) {
-      return getPostman().getResponseCookie(name);
-    }
-  },
-});
-
-
-/**
- * Returns the `postman` global, or a proxy
- */
-function getPostman () {
-  return typeof postman === 'object' ? postman : postmanProxy;
-}
-
-var postmanProxy = {
-  getEnvironmentVariable: function () {},
-  setEnvironmentVariable: function () {},
-  getGlobalVariable: function () {},
-  setGlobalVariable: function () {},
-  getResponseHeader: function () {},
-  getResponseCookie: function () {},
+    },
+  });
 };
 
-},{}],7:[function(require,module,exports){
+/**
+ * Defines the read-only property getters on the given object
+ *
+ * @param {object} getters
+ */
+function defineProperties (obj, getters) {
+  Object.keys(getters).forEach(function (name) {
+    Object.defineProperty(obj, name, {
+      configurable: true,
+      enumerable: true,
+      get: getters[name],
+    });
+  });
+}
+
+/**
+ * Calls {@link postman.getResponseHeader}, if it exists
+ *
+ * @param {string} name
+ * @returns {string|undefined}
+ */
+function getResponseHeader (name) {
+  if (typeof postman === 'object' && typeof postman.getResponseHeader === 'function') {
+    return postman.getResponseHeader(name);
+  }
+}
+
+/**
+ * Calls {@link postman.getResponseCookie}, if it exists
+ *
+ * @param {string} name
+ * @returns {string|undefined}
+ */
+function getResponseCookie (name) {
+  if (typeof postman === 'object' && typeof postman.getResponseCookie === 'function') {
+    return postman.getResponseCookie(name);
+  }
+}
+
+},{}],8:[function(require,module,exports){
 'use strict';
 
-var state = require('./state');
-var options = require('./options');
+var log = require('./log');
 
 module.exports = Runnable;
 
@@ -849,17 +907,19 @@ module.exports = Runnable;
  * Runnables include test suites (describe), tests (it), and hooks (before, after, beforeEach, afterEach)
  *
  * @param {string} type - The type of runnable ("describe", "it", "before", "afterEach", etc.)
+ * @param {State} state - An object containing the state of the current test script
  * @param {string} [title] - Optional title for the runnable
- * @param {function} fn - The function to run
+ * @param {function} [fn] - The function to run
  * @class
  */
-function Runnable (type, title, fn) {
+function Runnable (type, state, title, fn) {
   if (typeof title === 'function') {
     fn = title;
     title = '';
   }
 
   this.type = type;
+  this.state = state;
   this.isHook = false;
   this.title = title;
   this.fn = fn;
@@ -877,12 +937,13 @@ function Runnable (type, title, fn) {
  * {@link State.results}, even for hooks and test suites.
  */
 Runnable.prototype.run = function run () {
-  state.counters[this.type]++;
-  this.title = this.title || ((this.type === 'it' ? 'test' : this.type) + ' #' + state.counters[this.type]);
+  this.state.counters[this.type]++;
+  this.title = this.title ||
+    ((this.type === 'it' ? 'test' : this.type) + ' #' + this.state.counters[this.type]);
 
-  state.stack.push(this);
-  var fullTitle = state.stack.toString();
-  options.log && console.log('Running ' + fullTitle);
+  this.state.stack.push(this);
+  var fullTitle = this.state.stack.toString();
+  log.debug('Running ' + fullTitle);
 
   try {
     this.fn();
@@ -892,7 +953,7 @@ Runnable.prototype.run = function run () {
     this.failure(e, fullTitle);
   }
   finally {
-    state.stack.pop();
+    this.state.stack.pop();
   }
 };
 
@@ -902,9 +963,12 @@ Runnable.prototype.run = function run () {
  * @param {string} [fullTitle] - The full title (including any parent Runnables)
  */
 Runnable.prototype.success = function (fullTitle) {
+  log.info('passed: ' + fullTitle);
+
   this.result = true;
+
   if (this.type === 'it') {
-    state.results[fullTitle || this.title] = true;
+    this.state.results[fullTitle || this.title] = true;
   }
 };
 
@@ -915,166 +979,119 @@ Runnable.prototype.success = function (fullTitle) {
  * @param {string} [fullTitle] - The full title (including any parent Runnables)
  */
 Runnable.prototype.failure = function (err, fullTitle) {
-  options.log && (typeof console.error === 'function' ? console.error(err) : console.log(err));
-
-  // If a debugger is attached, then break on errors
-  if (options.debug) {
-    debugger;
-  }
+  log.error('failed: ' + fullTitle, err);
 
   this.result = false;
   this.error = err;
-  state.results[fullTitle || this.title] = false;
-  state.results[err.message] = false;
+  this.state.results[fullTitle || this.title] = false;
+  this.state.results[err.message] = false;
 };
 
-},{"./options":5,"./state":9}],8:[function(require,module,exports){
-(function (global){
+},{"./log":5}],9:[function(require,module,exports){
 'use strict';
 
-/**
- * Information about the Postman runtime we're running in
- */
-module.exports = {
-  /**
-   * The global scope for this runtime
-   */
-  global: detectNewman() ? this : global,
-
-  /**
-   * Are we running in Newman?
-   */
-  newman: detectNewman(),
-
-  /**
-   * Are we running the Chrome app?
-   */
-  chrome: detectChromeApp(),
-
-  /**
-   * Are we running in the Electron app?
-   */
-  electron: detectElectronApp(),
-
-  /**
-   * Are we running in the Postman Request Builder?
-   */
-  requestBuilder: detectRequestBuilder(),
-
-  /**
-   * Are we running in the Postman Collection Runner?
-   */
-  collectionRunner: detectCollectionRunner(),
-};
-
-
-function detectNewman () {
-  return !detectBrowser() && !global.process;
-}
-
-function detectChromeApp () {
-  // The Chrome App cannot access the parent document due cross-origin permissions
-  return detectBrowser() && !getParentDocument();
-}
-
-function detectElectronApp () {
-  // The Electron App is able to access the parent document
-  return detectBrowser() && !!getParentDocument();
-}
-
-function detectRequestBuilder () {
-  // We can only detect the Request Builder when running in the Electron App
-  return detectElectronApp() && !!window.parent.document.querySelector('.requester-builder');
-}
-
-function detectCollectionRunner () {
-  // In the Chrome App, we always default to Collection Runner mode
-  return !detectRequestBuilder();
-}
-
-function detectBrowser () {
-  return typeof window === 'object';
-}
-
-function getParentDocument () {
-  try {
-    return window.parent.document;
-  }
-  catch (err) {
-    return null;
-  }
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{}],9:[function(require,module,exports){
-'use strict';
+module.exports = State;
 
 /**
  * Keeps track of the state for a single Postman test script.
  */
-var state = module.exports = {
+function State () {
   /**
    * Postman's global `tests` variable.
    * All test results must be stored on this object as boolean properties
    */
-  results: typeof tests === 'object' ? tests : {},
+  this.results = resetTests();
 
   /**
    * The stack of runnables that are currently running
    */
-  stack: [],
+  this.stack = [];
 
   /**
    * Keeps track of how many runnables of each type are currently running.
    */
-  counters: {
+  this.counters = {
     describe: 0,
     it: 0,
     before: 0,
     after: 0,
     beforeEach: 0,
     afterEach: 0,
-  },
+  };
 
   /**
-   * Determines whether we are currently inside a hook
+   * Pretty formatting for the stack
    */
-  inAHook: function () {
-    return this.stack.some(function (runnable) {
-      return runnable.isHook;
-    });
-  },
+  this.stack.toString = function () {
+    return this.map(function (r) { return r.title; }).join(' ');
+  };
+}
 
-  /**
-   * Resets all state.
-   * This is called at the beginning of a Postman test script,
-   * in case Postman BDD is being re-used across multiple requests
-   */
-  reset: function () {
-    var me = this;
+/**
+ * Determines whether the test script has started
+ * (i.e. at least one `describe`, `it`, or hook has started)
+ *
+ * @returns {boolean}
+ */
+State.prototype.isStarted = function () {
+  var me = this;
 
-    // Clear any results from a previous test run
-    // (this happens when the user user clicks the "send" button multiple times in Request Builder)
-    var t = typeof tests === 'object' ? tests : {};
-    Object.keys(t).forEach(function (key) {
-      delete t[key];
-    });
-    me.results = t;
-
-    // Reset all counters to zero
-    Object.keys(this.counters).forEach(function (key) {
-      me.counters[key] = 0;
+  if (this.stack.length > 0) {
+    // We're currently in a Runnable
+    return true;
+  }
+  else {
+    // Have any Runnables ran yet?
+    return Object.keys(this.counters).some(function (key) {
+      return me.counters[key] > 0;
     });
   }
 };
 
 /**
- * Pretty formatting for the stack
+ * Determines whether the test script has finished
+ * (i.e. the top-level `describe` block has finished running)
+ *
+ * @returns {boolean}
  */
-state.stack.toString = function () {
-  return this.map(function (r) { return r.title; }).join(' ');
+State.prototype.isFinished = function () {
+  return this.stack.length === 0 && this.counters.describe > 0;
 };
+
+/**
+ * Determines whether we are currently inside a hook
+ *
+ * @returns {boolean}
+ */
+State.prototype.inAHook = function () {
+  return this.stack.some(function (runnable) {
+    return runnable.isHook;
+  });
+};
+
+/**
+ * Deletes all properties of the Postman `tests` object, to reset any previous
+ * test state. This is necessary when the user clicks the "Send" button multiple
+ * times in Request Builder, which re-uses the same `tests` object each time.
+ *
+ * @reeturns {object} - Returns the empty `tests` object
+ */
+function resetTests () {
+  if (typeof tests !== 'object') {
+    throw new Error(
+      'Postman BDD can only run inside the Postman scripting runtime ' +
+      '(the "tests" global variable is missing)'
+    );
+  }
+
+  // Clear any results from a previous test run
+  // (this happens when the user user clicks the "send" button multiple times in Request Builder)
+  Object.keys(tests).forEach(function (key) {
+    delete tests[key];
+  });
+
+  return tests;
+}
 
 },{}],10:[function(require,module,exports){
 module.exports = require('./lib/chai');
@@ -7489,40 +7506,41 @@ Library.prototype.test = function(obj, type) {
 
 },{}],47:[function(require,module,exports){
 'use strict';
-const ipRegex = require('ip-regex');
+var ipRegex = require('ip-regex');
 
-const isIp = module.exports = x => ipRegex({exact: true}).test(x);
-isIp.v4 = x => ipRegex.v4({exact: true}).test(x);
-isIp.v6 = x => ipRegex.v6({exact: true}).test(x);
+var ip = module.exports = function (str) {
+	return ipRegex({exact: true}).test(str);
+};
+
+ip.v4 = function (str) {
+	return ipRegex.v4({exact: true}).test(str);
+};
+
+ip.v6 = function (str) {
+	return ipRegex.v6({exact: true}).test(str);
+};
 
 },{"ip-regex":48}],48:[function(require,module,exports){
 'use strict';
 
-const v4 = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}';
+var v4 = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}';
+var v6 = '(?:(?:[0-9a-fA-F:]){1,4}(?:(?::(?:[0-9a-fA-F]){1,4}|:)){2,7})+';
 
-const v6seg = '[0-9a-fA-F]{1,4}';
-const v6 = `
-(?:${v6seg}:){1,4}:${v4}|                 # 2001:db8:3:4::192.0.2.33  64:ff9b::192.0.2.33
-::(?:ffff(?::0{1,4}){0,1}:){0,1}${v4}|    # ::255.255.255.255  ::ffff:255.255.255.255  ::ffff:0:255.255.255.255
-fe80:(?::${v6seg}){0,4}%[0-9a-zA-Z]{1,}|  # fe80::7:8%eth0     fe80::7:8%1
-(?:${v6seg}:){7,7}${v6seg}|               # 1:2:3:4:5:6:7:8
-:(?:(?::${v6seg}){1,7}|:)|                # ::2:3:4:5:6:7:8    ::2:3:4:5:6:7:8  ::8
-${v6seg}:(?:(?::${v6seg}){1,6})|          # 1::3:4:5:6:7:8     1::3:4:5:6:7:8   1::8
-(?:${v6seg}:){1,2}(?::${v6seg}){1,5}|     # 1::4:5:6:7:8       1:2::4:5:6:7:8   1:2::8
-(?:${v6seg}:){1,3}(?::${v6seg}){1,4}|     # 1::5:6:7:8         1:2:3::5:6:7:8   1:2:3::8
-(?:${v6seg}:){1,4}(?::${v6seg}){1,3}|     # 1::6:7:8           1:2:3:4::6:7:8   1:2:3:4::8
-(?:${v6seg}:){1,5}(?::${v6seg}){1,2}|     # 1::7:8             1:2:3:4:5::7:8   1:2:3:4:5::8
-(?:${v6seg}:){1,6}:${v6seg}|              # 1::8               1:2:3:4:5:6::8   1:2:3:4:5:6::8
-(?:${v6seg}:){1,7}:|                      # 1::                                 1:2:3:4:5:6:7::
-::                                        # ::
-`.replace(/\s*#.*$/gm, '').replace(/\n/g, '').trim();
+var ip = module.exports = function (opts) {
+	opts = opts || {};
+	return opts.exact ? new RegExp('(?:^' + v4 + '$)|(?:^' + v6 + '$)') :
+	                    new RegExp('(?:' + v4 + ')|(?:' + v6 + ')', 'g');
+};
 
-const ip = module.exports = opts => opts && opts.exact ?
-	new RegExp(`(?:^${v4}$)|(?:^${v6}$)`) :
-	new RegExp(`(?:${v4})|(?:${v6})`, 'g');
+ip.v4 = function (opts) {
+	opts = opts || {};
+	return opts.exact ? new RegExp('^' + v4 + '$') : new RegExp(v4, 'g');
+};
 
-ip.v4 = opts => opts && opts.exact ? new RegExp(`^${v4}$`) : new RegExp(v4, 'g');
-ip.v6 = opts => opts && opts.exact ? new RegExp(`^${v6}$`) : new RegExp(v6, 'g');
+ip.v6 = function (opts) {
+	opts = opts || {};
+	return opts.exact ? new RegExp('^' + v6 + '$') : new RegExp(v6, 'g');
+};
 
 },{}],49:[function(require,module,exports){
 'use strict';
