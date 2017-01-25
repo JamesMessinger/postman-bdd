@@ -1,183 +1,329 @@
-(function () {
-  'use strict';
+'use strict';
 
-  var result, i;
+const test = require('tape');
+const Postman = require('../fixtures/postman');
 
+test('`afterEach` hook without any args', (t) => {
+  let postman = new Postman(t);
 
-  afterEach();   // AfterEach called with no args
-  result = describe('AfterEach', function () {
-    it('passes', function () {});
+  afterEach();
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  result.should.deep.equal({
-    'AfterEach passes': true,
-    'AfterEach afterEach #1': false,
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite afterEach #1': false,
     'this.fn is not a function': false,
   });
-  afterEach.pop();
 
+  t.end();
+});
 
-  afterEach('called without a function');
-  result = describe('AfterEach', function () {
-    it('passes', function () {});
+test('`afterEach` hook with only a name', (t) => {
+  let postman = new Postman(t);
+
+  afterEach('my hook');
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  result.should.deep.equal({
-    'AfterEach passes': true,
-    'AfterEach called without a function': false,
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite my hook': false,
     'this.fn is not a function': false,
   });
-  afterEach.pop();
 
+  t.end();
+});
 
-  afterEach('caleld with an empty function', function () {});
-  result = describe('AfterEach', function () {
-    it('passes', function () {});
+test('`afterEach` hook with only a function', (t) => {
+  let postman = new Postman(t);
+  let called = false;
+
+  afterEach(() => {
+    called = true;
   });
-  result.should.deep.equal({
-    'AfterEach passes': true
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  afterEach.pop();
 
+  t.equal(called, true);
 
-  afterEach('throws an error', function () {
+  postman.checkTests({
+    'my test suite my test': true
+  });
+
+  t.end();
+});
+
+test('Error in `afterEach` hook', (t) => {
+  let postman = new Postman(t);
+
+  afterEach('my hook', () => {
     throw new Error('BOOM!');
   });
-  result = describe('AfterEach', function () {
-    it('passes', function () {});
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  result.should.deep.equal({
-    'AfterEach passes': true,
-    'AfterEach throws an error': false,
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite my hook': false,
     'BOOM!': false,
   });
-  afterEach.pop();
 
+  t.end();
+});
 
-  afterEach('does some assertions', function () {
+test('Error in unnamed `afterEach` hook', (t) => {
+  let postman = new Postman(t);
+
+  afterEach(() => {
+    throw new Error('BOOM!');
+  });
+  describe('my test suite', () => {
+    it('my test', () => { });
+  });
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite afterEach #1': false,
+    'BOOM!': false,
+  });
+
+  t.end();
+});
+
+test('`afterEach` hook with successful assertions', (t) => {
+  let postman = new Postman(t);
+  let called = false;
+
+  afterEach('does some assertions', () => {
     assert(true);
     assert.equal('hello', 'hello');
+    called = true;
   });
-  result = describe('AfterEach', function () {
-    it('passes', function () {});
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  result.should.deep.equal({
-    'AfterEach passes': true
-  });
-  afterEach.pop();
 
+  t.equal(called, true);
 
-  afterEach('fails an assertion', function () {
-    assert.ok(0);
+  postman.checkTests({
+    'my test suite my test': true
   });
-  result = describe('AfterEach', function () {
-    it('still runs tests', function () {});
-  });
-  result.should.deep.equal({
-    'AfterEach still runs tests': true,
-    'AfterEach fails an assertion': false,
-    'expected 0 to be truthy': false,
-  });
-  afterEach.pop();
 
+  t.end();
+});
 
-  i = 0;
-  afterEach('runs first', function () {
-    assert.equal(++i, 2);
+test('`afterEach` hook with failed assertions', (t) => {
+  let postman = new Postman(t);
+
+  afterEach('my hook', () => {
+    assert.ok(false);
   });
-  afterEach('runs second', function () {
-    assert.equal(++i, 3);
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  afterEach('runs third', function () {
-    assert.equal(++i, 4);
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite my hook': false,
+    'expected false to be truthy': false,
   });
-  result = describe('AfterEach', function () {
-    it('runs in order', function () {
+
+  t.end();
+});
+
+test('Passed assertions + failed `afterEach` hook', (t) => {
+  let postman = new Postman(t);
+
+  afterEach('my hook', () => {
+    assert.ok(false);
+  });
+  describe('my test suite', () => {
+    it('my test', () => { });
+  });
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite my hook': false,
+    'expected false to be truthy': false,
+  });
+
+  t.end();
+});
+
+test('Failed assertions + failed `afterEach` hook', (t) => {
+  let postman = new Postman(t);
+
+  afterEach('my hook', () => {
+    assert.ok(false);
+  });
+  describe('my test suite', () => {
+    it('my test', () => {
+      assert.equal(1, 2);
+    });
+  });
+
+  postman.checkTests({
+    'my test suite my test': false,
+    'expected 1 to equal 2': false,
+    'my test suite my hook': false,
+    'expected false to be truthy': false,
+  });
+
+  t.end();
+});
+
+test('`afterEach` hooks run in correct order', (t) => {
+  let postman = new Postman(t);
+  let i = 0, testNumber = 0;
+
+  afterEach('my first hook', () => {
+    assert.equal(++i, (testNumber * 4) + 2);
+  });
+  afterEach('my second hook', () => {
+    assert.equal(++i, (testNumber * 4) + 3);
+  });
+  afterEach('my third hook', () => {
+    assert.equal(++i, (testNumber * 4) + 4);
+  });
+  describe('my test suite', () => {
+    it('my first test', () => {
       assert.equal(++i, 1);
     });
 
-    it('runs after each test', function () {
-      i = 0;
-      assert.equal(++i, 9999);
-    });
-
-    it('runs even after a test fails', function () {
+    it('my second test', () => {
       assert.equal(++i, 5);
-      i = 1;
+      testNumber++;
+    });
+
+    it('my third test', () => {
+      assert.equal(++i, 9);
+      testNumber++;
     });
   });
-  result.should.deep.equal({
-    'AfterEach runs in order': true,
-    'AfterEach runs after each test': false,
-    'expected 1 to equal 9999': false,
-    'AfterEach runs even after a test fails': true,
+
+  t.equal(i, 12);
+
+  postman.checkTests({
+    'my test suite my first test': true,
+    'my test suite my second test': true,
+    'my test suite my third test': true,
   });
-  afterEach.pop();
-  afterEach.pop();
-  afterEach.pop();
 
+  t.end();
+});
 
-  i = 0;
-  afterEach('runs first', function () {
+test('`afterEach` hooks run in correct order even if there are failed assertions', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  afterEach('my first hook', () => {
     assert.equal(++i, 2);
   });
-  afterEach('fails an assertion', function () {
+  afterEach('my second hook', () => {
     assert.equal(++i, 9999);
   });
-  afterEach('runs third', function () {
+  afterEach('my third hook', () => {
     assert.equal(++i, 4);
   });
-  result = describe('AfterEach', function () {
-    it('runs in order', function () {
+  describe('my test suite', () => {
+    it('my test', () => {
       assert.equal(++i, 1);
     });
   });
-  result.should.deep.equal({
-    'AfterEach runs in order': true,
-    'AfterEach fails an assertion': false,
+
+  t.equal(i, 4);
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite my second hook': false,
     'expected 3 to equal 9999': false,
   });
-  afterEach.pop();
-  afterEach.pop();
-  afterEach.pop();
 
+  t.end();
+});
 
-  i = 0;
-  afterEach('runs after each test', function () {
-    assert.equal(++i % 2, 0);
+test('`afterEach` hooks run in correct order even if an error occurs', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  afterEach('my first hook', () => {
+    assert.equal(++i, 2);
   });
-  result = describe('AfterEach', function () {
-    it('should run once', function () {
+  afterEach('my second hook', () => {
+    assert.equal(++i, 3);
+    throw new Error('BOOM');
+  });
+  afterEach('my third hook', () => {
+    assert.equal(++i, 4);
+  });
+  describe('my test suite', () => {
+    it('my test', () => {
+      assert.equal(++i, 1);
+    });
+  });
+
+  t.equal(i, 4);
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my test suite my second hook': false,
+    BOOM: false,
+  });
+
+  t.end();
+});
+
+test('`afterEach` hooks run even for nested tests', (t) => {
+  let postman = new Postman(t);
+  let i = 0, testNumber = 0;
+
+  afterEach('my hook', () => {
+    assert.equal(++i, (testNumber * 2) + 2);
+  });
+  describe('my test suite', () => {
+    it('my first test', () => {
       assert.equal(++i, 1);
     });
 
-    it('should run again', function () {
+    it('my second test', () => {
       assert.equal(++i, 3);
+      testNumber++;
     });
 
-    describe(function () {
-      it('should run for a test in a nested describe block', function () {
+    describe(() => {
+      it('my third test', () => {
         assert.equal(++i, 5);
+        testNumber++;
       });
 
-      describe(function () {
-        it('should run for this one too', function () {
+      describe(() => {
+        it('my fourth test', () => {
           assert.equal(++i, 7);
+          testNumber++;
         });
       });
     });
 
-    it('should run for this test as well', function () {
+    it('my fifth test', () => {
       assert.equal(++i, 9);
+      testNumber++;
     });
   });
-  result.should.deep.equal({
-    'AfterEach should run once': true,
-    'AfterEach should run again': true,
-    'AfterEach describe #2 should run for a test in a nested describe block': true,
-    'AfterEach describe #2 describe #3 should run for this one too': true,
-    'AfterEach should run for this test as well': true
+
+  t.equal(i, 10);
+
+  postman.checkTests({
+    'my test suite my first test': true,
+    'my test suite my second test': true,
+    'my test suite describe #2 my third test': true,
+    'my test suite describe #2 describe #3 my fourth test': true,
+    'my test suite my fifth test': true,
   });
 
-  afterEach.clear();
-  afterEach.count().should.equal(0);
-
-}());
+  t.end();
+});

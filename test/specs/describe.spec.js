@@ -1,37 +1,80 @@
-(function () {
-  'use strict';
+'use strict';
 
-  var result;
+const test = require('tape');
+const Postman = require('../fixtures/postman');
 
+test('`describe` without any args', (t) => {
+  let postman = new Postman(t);
 
-  result = describe();  // Describe called with no args
-  result.should.deep.equal({
+  describe();
+
+  postman.checkTests({
     'describe #1': false,
     'this.fn is not a function': false
   });
 
+  t.end();
+});
 
-  result = describe('Describe called without a function');
-  result.should.deep.equal({
-    'Describe called without a function': false,
+test('`describe` with only a name', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite');
+
+  postman.checkTests({
+    'my test suite': false,
     'this.fn is not a function': false
   });
 
+  t.end();
+});
 
-  result = describe(function () {}); // Describe called with no name
-  result.should.be.empty;
+test('`describe` with only a function', (t) => {
+  let postman = new Postman(t);
 
+  describe(() => {});
 
-  result = describe('Describe called with no tests', function () {});
-  result.should.be.empty;
+  postman.checkTests({});
 
+  t.end();
+});
 
-  result = describe('Error in describe block', function () {
+test('`describe` without any tests', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {});
+
+  postman.checkTests({});
+
+  t.end();
+});
+
+test('Error in `describe` block', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
     throw new Error('BOOM!');
   });
-  result.should.deep.equal({
-    'Error in describe block': false,
+
+  postman.checkTests({
+    'my test suite': false,
     'BOOM!': false
   });
 
-}());
+  t.end();
+});
+
+test('Error in unnamed `describe` block', (t) => {
+  let postman = new Postman(t);
+
+  describe(() => {
+    throw new Error('BOOM!');
+  });
+
+  postman.checkTests({
+    'describe #1': false,
+    'BOOM!': false
+  });
+
+  t.end();
+});

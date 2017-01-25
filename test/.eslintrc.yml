@@ -1,13 +1,7 @@
+# ESLint config
+# http://eslint.org/docs/user-guide/configuring
+# https://github.com/BigstickCarpet/eslint-config-modular
+
 extends:
-  - modular/test
-
-globals:
-  postmanBDD: true
-  tests: true
-
-rules:
-  # Require "use strict" pragmas inside function closures
-  # so that test specs can be safely used in a web browser
-  strict:
-    - error
-    - function
+  - modular/es6
+  - modular/node

@@ -1,48 +1,120 @@
-(function () {
-  'use strict';
+'use strict';
 
-  var result;
+const test = require('tape');
+const Postman = require('../fixtures/postman');
 
+test('`it` without any args', (t) => {
+  let postman = new Postman(t);
 
-  result = describe('It called with no args', function () {
+  describe('my test suite', () => {
     it();
   });
-  result.should.deep.equal({
-    'It called with no args test #1': false,
+
+  postman.checkTests({
+    'my test suite test #1': false,
     'this.fn is not a function': false
   });
 
+  t.end();
+});
 
-  result = describe('It', function () {
-    it('called without a function');
+test('`it` with only a name', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
+    it('my test');
   });
-  result.should.deep.equal({
-    'It called without a function': false,
+
+  postman.checkTests({
+    'my test suite my test': false,
     'this.fn is not a function': false
   });
 
+  t.end();
+});
 
-  result = describe('It', function () {
-    it('called with empty function', function () {});
+test('`it` with only a function', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
+    it(() => { });
   });
-  result.should.deep.equal({
-    'It called with empty function': true
+
+  postman.checkTests({
+    'my test suite test #1': true
   });
 
+  t.end();
+});
 
-  result = describe('It', function () {
-    it('throws an error', function () {
+test('`it` outside of `describe` block', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  it('my first test', () => {
+    assert.equal(++i, 1);
+  });
+
+  describe('my test suite', () => {
+    it('my second test', () => {
+      assert.equal(++i, 2);
+    });
+  });
+
+  it('my third test', () => {
+    assert.equal(++i, 3);
+  });
+
+  t.equal(i, 3);
+
+  postman.checkTests({
+    'my first test': true,
+    'my test suite my second test': true,
+    'my third test': true,
+  });
+
+  t.end();
+});
+
+test('Error in `it`', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
+    it('my test', () => {
       throw new Error('BOOM!');
     });
   });
-  result.should.deep.equal({
-    'It throws an error': false,
+
+  postman.checkTests({
+    'my test suite my test': false,
     'BOOM!': false
   });
 
+  t.end();
+});
 
-  result = describe('It', function () {
-    it('does some assertions', function () {
+test('Error in unnamed `it`', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
+    it(() => {
+      throw new Error('BOOM!');
+    });
+  });
+
+  postman.checkTests({
+    'my test suite test #1': false,
+    'BOOM!': false
+  });
+
+  t.end();
+});
+
+test('`it` with successful assertions', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
+    it('my test', () => {
       assert(true);
       assert.ok(42);
       assert.equal('hello', 'hello');
@@ -50,41 +122,170 @@
       new Date().should.be.a('Date');
     });
   });
-  result.should.deep.equal({
-    'It does some assertions': true
+
+  postman.checkTests({
+    'my test suite my test': true
   });
 
+  t.end();
+});
 
-  result = describe('It', function () {
-    it('fails an assertion', function () {
+test('`it` with failed assertions', (t) => {
+  let postman = new Postman(t);
+
+  describe('my test suite', () => {
+    it('my test', () => {
       assert.equal('hello', 'world');
     });
   });
-  result.should.deep.equal({
-    'It fails an assertion': false,
+
+  postman.checkTests({
+    'my test suite my test': false,
     'expected \'hello\' to equal \'world\'': false,
   });
 
+  t.end();
+});
 
-  result = describe('It', function () {
-    it('does some assertions', function () {
-      assert(true);
-      assert.ok(42);
+test('`it` runs in the corret order', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  describe('my test suite', () => {
+    it('my first test', () => {
+      assert.equal(++i, 1);
     });
 
-    it('does some more assertions', function () {
-      assert.equal('hello', 'world');
+    it('my second test', () => {
+      assert.equal(++i, 2);
     });
 
-    it(function () {
-      assert(true);
+    it('my third test', () => {
+      assert.equal(++i, 3);
     });
   });
-  result.should.deep.equal({
-    'It does some assertions': true,
-    'It does some more assertions': false,
-    'expected \'hello\' to equal \'world\'': false,
-    'It test #3': true,
+
+  t.equal(i, 3);
+
+  postman.checkTests({
+    'my test suite my first test': true,
+    'my test suite my second test': true,
+    'my test suite my third test': true,
   });
 
-}());
+  t.end();
+});
+
+test('`it` runs in the corret order even if there are failed assertions', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  describe('my test suite', () => {
+    it('my first test', () => {
+      assert.equal(++i, 1);
+    });
+
+    it('my second test', () => {
+      assert.equal(++i, 9999);
+    });
+
+    it('my third test', () => {
+      assert.equal(++i, 3);
+    });
+  });
+
+  t.equal(i, 3);
+
+  postman.checkTests({
+    'my test suite my first test': true,
+    'my test suite my second test': false,
+    'expected 2 to equal 9999': false,
+    'my test suite my third test': true,
+  });
+
+  t.end();
+});
+
+test('`it` runs in the corret order even if an error occurs', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  describe('my test suite', () => {
+    it('my first test', () => {
+      assert.equal(++i, 1);
+    });
+
+    it('my second test', () => {
+      assert.equal(++i, 2);
+      throw new Error('BOOM');
+    });
+
+    it('my third test', () => {
+      assert.equal(++i, 3);
+    });
+  });
+
+  t.equal(i, 3);
+
+  postman.checkTests({
+    'my test suite my first test': true,
+    'my test suite my second test': false,
+    BOOM: false,
+    'my test suite my third test': true,
+  });
+
+  t.end();
+});
+
+test('`it` can be nested', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  it('my first test', () => {
+    assert.equal(++i, 1);
+  });
+
+  describe('my test suite', () => {
+    it('my second test', () => {
+      assert.equal(++i, 2);
+    });
+
+    describe(() => {
+      it('my third test', () => {
+        assert.equal(++i, 3);
+      });
+
+      describe(() => {
+        it('my fourth test', () => {
+          assert.equal(++i, 4);
+        });
+      });
+
+      it('my fifth test', () => {
+        assert.equal(++i, 5);
+      });
+    });
+
+    it('my sixth test', () => {
+      assert.equal(++i, 6);
+    });
+  });
+
+  it('my seventh test', () => {
+    assert.equal(++i, 7);
+  });
+
+  t.equal(i, 7);
+
+  postman.checkTests({
+    'my first test': true,
+    'my test suite my second test': true,
+    'my test suite describe #2 my third test': true,
+    'my test suite describe #2 describe #3 my fourth test': true,
+    'my test suite describe #2 my fifth test': true,
+    'my test suite my sixth test': true,
+    'my seventh test': true,
+  });
+
+  t.end();
+});

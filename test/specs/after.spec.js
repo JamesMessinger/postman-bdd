@@ -1,172 +1,303 @@
-(function () {
-  'use strict';
+'use strict';
 
-  var result, i;
+const test = require('tape');
+const Postman = require('../fixtures/postman');
 
+test('`after` hook without any args', (t) => {
+  let postman = new Postman(t);
 
-  after();   // After called with no args
-  result = describe('After', function () {});
-  result.should.deep.equal({
+  after();
+  describe('my test suite', () => { });
+
+  postman.checkTests({
     'after #1': false,
     'this.fn is not a function': false
   });
-  after.pop();
 
+  t.end();
+});
 
-  after('called without a function');
-  result = describe('After', function () {});
-  result.should.deep.equal({
-    'called without a function': false,
+test('`after` hook with only a name', (t) => {
+  let postman = new Postman(t);
+
+  after('my hook');
+  describe('my test suite', () => { });
+
+  postman.checkTests({
+    'my hook': false,
     'this.fn is not a function': false
   });
-  after.pop();
 
+  t.end();
+});
 
-  after('caleld with an empty function', function () {});
-  result = describe('After', function () {
-    it('passes', function () {});
+test('`after` hook with only a function', (t) => {
+  let postman = new Postman(t);
+  let called = false;
+
+  after(() => {
+    called = true;
   });
-  result.should.deep.equal({
-    'After passes': true
+  describe('my test suite', () => {
+    it('my test', () => { });
   });
-  after.pop();
 
+  t.equal(called, true);
 
-  after('throws an error', function () {
+  postman.checkTests({
+    'my test suite my test': true
+  });
+
+  t.end();
+});
+
+test('Error in `after` hook', (t) => {
+  let postman = new Postman(t);
+
+  after('my hook', () => {
     throw new Error('BOOM!');
   });
-  result = describe('After', function () {});
-  result.should.deep.equal({
-    'throws an error': false,
+  describe('my test suite', () => { });
+
+  postman.checkTests({
+    'my hook': false,
     'BOOM!': false
   });
-  after.pop();
 
+  t.end();
+});
 
-  after('does some assertions', function () {
+test('Error in unnamed `after` hook', (t) => {
+  let postman = new Postman(t);
+
+  after(() => {
+    throw new Error('BOOM!');
+  });
+  describe('my test suite', () => { });
+
+  postman.checkTests({
+    'after #1': false,
+    'BOOM!': false
+  });
+
+  t.end();
+});
+
+test('`after` hook with successful assertions', (t) => {
+  let postman = new Postman(t);
+  let called = false;
+
+  after('my hook', () => {
     assert(true);
     assert.equal('hello', 'hello');
+    called = true;
   });
-  result = describe('After', function () {
-    it('passes', function () {});
-  });
-  result.should.deep.equal({
-    'After passes': true
-  });
-  after.pop();
+  describe('my test suite', () => { });
 
+  t.equal(called, true);
 
-  after('fails an assertion', function () {
-    assert.ok(0);
-  });
-  result = describe('After', function () {});
-  result.should.deep.equal({
-    'fails an assertion': false,
-    'expected 0 to be truthy': false
-  });
-  after.pop();
+  postman.checkTests({});
 
+  t.end();
+});
 
-  after('fails an assertion', function () {
-    assert.ok(0);
-  });
-  result = describe('After', function () {
-    it('still runs tests', function () {});
-  });
-  result.should.deep.equal({
-    'After still runs tests': true,
-    'fails an assertion': false,
-    'expected 0 to be truthy': false,
-  });
-  after.pop();
+test('`after` hook with failed assertions', (t) => {
+  let postman = new Postman(t);
 
+  after('my hook', () => {
+    assert.ok(false);
+  });
+  describe('my test suite', () => { });
 
-  i = 0;
-  after('runs first', function () {
+  postman.checkTests({
+    'my hook': false,
+    'expected false to be truthy': false,
+  });
+
+  t.end();
+});
+
+test('Passed assertions + failed `after` hook', (t) => {
+  let postman = new Postman(t);
+
+  after('my hook', () => {
+    assert.ok(false);
+  });
+  describe('my test suite', () => {
+    it('my test', () => { });
+  });
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my hook': false,
+    'expected false to be truthy': false,
+  });
+
+  t.end();
+});
+
+test('Failed assertions + failed `after` hook', (t) => {
+  let postman = new Postman(t);
+
+  after('my hook', () => {
+    assert.ok(false);
+  });
+  describe('my test suite', () => {
+    it('my test', () => {
+      assert.equal(1, 2);
+    });
+  });
+
+  postman.checkTests({
+    'my test suite my test': false,
+    'expected 1 to equal 2': false,
+    'my hook': false,
+    'expected false to be truthy': false,
+  });
+
+  t.end();
+});
+
+test('`after` hooks run in correct order', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  after('my first hook', () => {
     assert.equal(++i, 2);
   });
-  after('runs second', function () {
+  after('my second hook', () => {
     assert.equal(++i, 3);
   });
-  after('runs third', function () {
+  after('my third hook', () => {
     assert.equal(++i, 4);
   });
-  result = describe('After', function () {
-    it('runs in order', function () {
+  describe('my test suite', () => {
+    it('my test', () => {
       assert.equal(++i, 1);
     });
   });
-  result.should.deep.equal({
-    'After runs in order': true
+
+  t.equal(i, 4);
+
+  postman.checkTests({
+    'my test suite my test': true
   });
-  after.pop();
-  after.pop();
-  after.pop();
 
+  t.end();
+});
 
-  i = 0;
-  after('runs first', function () {
+test('`after` hooks run in correct order even if there are failed assertions', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  after('my first hook', () => {
     assert.equal(++i, 2);
   });
-  after('fails an assertion', function () {
+  after('my second hook', () => {
     assert.equal(++i, 9999);
   });
-  after('runs third', function () {
+  after('my third hook', () => {
     assert.equal(++i, 4);
   });
-  result = describe('After', function () {
-    it('runs in order', function () {
+  describe('my test suite', () => {
+    it('my test', () => {
       assert.equal(++i, 1);
     });
   });
-  result.should.deep.equal({
-    'After runs in order': true,
-    'fails an assertion': false,
+
+  t.equal(i, 4);
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my second hook': false,
     'expected 3 to equal 9999': false,
   });
-  after.pop();
-  after.pop();
-  after.pop();
 
+  t.end();
+});
 
-  i = 0;
-  after('only runs after root-level describes', function () {
-    assert.equal(++i, 6);
+test('`after` hooks run in correct order even if an error occurs', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  after('my first hook', () => {
+    assert.equal(++i, 2);
   });
-  result = describe('After', function () {
-    it('should not have run yet', function () {
+  after('my second hook', () => {
+    assert.equal(++i, 3);
+    throw new Error('BOOM');
+  });
+  after('my third hook', () => {
+    assert.equal(++i, 4);
+  });
+  describe('my test suite', () => {
+    it('my test', () => {
+      assert.equal(++i, 1);
+    });
+  });
+
+  t.equal(i, 4);
+
+  postman.checkTests({
+    'my test suite my test': true,
+    'my second hook': false,
+    BOOM: false,
+  });
+
+  t.end();
+});
+
+test('`after` hooks only run after top-level describe blocks', (t) => {
+  let postman = new Postman(t);
+  let i = 0;
+
+  after('my hook', () => {
+    assert.equal(++i, 7);
+  });
+
+  // The `after` hook will run after this describe block
+  describe('my test suite', () => {
+    it('my first test', () => {
       assert.equal(++i, 1);
     });
 
-    it('still should not have run', function () {
+    it('my second test', () => {
       assert.equal(++i, 2);
     });
 
-    describe(function () {
-      it('should not have run for a nested describe block', function () {
+    // The `after` hook will NOT run after this describe block
+    describe(() => {
+      it('my third test', () => {
         assert.equal(++i, 3);
       });
 
-      describe(function () {
-        it('should not have run for this one either', function () {
+      // The `after` hook will NOT run after this describe block
+      describe(() => {
+        it('my fourth test', () => {
           assert.equal(++i, 4);
         });
       });
+
+      it('my fifth test', () => {
+        assert.equal(++i, 5);
+      });
     });
 
-    it('should not run after the nested describe blocks', function () {
-      assert.equal(++i, 5);
+    it('my sixth test', () => {
+      assert.equal(++i, 6);
     });
   });
-  result.should.deep.equal({
-    'After should not have run yet': true,
-    'After still should not have run': true,
-    'After describe #2 should not have run for a nested describe block': true,
-    'After describe #2 describe #3 should not have run for this one either': true,
-    'After should not run after the nested describe blocks': true,
+
+  t.equal(i, 7);
+
+  postman.checkTests({
+    'my test suite my first test': true,
+    'my test suite my second test': true,
+    'my test suite describe #2 my third test': true,
+    'my test suite describe #2 describe #3 my fourth test': true,
+    'my test suite describe #2 my fifth test': true,
+    'my test suite my sixth test': true,
   });
 
-  after.clear();
-  after.count().should.equal(0);
-
-}());
+  t.end();
+});
