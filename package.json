@@ -43,22 +43,23 @@
     "bump": "bump --prompt --grep dist/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
   },
-  "devDependencies": {
+  "dependencies": {
     "chai": "^3.5.0",
-    "codacy-coverage": "^2.0.0",
     "cookiejar": "^2.0.6",
+    "is-ip": "^1.0.0",
+    "qs": "^6.1.0"
+  },
+  "devDependencies": {
+    "codacy-coverage": "^2.0.0",
     "coveralls": "^2.11.6",
     "eslint": "^3.13.1",
     "eslint-config-modular": "^2.0.1",
     "http-server": "^0.9.0",
-    "is-ip": "^1.0.0",
     "istanbul": "^0.4.2",
     "newman": "^3.4.2",
     "npm-check": "^5.4.0",
-    "qs": "^6.1.0",
     "simplifyify": "^3.2.1",
     "tape": "4.6.3",
     "version-bump-prompt": "^3.0.1"
-  },
-  "dependencies": {}
+  }
 }
