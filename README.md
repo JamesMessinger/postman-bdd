@@ -22,7 +22,6 @@ This project is a port of [Chai HTTP](https://github.com/chaijs/chai-http) that 
 - **[API Documentation](#api-documentation)**
 - **[Running tests in bulk](#running-tests-in-bulk)**
 - **[Running tests from the command line](#running-tests-from-the-command-line)**
-- **[Debugging tests](#debugging-tests)**
 
 
 Example
@@ -126,14 +125,6 @@ Running tests from the command line
 Postman has a command-line test runner called [Newman](http://www.getpostman.com/docs/newman_intro).  If you prefer the CLI instead of a GUI, then this the tool for you.  It's also ideal for [continuous-integration](https://en.wikipedia.org/wiki/Continuous_integration) and [continuous-delivery](https://en.wikipedia.org/wiki/Continuous_delivery) testing.  Just like the Collection Runner, you can run your entire suite of tests, or just a single folder.  You can load data from a file, and even write the test results to an output file in various formats (JSON, XML, HTML)
 
 ![Newman](docs/newman.gif)
-
-
-Debugging tests
---------------------------
-Postman is actually an HTML-based application, running in an embedded Chrome browser instance.  So you canuse Chrome's built-in developer tools to debug.  On Windows, press `F12` to open the developer tools.  On Mac, press `cmd`+`alt`+`i`.
-
-> **Note:** You may need to [enable debugging for packed apps](http://blog.getpostman.com/2014/01/27/enabling-chrome-developer-tools-inside-postman/) first
-
 
 
 Contributing
