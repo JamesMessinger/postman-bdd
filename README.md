@@ -3,9 +3,12 @@ Postman BDD
 #### BDD test framework for Postman and Newman
 
 [![Build Status](https://api.travis-ci.org/BigstickCarpet/postman-bdd.svg)](https://travis-ci.org/BigstickCarpet/postman-bdd)
-[![Dependencies](https://david-dm.org/BigstickCarpet/postman-bdd.svg)](https://david-dm.org/BigstickCarpet/postman-bdd)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/bigstickcarpet/postman-bdd?svg=true&failingText=Windows%20build%20failing&passingText=Windows%20build%20passing)](https://ci.appveyor.com/project/BigstickCarpet/postman-bdd)
+
 [![Coverage Status](https://coveralls.io/repos/BigstickCarpet/postman-bdd/badge.svg?branch=master&service=github)](https://coveralls.io/r/BigstickCarpet/postman-bdd)
+[![Codacy Score](https://www.codacy.com/project/badge/ac55fea9e51b4f29ac83c4cd7ed30020)](https://www.codacy.com/public/jamesmessinger/postman-bdd)
 [![Inline docs](http://inch-ci.org/github/BigstickCarpet/postman-bdd.svg?branch=master&style=shields)](http://inch-ci.org/github/BigstickCarpet/postman-bdd)
+[![Dependencies](https://david-dm.org/BigstickCarpet/postman-bdd.svg)](https://david-dm.org/BigstickCarpet/postman-bdd)
 
 [![npm](http://img.shields.io/npm/v/postman-bdd.svg)](https://www.npmjs.com/package/postman-bdd)
 [![Bower](http://img.shields.io/bower/v/postman-bdd.svg)](http://bower.io/)
@@ -47,7 +50,7 @@ You now have Postman BDD installed globally.  You can use it in any Postman requ
 
 ```javascript
 // Load Postman BDD
-eval(postman.getGlobalVariable('postmanBDD'));
+eval(globals.postmanBDD);
 
 describe('Get user info', function() {
     it('should return user data', function() {
@@ -57,7 +60,7 @@ describe('Get user info', function() {
     });
 
     it('should have a full name', function() {
-      var user = response.body.results[0].user;
+      var user = response.body.results[0];
       user.name.should.be.an('object');
       user.name.should.have.property('first').and.not.empty;
       user.name.should.have.property('last').and.not.empty;
@@ -65,7 +68,7 @@ describe('Get user info', function() {
     });
 
     it('should have an address', function() {
-      var user = response.body.results[0].user;
+      var user = response.body.results[0];
       user.location.should.be.an('object');
       user.location.should.have.property('street').and.not.empty;
       user.location.should.have.property('city').and.not.empty;
@@ -78,13 +81,13 @@ Advanced Usage
 --------------------------
 Postman BDD supports more advanced features too.  I'll add documentation for them soon, but here's a little teaser :)
 
-- **Simple debugging** - When a debugger is attached, Postman BDD will automatically pause when a test fails so you can debug it.
-
 - **Nested `describe` blocks** - In standard BDD pattern, you can nest `describe` blocks to logically group your tests
 
 - **Hooks** - Postman BDD supports all the standard BDD hooks: `before`, `after`, `beforeEach`, and `afterEach`, so you can reuse tests across multiple requests in your REST API.
 
 - **JSON Schema Validation** - Postman BDD includes an assertion `response.body.should.have.schema(someJsonSchema)`, which allows you to validate your API's responses against a [JSON Schema](https://spacetelescope.github.io/understanding-json-schema/basics.html).  This is especially great if you've already built a [Swagger schema](http://editor.swagger.io) for your API.
+
+- **Detailed logging** - You can increase or decrease the amount of information that Postman BDD logs by setting `postmanBDD.logLevel`. Errors and warnings are logged by default.
 
 
 API Documentation
@@ -162,4 +165,3 @@ Import the [Postman BDD Collection](test/newman/postman_bdd_collection.json), an
 License
 --------------------------
 Postman BDD is 100% free and open-source, under the [MIT license](LICENSE). Use it however you want.
-I
