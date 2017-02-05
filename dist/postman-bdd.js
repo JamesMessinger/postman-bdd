@@ -1,5 +1,13 @@
 /*!
- * Postman BDD v1.5.2 (February 5th 2017)
+ * Postman BDD v1.5.1 (February 5th 2017)
+ * 
+ * https://bigstickcarpet.github.io/postman-bdd
+ * 
+ * @author  James Messinger (http://jamesmessinger.com)
+ * @license MIT
+ */
+/*!
+ * Postman BDD v1.5.1 (February 5th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
