@@ -1,379 +1,349 @@
-// 'use strict';
+'use strict';
 
-// const test = require('tape');
-// const Postman = require('../fixtures/postman');
+const test = require('tape');
+const Postman = require('../fixtures/postman');
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('status assertion (pass)', (t) => {
+  let postman = new Postman(t);
+  postman.responseCode.code = 200;
 
-//   let req, res;
+  expect(response).to.have.status(200);
+  response.should.have.status(200);
 
-//   // Status
-//   res = { status: 200 };
-//   res.should.to.have.status(200);
+  expect(response).not.to.have.status(404);
+  response.should.not.have.status(404);
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('status assertion (fail)', (t) => {
+  let postman = new Postman(t);
+  postman.responseCode.code = 200;
 
-//   (function () {
-//     res.should.not.have.status(200);
-//   }).should.throw('expected { status: 200 } to not have status code 200');
+  (() => {
+    response.should.have.status(404);
+  }).should.throw('expected the response to have status code 404');
 
-//   t.end();
-// });
+  (() => {
+    expect(response).to.have.status(404);
+  }).should.throw('expected the response to have status code 404');
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    response.should.not.have.status(200);
+  }).should.throw('expected the response to not have status code 200');
 
-//   (function () {
-//     ({}).should.not.to.have.status(200);
-//   }).should.throw('expected {} to have a property \'status\'');
+  (() => {
+    expect(response).not.to.have.status(200);
+  }).should.throw('expected the response to not have status code 200');
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('ip assertion (pass)', (t) => {
+  new Postman(t);   // eslint-disable-line no-new
 
-//   // IP
-//   '127.0.0.1'.should.be.an.ip;
-//   '2001:0db8:85a3:0000:0000:8a2e:0370:7334'.should.be.an.ip;
+  // IPv4
+  '127.0.0.1'.should.be.an.ip;
+  expect('127.0.0.1').to.be.an.ip;
 
-//   t.end();
-// });
+  // IPv6
+  '2001:0db8:85a3:0000:0000:8a2e:0370:7334'.should.be.an.ip;
+  expect('2001:0db8:85a3:0000:0000:8a2e:0370:7334').to.be.an.ip;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  // Invalid
+  'hello world'.should.not.be.an.ip;
+  expect(123456789).not.to.be.an.ip;
+  expect('123456789').not.to.be.an.ip;
 
-//   (function () {
-//     '127.0.0.1'.should.not.be.an.ip;
-//   }).should.throw('expected \'127.0.0.1\' to not be an ip');
+  t.end();
+});
 
-//   t.end();
-// });
+test('ip assertion (fail)', (t) => {
+  new Postman(t);   // eslint-disable-line no-new
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    'hello world'.should.be.an.ip;
+  }).should.throw("expected 'hello world' to be an ip");
 
-//   (function () {
-//     '2001:0db8:85a3:0000:0000:8a2e:0370:7334'.should.not.be.an.ip;
-//   }).should.throw('expected \'2001:0db8:85a3:0000:0000:8a2e:0370:7334\' to not be an ip');
+  (() => {
+    expect('123456789').to.be.an.ip;
+  }).should.throw("expected '123456789' to be an ip");
 
-//   t.end();
-// });
+  (() => {
+    expect(123456789).to.be.an.ip;
+  }).should.throw('expected 123456789 to be an ip');
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    '127.0.0.1'.should.not.be.an.ip;
+  }).should.throw("expected '127.0.0.1' to not be an ip");
 
-//   // Header (existence)
-//   req = { headers: { foo: 'bar' } };
-//   res = {
-//     getHeader(key) {
-//       return key === 'foo' ? 'bar' : undefined;
-//     }
-//   };
+  (() => {
+    expect('2001:0db8:85a3:0000:0000:8a2e:0370:7334').not.to.be.an.ip;
+  }).should.throw("expected '2001:0db8:85a3:0000:0000:8a2e:0370:7334' to not be an ip");
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('header existence assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-//   req.should.have.header('foo');
-//   req.should.not.have.header('bar');
+  response.should.not.have.headers;
+  expect(response).not.to.have.headers;
+  response.should.not.have.header();
+  response.should.not.have.header('foo');
 
-//   t.end();
-// });
+  postman.responseHeaders.foo = 'bar';
+  postman.responseHeaders['content-type'] = '';
+  postman.responseHeaders['x-powered-by'] = 'my cool web server';
+  postman.responseHeaders['set-cookie'] = 'myCookie=hello';
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  response.should.have.headers;
+  expect(response).to.have.headers;
 
-//   res.should.have.header('foo');
-//   res.should.not.have.header('bar');
+  response.should.have.header('foo');
+  response.should.have.header('Content-Type');
+  response.should.not.have.header('User-Agent');
 
-//   t.end();
-// });
+  expect(response).to.have.header('Set-Cookie');
+  expect(response).not.to.have.header('bar');
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  response.should.have.header('X-POWERED-BY');
+  expect(response).to.have.header('x-powered-by');
 
-//   (function () {
-//     req.should.have.header('bar');
-//   }).should.throw('expected header \'bar\' to exist');
+  t.end();
+});
 
-//   t.end();
-// });
+test('header existence assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    response.should.have.headers;
+  }).should.throw('expected the response to have headers');
 
-//   (function () {
-//     res.should.have.header('bar');
-//   }).should.throw('expected header \'bar\' to exist');
+  (() => {
+    response.should.have.header('foo');
+  }).should.throw("expected header 'foo' to exist");
 
-//   t.end();
-// });
+  postman.responseHeaders['content-type'] = '';
+  postman.responseHeaders['x-powered-by'] = 'my cool web server';
+  postman.responseHeaders['set-cookie'] = 'myCookie=hello';
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    expect(response).not.to.have.headers;
+  }).should.throw('expected the response to not have headers');
 
-//   // Header (value)
-//   req = { headers: { foo: 'bar' } };
-//   res = {
-//     getHeader() {
-//       return 'foo';
-//     }
-//   };
+  (() => {
+    response.should.not.have.header('Content-Type');
+  }).should.throw("expected header 'Content-Type' to not exist");
 
-//   t.end();
-// });
+  (() => {
+    expect(response).to.have.header('User-Agent');
+  }).should.throw("expected header 'User-Agent' to exist");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    response.should.not.have.header('X-POWERED-BY');
+  }).should.throw("expected header 'X-POWERED-BY' to not exist");
 
-//   req.should.have.header('foo', 'bar');
-//   res.should.have.header('bar', 'foo');
-//   res.should.have.header('bar', /^fo/);
+  (() => {
+    response.should.not.have.header('X-POWERED-BY');
+  }).should.throw("expected header 'X-POWERED-BY' to not exist");
 
-//   t.end();
-// });
+  (() => {
+    expect(response).not.to.have.header('Set-Cookie');
+  }).should.throw("expected header 'Set-Cookie' to not exist");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  t.end();
+});
 
-//   (function () {
-//     req.should.not.have.header('foo', 'bar');
-//   }, 'expected header \'foo\' to not have value bar');
+test('header value assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-//   t.end();
-// });
+  response.should.not.have.header('foo', undefined);
+  response.should.not.have.header('foo', null);
+  response.should.not.have.header('foo', 'zzzzz');
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  postman.responseHeaders.foo = 'bar';
+  postman.responseHeaders['content-type'] = '';
+  postman.responseHeaders['x-powered-by'] = 'my cool web server';
+  postman.responseHeaders['set-cookie'] = 'myCookie=hello';
 
-//   (function () {
-//     res.should.not.have.header('bar', 'foo');
-//   }).should.throw('expected header \'bar\' to not have value foo');
+  response.should.have.header('foo', 'bar');
+  response.should.not.have.header('foo', 'zzzzz');
 
-//   t.end();
-// });
+  response.should.have.header('Content-Type', '');
+  response.should.not.have.header('Content-Type', undefined);
+  response.should.not.have.header('Content-Type', null);
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  expect(response).to.have.header('Set-Cookie', 'myCookie=hello');
+  expect(response).not.to.have.header('Set-Cookie', 'someOtherCookie=goodbye');
 
-//   (function () {
-//     res.should.not.have.header('bar', /^fo/);
-//   }).should.throw('expected header \'bar\' not to match /^fo/ but got \'foo\'');
+  response.should.have.header('X-POWERED-BY', /^my (\w+ )+server$/);
+  expect(response).not.to.have.header('x-powered-by', /^my awesome server$/);
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('header value assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-//   // Header (case insensitive)
-//   req = { headers: { foo: 'bar' } };
-//   res = {
-//     getHeader() {
-//       return 'foo';
-//     }
-//   };
+  (() => {
+    response.should.have.header('foo', 'bar');
+  }).should.throw("expected header 'foo' to have value 'bar'");
 
-//   t.end();
-// });
+  (() => {
+    response.should.have.header('foo', undefined);
+  }).should.throw("expected header 'foo' to have value undefined but got '<header-not-set>'");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  postman.responseHeaders.foo = 'bar';
+  postman.responseHeaders['content-type'] = 'application/json';
+  postman.responseHeaders['x-powered-by'] = 'my cool web server';
+  postman.responseHeaders['set-cookie'] = 'myCookie=hello';
 
-//   res.should.have.header('Foo');
-//   res.should.have.header('Bar');
-//   req.should.have.header('FoO', 'bar');
-//   res.should.have.header('BAr', 'foo');
+  (() => {
+    response.should.not.have.header('foo', 'bar');
+  }).should.throw("expected header 'foo' to not have value 'bar'");
 
-//   t.end();
-// });
+  (() => {
+    response.should.have.header('foo', 'zzzzz');
+  }).should.throw("expected header 'foo' to have value 'zzzzz'");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    expect(response).not.to.have.header('Set-Cookie', 'myCookie=hello');
+  }).should.throw("expected header 'Set-Cookie' to not have value 'myCookie=hello'");
 
-//   // Headers
-//   req = { headers: { foo: 'bar' } };
-//   res = {
-//     getHeader() {
-//       return 'foo';
-//     }
-//   };
+  (() => {
+    expect(response).to.have.header('Set-Cookie', 'someOtherCookie=goodbye');
+  }).should.throw("expected header 'Set-Cookie' to have value 'someOtherCookie=goodbye'");
 
-//   t.end();
-// });
+  (() => {
+    response.should.not.have.header('X-POWERED-BY', /^my (\w+ )+server$/);
+  }).should.throw("expected header 'X-POWERED-BY' to not match /^my (\\w+ )+server$/");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    expect(response).to.have.header('x-powered-by', /^my awesome server$/);
+  }).should.throw("expected header 'x-powered-by' to match /^my awesome server$/");
 
-//   req.should.have.headers;
-//   res.should.have.headers;
+  (() => {
+    expect(response).to.have.header('xyz', /^some expression$/);
+  }).should.throw("expected header 'xyz' to match /^some expression$/ but got '<header-not-set>'");
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('json assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-//   (function () {
-//     req.should.not.have.headers;
-//   }).should.throw('expected { headers: { foo: \'bar\' } } to not have headers or getHeader method');
+  response.should.not.be.json;
 
-//   t.end();
-// });
+  postman.responseHeaders['content-type'] = 'application/json; charset=utf-8';
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  response.should.be.json;
+  expect(response).to.be.json;
 
-//   (function () {
-//     res.should.not.have.headers;
-//   }).should.throw(/expected .*getHeader.* to not have headers or getHeader method/);
+  response.should.not.be.html;
+  expect(response).not.to.be.text;
 
-//   t.end();
-// });
+  postman.responseHeaders['content-type'] = 'application/hal+json; charset=utf-8';
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  response.should.not.be.json;
 
-//   // JSON
-//   req = { headers: { 'content-type': ['application/json'] } };
-//   res = {
-//     getHeader() {
-//       return 'application/json';
-//     }
-//   };
+  t.end();
+});
 
-//   t.end();
-// });
+test('json assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    response.should.be.json;
+  }).should.throw("expected the response type to be 'json' but got '<content-type-not-set>'");
 
-//   req.should.be.json;
-//   res.should.be.json;
+  postman.responseHeaders['content-type'] = 'application/xml; charset=utf-8';
 
-//   t.end();
-// });
+  (() => {
+    expect(response).to.be.json;
+  }).should.throw("expected the response type to be 'json' but got 'application/xml; charset=utf-8'");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  t.end();
+});
 
-//   (function () {
-//     req.should.not.be.json;
-//   }).should.throw('expected [ \'application/json\' ] to not include \'application/json\'');
+test('html assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-//   t.end();
-// });
+  response.should.not.be.html;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  postman.responseHeaders['content-type'] = 'text/html; charset=utf-8';
 
-//   (function () {
-//     res.should.not.be.json;
-//   }).should.throw('expected \'application/json\' to not include \'application/json\'');
+  response.should.be.html;
+  expect(response).to.be.html;
 
-//   t.end();
-// });
+  response.should.not.be.json;
+  expect(response).not.to.be.text;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  postman.responseHeaders['content-type'] = 'text/xhtml; charset=utf-8';
 
-//   // Text
-//   req = { headers: { 'content-type': ['text/plain'] } };
-//   res = {
-//     getHeader() {
-//       return 'text/plain';
-//     }
-//   };
+  response.should.not.be.html;
 
-//   t.end();
-// });
+  t.end();
+});
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('html assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-//   req.should.be.text;
-//   res.should.be.text;
+  (() => {
+    response.should.be.html;
+  }).should.throw("expected the response type to be 'html' but got '<content-type-not-set>'");
 
-//   t.end();
-// });
+  postman.responseHeaders['content-type'] = 'application/xml; charset=utf-8';
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  (() => {
+    expect(response).to.be.html;
+  }).should.throw("expected the response type to be 'html' but got 'application/xml; charset=utf-8'");
 
-//   (function () {
-//     req.should.not.be.text;
-//   }).should.throw('expected [ \'text/plain\' ] to not include \'text/plain\'');
+  t.end();
+});
 
-//   t.end();
-// });
+test('text assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  response.should.not.be.text;
 
-//   (function () {
-//     res.should.not.be.text;
-//   }).should.throw('expected \'text/plain\' to not include \'text/plain\'');
+  postman.responseHeaders['content-type'] = 'text/plain; charset=utf-8';
 
-//   t.end();
-// });
+  response.should.be.text;
+  expect(response).to.be.text;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  response.should.not.be.json;
+  expect(response).not.to.be.html;
 
-//   // HTML
-//   req = { headers: { 'content-type': ['text/html'] } };
-//   res = {
-//     getHeader() {
-//       return 'text/html';
-//     }
-//   };
+  postman.responseHeaders['content-type'] = 'text/rtf; charset=utf-8';
 
-//   t.end();
-// });
+  response.should.not.be.text;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  t.end();
+});
 
-//   req.should.be.html;
-//   res.should.be.html;
+test('text assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-//   t.end();
-// });
+  (() => {
+    response.should.be.text;
+  }).should.throw("expected the response type to be 'text' but got '<content-type-not-set>'");
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  postman.responseHeaders['content-type'] = 'application/xml; charset=utf-8';
 
-//   (function () {
-//     req.should.not.be.html;
-//   }).should.throw('expected [ \'text/html\' ] to not include \'text/html\'');
+  (() => {
+    expect(response).to.be.text;
+  }).should.throw("expected the response type to be 'text' but got 'application/xml; charset=utf-8'");
 
-//   t.end();
-// });
-
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
-
-//   (function () {
-//     res.should.not.be.html;
-//   }).should.throw('expected \'text/html\' to not include \'text/html\'');
-
-//   t.end();
-// });
+  t.end();
+});
 
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
 //   // Redirect
-//   res = { status: 200 };
-//   res.should.not.redirect;
+//   response = { status: 200 };
+//   response.should.not.redirect;
 
 //   t.end();
 // });
@@ -382,8 +352,8 @@
 //   let postman = new Postman(t);
 
 //   [301, 302, 303].forEach((status) => {
-//     res = { status };
-//     res.should.redirect;
+//     response = { status };
+//     response.should.redirect;
 //   });
 
 //   t.end();
@@ -414,9 +384,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
-//     res = { status: 200 };
-//     res.should.redirect;
+//   (() => {
+//     response = { status: 200 };
+//     response.should.redirect;
 //   }).should.throw('expected redirect with 30{1-3} status code but got 200');
 
 //   t.end();
@@ -425,9 +395,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
-//     res = { status: 301 };
-//     res.should.not.redirect;
+//   (() => {
+//     response = { status: 301 };
+//     response.should.not.redirect;
 //   }).should.throw('expected not to redirect but got 301 status');
 
 //   t.end();
@@ -437,28 +407,17 @@
 //   let postman = new Postman(t);
 
 //   // RedirectTo
-//   res = { status: 301, headers: { location: 'foo' } };
-//   res.should.redirectTo('foo');
+//   response = { status: 301, headers: { location: 'foo' } };
+//   response.should.redirectTo('foo');
 
-//   res = { status: 301, headers: { location: 'bar' } };
-//   res.should.not.redirectTo('foo');
+//   response = { status: 301, headers: { location: 'bar' } };
+//   response.should.not.redirectTo('foo');
 
-//   res = { status: 200, redirects: ['bar'] };
-//   res.should.redirectTo('bar');
+//   response = { status: 200, redirects: ['bar'] };
+//   response.should.redirectTo('bar');
 
-//   res = { status: 200, redirects: ['bar'] };
-//   res.should.not.redirectTo('foo');
-
-//   t.end();
-// });
-
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
-
-//   (function () {
-//     res = { status: 301, headers: { location: 'foo' } };
-//     res.should.not.redirectTo('foo');
-//   }).should.throw('expected header \'location\' to not have value foo');
+//   response = { status: 200, redirects: ['bar'] };
+//   response.should.not.redirectTo('foo');
 
 //   t.end();
 // });
@@ -466,10 +425,10 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
-//     res = { status: 301, headers: { location: 'bar' } };
-//     res.should.redirectTo('foo');
-//   }).should.throw('expected header \'location\' to have value foo');
+//   (() => {
+//     response = { status: 301, headers: { location: 'foo' } };
+//     response.should.not.redirectTo('foo');
+//   }).should.throw('expected header 'location' to not have value foo');
 
 //   t.end();
 // });
@@ -477,9 +436,20 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
-//     res = { status: 200, redirects: ['bar', 'baz'] };
-//     res.should.redirectTo('foo');
+//   (() => {
+//     response = { status: 301, headers: { location: 'bar' } };
+//     response.should.redirectTo('foo');
+//   }).should.throw('expected header 'location' to have value foo');
+
+//   t.end();
+// });
+
+// test('XXXXXXXXXXXXXXXXXX', (t) => {
+//   let postman = new Postman(t);
+
+//   (() => {
+//     response = { status: 200, redirects: ['bar', 'baz'] };
+//     response.should.redirectTo('foo');
 //   }).should.throw('expected redirect to foo but got bar then baz');
 
 //   t.end();
@@ -505,9 +475,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.not.have.param('foo');
-//   }).should.throw(/expected .* to not have property \'foo\'/);
+//   }).should.throw(/expected .* to not have property 'foo'/);
 
 //   t.end();
 // });
@@ -515,9 +485,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.not.have.param('foo', 'bar');
-//   }).should.throw(/expected .* to not have a property \'foo\' of \'bar\'/);
+//   }).should.throw(/expected .* to not have a property 'foo' of 'bar'/);
 
 //   t.end();
 // });
@@ -542,9 +512,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.not.have.deep.param('form.name');
-//   }).should.throw(/expected .* to not have deep property \'form.name\'/);
+//   }).should.throw(/expected .* to not have deep property 'form.name'/);
 
 //   t.end();
 // });
@@ -552,9 +522,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.not.have.deep.param('form.lastName', 'bob');
-//   }).should.throw(/expected .* to not have a deep property \'form.lastName\' of \'bob\'/);
+//   }).should.throw(/expected .* to not have a deep property 'form.lastName' of 'bob'/);
 
 //   t.end();
 // });
@@ -563,7 +533,7 @@
 //   let postman = new Postman(t);
 
 //   // Cookie
-//   res = {
+//   response = {
 //     headers: {
 //       'set-cookie': [
 //         'name=value',
@@ -571,12 +541,12 @@
 //       ]
 //     }
 //   };
-//   res.should.have.cookie('name');
-//   res.should.have.cookie('name2');
-//   res.should.have.cookie('name', 'value');
-//   res.should.have.cookie('name2', 'value2');
-//   res.should.not.have.cookie('bar');
-//   res.should.not.have.cookie('name2', 'bar');
+//   response.should.have.cookie('name');
+//   response.should.have.cookie('name2');
+//   response.should.have.cookie('name', 'value');
+//   response.should.have.cookie('name2', 'value2');
+//   response.should.not.have.cookie('bar');
+//   response.should.not.have.cookie('name2', 'bar');
 
 //   t.end();
 // });
@@ -584,9 +554,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
-//     res.should.not.have.cookie('name');
-//   }).should.throw('expected cookie \'name\' to not exist');
+//   (() => {
+//     response.should.not.have.cookie('name');
+//   }).should.throw('expected cookie 'name' to not exist');
 
 //   t.end();
 // });
@@ -594,17 +564,17 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
-//     res.should.have.cookie('foo');
-//   }).should.throw('expected cookie \'foo\' to exist');
+//   (() => {
+//     response.should.have.cookie('foo');
+//   }).should.throw('expected cookie 'foo' to exist');
 
-//   (function () {
-//     res.should.not.have.cookie('name', 'value');
-//   }).should.throw('expected cookie \'name\' to not have value \'value\'');
+//   (() => {
+//     response.should.not.have.cookie('name', 'value');
+//   }).should.throw('expected cookie 'name' to not have value 'value'');
 
-//   (function () {
-//     res.should.have.cookie('name2', 'value');
-//   }).should.throw('expected cookie \'name2\' to have value \'value\' but got \'value2\'');
+//   (() => {
+//     response.should.have.cookie('name2', 'value');
+//   }).should.throw('expected cookie 'name2' to have value 'value' but got 'value2'');
 
 //   t.end();
 // });
@@ -631,9 +601,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.not.have.cookie('name');
-//   }).should.throw('expected cookie \'name\' to not exist');
+//   }).should.throw('expected cookie 'name' to not exist');
 
 //   t.end();
 // });
@@ -641,9 +611,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.have.cookie('foo');
-//   }).should.throw('expected cookie \'foo\' to exist');
+//   }).should.throw('expected cookie 'foo' to exist');
 
 //   t.end();
 // });
@@ -651,9 +621,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.not.have.cookie('name', 'value');
-//   }).should.throw('expected cookie \'name\' to not have value \'value\'');
+//   }).should.throw('expected cookie 'name' to not have value 'value'');
 
 //   t.end();
 // });
@@ -661,9 +631,9 @@
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
 
-//   (function () {
+//   (() => {
 //     req.should.have.cookie('name2', 'value');
-//   }).should.throw('expected cookie \'name2\' to have value \'value\' but got \'value2\'');
+//   }).should.throw('expected cookie 'name2' to have value 'value' but got 'value2'');
 
 //   t.end();
 // });

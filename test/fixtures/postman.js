@@ -12,8 +12,8 @@ module.exports = class Postman {
     // Store the Tape test instance, so we can perform assertions on it later
     this.test = test;
 
-    // Create a mock `tests` object to simulate Postman's test sandbox
-    global.tests = {};
+    // Re-initialize the mock Postman's test sandbox
+    initPostmanSandbox();
 
     // Re-initialize Postman BDD, to clear any previous hooks or test state
     let postmanBDD = require('../../');
@@ -21,6 +21,34 @@ module.exports = class Postman {
 
     // Turn off Postman BDD logging
     postmanBDD.logLevel = 'silent';
+  }
+
+  /**
+   * Allows tests to set modify Postman's `responseCode` object
+   */
+  get responseCode () {
+    return global.responseCode;
+  }
+
+  /**
+   * Allows tests to set modify Postman's `responseHeaders` object
+   */
+  get responseHeaders () {
+    return global.responseHeaders;
+  }
+
+  /**
+   * Allows tests to set modify Postman's `responseBody` property
+   */
+  set responseBody (value) {
+    global.responseBody = value;
+  }
+
+  /**
+   * Allows tests to set modify Postman's `responseTime` property
+   */
+  set responseTime (value) {
+    global.responseTime = value;
   }
 
   /**
@@ -33,6 +61,30 @@ module.exports = class Postman {
     checkTestResults(this.test, global.tests, expected);
   }
 };
+
+/**
+ * Creates global objects to simulate Postman's test sandbox
+ * @link https://www.getpostman.com/docs/sandbox
+ */
+function initPostmanSandbox () {
+  global.tests = {};
+  global.responseBody = '';
+  global.responseTime = 0;
+  global.responseHeaders = {};
+  global.responseCode = {
+    code: 0,
+    name: '',
+    detail: '',
+  };
+
+  global.postman = {
+    getResponseHeader (name) {
+      return global.responseHeaders[(name || '').toLowerCase()];
+    },
+
+    getResponseCookie () {},
+  };
+}
 
 /**
  * Makes sure the order of the tests is correct.
