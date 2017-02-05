@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v1.5.1 (January 25th 2017)
+ * Postman BDD v1.5.2 (February 5th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -7,7 +7,7 @@
  * @license MIT
  */
 /*!
- * Postman BDD v1.5.1 (January 25th 2017)
+ * Postman BDD v1.5.2 (February 5th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -504,6 +504,9 @@ Hook.prototype.run = function () {
 
 /**
  * Adds a new runnable for this hook
+ *
+ * @param {string} [title] - Optional title for the runnable
+ * @param {function} [fn] - The function to run
  */
 Hook.prototype.push = function (title, fn) {
   var runnable = new Runnable(this.type, this.state, title, fn);
