@@ -29,12 +29,69 @@ module.exports = class Postman {
    * @param {object} expected
    */
   checkTests (expected) {
-    // Make sure the order is correct
-    let actualKeys = Object.keys(global.tests);
-    let expectedKeys = Object.keys(expected);
-    this.test.deepEqual(actualKeys, expectedKeys);
-
-    // Make sure the results are correct
-    this.test.deepEqual(global.tests, expected);
+    checkTestOrder(this.test, global.tests, expected);
+    checkTestResults(this.test, global.tests, expected);
   }
 };
+
+/**
+ * Makes sure the order of the tests is correct.
+ * This is important because whenever a test fails, Postman BDD injects the failure
+ * message immediately after the failed test to help the user debug the failure.
+ *
+ * @param {object} test - The Tape test object
+ * @param {object} actual - The actual Postman `tests` object
+ * @param {object} expected - The expected Postman `tests` object
+ */
+function checkTestOrder (test, actual, expected) {
+  let actualKeys = Object.keys(actual);
+  let expectedKeys = Object.keys(expected);
+  let length = Math.max(actualKeys.length, expectedKeys.length);
+
+  // Check each key one-by-one,
+  // so we can throw a nicer error message if the keys don't match.
+  for (let i = 0; i < length; i++) {
+    let actualKey = actualKeys[i];
+    let expectedKey = expectedKeys[i];
+
+    if (actualKey !== expectedKey) {
+      // Fail the test
+      let msg = `tests[${i}] is named "${actualKey}", not "${expectedKey}"`;
+      test.equal(actualKey, expectedKey, msg);
+
+      // Bail immediately
+      process.exit(1);
+    }
+  }
+
+  // Compare the entire arrays, just to be sure
+  test.deepEqual(actualKeys, expectedKeys, 'All of the expected tests were run');
+}
+
+/**
+ * Checks the result of each test to make sure they all match the expected results.
+ *
+ * @param {object} test - The Tape test object
+ * @param {object} actual - The actual Postman `tests` object
+ * @param {object} expected - The expected Postman `tests` object
+ */
+function checkTestResults (test, actual, expected) {
+  // Check each test one-by-one,
+  // so we can throw a nicer error message if the results don't match.
+  for (let key of Object.keys(expected)) {
+    let actualResult = actual[key] ? 'passed' : 'failed';
+    let expectedResult = expected[key] ? 'passed' : 'failed';
+
+    if (actualResult !== expectedResult) {
+      // Fail the test
+      let msg = `${key} should have ${expectedResult}, but it ${actualResult}`;
+      test.equal(actualResult, expectedResult, msg);
+
+      // Bail immediately
+      process.exit(1);
+    }
+  }
+
+  // Compare the entire objects, just to be sure
+  test.deepEqual(actual, expected, 'All of the test results are correct');
+}
