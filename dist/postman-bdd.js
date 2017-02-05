@@ -6,14 +6,6 @@
  * @author  James Messinger (http://jamesmessinger.com)
  * @license MIT
  */
-/*!
- * Postman BDD v1.5.2 (February 5th 2017)
- * 
- * https://bigstickcarpet.github.io/postman-bdd
- * 
- * @author  James Messinger (http://jamesmessinger.com)
- * @license MIT
- */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
@@ -21,6 +13,12 @@ var isIP = require('is-ip');
 var qs = require('qs');
 var url = require('url');
 var Cookie = require('cookiejar');
+
+var contentTypes = {
+  json: 'application/json',
+  text: 'text/plain',
+  html: 'text/html',
+};
 
 module.exports = chaiHttp;
 
@@ -33,53 +31,6 @@ module.exports = chaiHttp;
  */
 function chaiHttp (chai, _) {
   var Assertion = chai.Assertion;
-
-  var contentTypes = {
-    json: 'application/json',
-    text: 'text/plain',
-    html: 'text/html',
-  };
-
-  /**
-   * Return a header from `Request` or `Response` object.
-   *
-   * @param {Request|Response} object
-   * @param {String} Header
-   * @returns {String|Undefined}
-   */
-  function getHeader (obj, key) {
-    if (obj.getHeader) { return obj.getHeader(key); }
-
-    key = key.toLowerCase();
-    var keys = Object.keys(obj.headers);
-    for (var i = 0; i < keys.length; i++) {
-      if (keys[i].toLowerCase() === key) {
-        return obj.headers[keys[i]];
-      }
-    }
-  }
-
-  /**
-   * Returns a cookie from `Request` or `Response` object.
-   *
-   * @param {Request|Response} object
-   * @param {String} Cookie
-   * @returns {String|Undefined}
-   */
-  function getCookie (obj, key) {
-    if (obj.getCookie) { return obj.getCookie(key); }
-
-    var header = getHeader(obj, 'set-cookie');
-
-    if (!header) {
-      header = (getHeader(obj, 'cookie') || '').split(';');
-    }
-
-    /* eslint new-cap: 0 */
-    var cookie = Cookie.CookieJar();
-    cookie.setCookies(header);
-    return cookie.getCookie(key, new Cookie.CookieAccessInfo());
-  }
 
   /**
    * Assert that a response has a supplied status.
@@ -96,10 +47,26 @@ function chaiHttp (chai, _) {
 
     this.assert(
       status === code,
-      'expected #{this} to have status code #{exp} but got #{act}',
-      'expected #{this} to not have status code #{act}',
+      'expected the response to have status code #{exp} but got #{act}',
+      'expected the response to not have status code #{act}',
       code,
       status
+    );
+  });
+
+  /**
+   * Assert that a `Response` or `Request` object has headers.
+   *
+   * @example:
+   * expect(req).to.have.headers;
+   *
+   * @name headers
+   */
+  Assertion.addProperty('headers', function () {
+    this.assert(
+      Object.keys(this._obj.header || {}).length > 0,
+      'expected the response to have headers',
+      'expected the response to not have headers'
     );
   });
 
@@ -119,48 +86,35 @@ function chaiHttp (chai, _) {
    */
   Assertion.addMethod('header', function (key, value) {
     var header = getHeader(this._obj, key);
+    var headerExists = header !== undefined && header !== null;
 
     if (arguments.length < 2) {
       this.assert(
-        typeof header !== 'undefined' || header === null,
-        'expected header \'' + key + '\' to exist',
-        'expected header \'' + key + '\' to not exist'
+        headerExists,
+        'expected header #{exp} to exist',
+        'expected header #{exp} to not exist',
+        key,
+        header
       );
     }
     else if (value instanceof RegExp) {
       this.assert(
-        value.test(header),
-        'expected header \'' + key + '\' to match ' + value + ' but got ' + _.inspect(header),
-        'expected header \'' + key + '\' not to match ' + value + ' but got ' + _.inspect(header),
+        headerExists && value.test(header),
+        "expected header '" + key + "' to match #{exp} but got #{act}",
+        "expected header '" + key + "' to not match #{exp} but got #{act}",
         value,
-        header
+        headerExists ? header : '<header-not-set>'
       );
     }
     else {
       this.assert(
-        header === value,
-        'expected header \'' + key + '\' to have value ' + value + ' but got ' + _.inspect(header),
-        'expected header \'' + key + '\' to not have value ' + value,
+        headerExists && header === value,
+        "expected header '" + key + "' to have value #{exp} but got #{act}",
+        "expected header '" + key + "' to not have value #{exp}",
         value,
-        header
+        headerExists ? header : '<header-not-set>'
       );
     }
-  });
-
-  /**
-   * Assert that a `Response` or `Request` object has headers.
-   *
-   * @example:
-   * expect(req).to.have.headers;
-   *
-   * @name headers
-   */
-  Assertion.addProperty('headers', function () {
-    this.assert(
-      typeof this._obj.getHeader === 'function' || Object.keys(this._obj.headers || {}).length > 0,
-      'expected #{this} to have headers or getHeader method',
-      'expected #{this} to not have headers or getHeader method'
-    );
   });
 
   /**
@@ -196,14 +150,14 @@ function chaiHttp (chai, _) {
     var val = contentTypes[name];
 
     Assertion.addProperty(name, function () {
-      new Assertion(this._obj).to.have.headers;
-      var ct = getHeader(this._obj, 'content-type');
-      var ins = _.inspect(ct) === 'undefined' ? 'headers' : _.inspect(ct);
+      var contentType = getHeader(this._obj, 'content-type');
 
       this.assert(
-        ct && ct.indexOf(val) >= 0,
-        'expected ' + ins + ' to include \'' + val + '\'',
-        'expected ' + ins + ' to not include \'' + val + '\''
+        contentType && contentType.indexOf(val) >= 0,
+        'expected the response type to be #{exp} but got #{act}',
+        'expected the response type to not be #{exp} (#{act})',
+        name,
+        contentType || '<content-type-not-set>'
       );
     });
   }
@@ -343,6 +297,47 @@ function chaiHttp (chai, _) {
       throw tv4.error;
     }
   });
+}
+
+/**
+ * Return a header from `Request` or `Response` object.
+ *
+ * @param {Request|Response} object
+ * @param {String} Header
+ * @returns {String|Undefined}
+ */
+function getHeader (obj, key) {
+  if (obj.getHeader) { return obj.getHeader(key); }
+
+  key = (key || '').toLowerCase();
+  var keys = Object.keys(obj.headers);
+  for (var i = 0; i < keys.length; i++) {
+    if (keys[i].toLowerCase() === key) {
+      return obj.headers[keys[i]];
+    }
+  }
+}
+
+/**
+ * Returns a cookie from `Request` or `Response` object.
+ *
+ * @param {Request|Response} object
+ * @param {String} Cookie
+ * @returns {String|Undefined}
+ */
+function getCookie (obj, key) {
+  if (obj.getCookie) { return obj.getCookie(key); }
+
+  var header = getHeader(obj, 'set-cookie');
+
+  if (!header) {
+    header = (getHeader(obj, 'cookie') || '').split(';');
+  }
+
+  /* eslint new-cap: 0 */
+  var cookie = Cookie.CookieJar();
+  cookie.setCookies(header);
+  return cookie.getCookie(key, new Cookie.CookieAccessInfo());
 }
 
 },{"cookiejar":46,"is-ip":47,"qs":50,"url":62}],2:[function(require,module,exports){
@@ -644,7 +639,7 @@ module.exports = function SuperAgent () {
      * @returns {?string}
      */
     getHeader: function (name) {
-      name = name.toLowerCase();
+      name = (name || '').toLowerCase();
       return getResponseHeader(name) || superAgent.response.header[name];
     },
 
@@ -831,6 +826,20 @@ module.exports = function SuperAgent () {
 
     /**
      * The parsed response headers, with lowercased field names.
+     *
+     * NOTE: SuperAgent exposes this property as both `header` and `headers`
+     *
+     * @type {object}
+     */
+    header: function () {
+      return typeof responseHeaders === 'object' ? responseHeaders : {};
+    },
+
+    /**
+     * The parsed response headers, with lowercased field names.
+     *
+     * NOTE: SuperAgent exposes this property as both `header` and `headers`
+     *
      * @type {object}
      */
     headers: function () {
