@@ -1,6 +1,5 @@
 {
   "name": "postman-bdd",
-  "version": "1.5.3",
   "description": "BDD test framework for Postman and Newman",
   "keywords": [
     "rest",
@@ -23,15 +22,16 @@
     }
   ],
   "homepage": "https://bigstickcarpet.github.io/postman-bdd",
-  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/BigstickCarpet/postman-bdd.git"
   },
+  "license": "MIT",
   "main": "dist/postman-bdd.js",
   "ignore": [
     "/bower_components",
     "/dist/*.test.js",
+    "/docs",
     "/lib",
     "/test",
     "/.*",

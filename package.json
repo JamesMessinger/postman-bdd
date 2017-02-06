@@ -30,6 +30,13 @@
   "browser": {
     "querystring": "qs"
   },
+  "files": [
+    "dist/postman-bdd.js",
+    "dist/postman-bdd.js.map",
+    "dist/postman-bdd.min.js",
+    "dist/postman-bdd.min.js.map",
+    "lib"
+  ],
   "scripts": {
     "lint": "eslint lib test --fix",
     "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
