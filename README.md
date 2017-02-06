@@ -1,6 +1,4 @@
-Postman BDD
-============================
-#### BDD test framework for Postman and Newman
+![Postman BDD](docs/logo.gif)
 
 [![Build Status](https://api.travis-ci.org/BigstickCarpet/postman-bdd.svg)](https://travis-ci.org/BigstickCarpet/postman-bdd)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/bigstickcarpet/postman-bdd?svg=true&failingText=Windows%20build%20failing&passingText=Windows%20build%20passing)](https://ci.appveyor.com/project/BigstickCarpet/postman-bdd)
@@ -15,78 +13,104 @@ Postman BDD
 [![License](https://img.shields.io/npm/l/postman-bdd.svg)](LICENSE)
 
 
-This project is a port of [Chai HTTP](https://github.com/chaijs/chai-http) that runs in the [Postman REST Client](http://getpostman.com).  The API is exactly the same, but instead of using `chai.request("http://my-server.com")`, you can use the Postman GUI to build and send your HTTP request.
-
-- **[Usage](#usage)**
-- **[Advanced Usage](#advanced-usage)**
-- **[API Documentation](#api-documentation)**
-- **[Running tests in bulk](#running-tests-in-bulk)**
-- **[Running tests from the command line](#running-tests-from-the-command-line)**
-
-
-Example
+Overview
 --------------------------
-![Postman BDD Example](docs/example.gif)
+The [Postman REST client](http://getpostman.com) allows you to [write tests](https://www.getpostman.com/docs/writing_tests) for your APIs, such as ensuring that your endpoints return the proper HTTP status codes, headers, and content.  It even has has a built-in [test runner](https://www.getpostman.com/docs/running_collections) that makes it easy to run all of your tests and immediately see the results.  And you can use the [Newman command-line tool](https://www.getpostman.com/docs/newman_intro) to automate your tests and integrate them into your CI and deployment pipeline.
+
+Postman's built-in test framework uses a boolean-flag syntax for testing, like this:
+
+```javascript
+tests['The correct response code was returned'] = responseCode.code === 200;
+tests['The Location header is set'] = postman.getResponseHeader('Location');
+tests['The Content-Type is JSON'] = postman.getResponseHeader('Content-Type') === 'application/json';
+tests['The response has an ID property'] = JSON.parse(responseBody).id = 12345;
+```
+
+But Postman BDD allows you to use BDD syntax to structure your tests and [fluent Chai-JS syntax](http://chaijs.com/api/bdd/) to write assertions. So the above test suite could look like this instead:
+
+```javascript
+describe('Get customer info', () => {
+
+  it('should return a 200 response', () => {
+    response.should.have.status(200);
+  });
+
+  it('should set the Location header', () => {
+    response.should.have.header('Location');
+  });
+
+  it('should return a JSON response', () => {
+    response.should.be.json;
+  });
+
+  it('should return the correct customer', () => {
+    response.body.should.have.property('id', 12345);
+  });
+
+});
+```
+
+
+Features & Benefits
+--------------------------
+- **BDD & fluent syntax**<br>
+Makes tests easier to write and read
+
+- **BDD Hooks**<br>
+Use `before`, `after`, `beforeEach`, and `afterEach` hooks to reuse code and tests
+
+- **Lots of Assertions**<br>
+Full access to all [Chai-JS](http://chaijs.com/api/bdd/) and [Chai-HTTP](http://chaijs.com/plugins/chai-http/#assertions) assertions
+
+- **Custom Assertions**<br>
+Define custom Chai-JS assertions for your API to encapsulate logic and make tests more readabile (e.g. `response.body.should.be.a.customer`)
+
+- **Automatic Error Handling**<br>
+If a script error occurs, only that _one_ test fails. Other tests still run.
+
+- **Nested `describe` blocks**<br>
+You can nest `describe` blocks to logically group your tests
+
+- **JSON Schema Validation**<br>
+Use `response.body.should.have.schema(someJsonSchema)` to validate responses against a [JSON Schema](https://spacetelescope.github.io/understanding-json-schema/basics.html)
+
+- **Detailed logging**<br>
+You can increase or decrease the amount of information that Postman BDD logs by setting `postmanBDD.logLevel`. Errors and warnings are logged by default.
 
 
 Installation
 --------------------------
-To install Postman BDD in Postman, just create a `GET` request to [`postman-bdd.js`](http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.js) or [`postman-bdd.min.js`](http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js).  (The latter is a smaller download, the former is easier to debug)
+There are two simple steps to installing Postman BDD:
 
-Go to the "Tests" tab of this request, and add the following script:
+**1. Download Postman BDD**<br>
+Create a `GET` request in Postman and point it to the following URL:<br>
+[`http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js`](http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js)
+
+**2. Install Postman BDD**<br>
+In the same request that you created in Step 1, go to the "Tests" tab and add the following script:
 
 ```javascript
 // "install" Postman BDD
 postman.setGlobalVariable('postmanBDD', responseBody);
 ```
 
+Here's what that should look like:
+
 ![Postman BDD Installation](docs/install.gif)
 
 
 Usage
 --------------------------
-You now have Postman BDD installed globally.  You can use it in any Postman request like this:
+You now have Postman BDD installed globally.  You can use it in any Postman request by "loading" it with the following script:
 
 ```javascript
 // Load Postman BDD
 eval(globals.postmanBDD);
-
-describe('Get user info', function() {
-    it('should return user data', function() {
-       response.should.have.status(200);
-       response.should.be.json;
-       response.body.should.not.be.empty;
-    });
-
-    it('should have a full name', function() {
-      var user = response.body.results[0];
-      user.name.should.be.an('object');
-      user.name.should.have.property('first').and.not.empty;
-      user.name.should.have.property('last').and.not.empty;
-      user.name.should.have.property('that-does-not-exist');
-    });
-
-    it('should have an address', function() {
-      var user = response.body.results[0];
-      user.location.should.be.an('object');
-      user.location.should.have.property('street').and.not.empty;
-      user.location.should.have.property('city').and.not.empty;
-    });
-});
 ```
 
+After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](docs/sample_collection.json):
 
-Advanced Usage
---------------------------
-Postman BDD supports more advanced features too.  I'll add documentation for them soon, but here's a little teaser :)
-
-- **Nested `describe` blocks** - In standard BDD pattern, you can nest `describe` blocks to logically group your tests
-
-- **Hooks** - Postman BDD supports all the standard BDD hooks: `before`, `after`, `beforeEach`, and `afterEach`, so you can reuse tests across multiple requests in your REST API.
-
-- **JSON Schema Validation** - Postman BDD includes an assertion `response.body.should.have.schema(someJsonSchema)`, which allows you to validate your API's responses against a [JSON Schema](https://spacetelescope.github.io/understanding-json-schema/basics.html).  This is especially great if you've already built a [Swagger schema](http://editor.swagger.io) for your API.
-
-- **Detailed logging** - You can increase or decrease the amount of information that Postman BDD logs by setting `postmanBDD.logLevel`. Errors and warnings are logged by default.
+![Postman BDD Example](docs/example.gif)
 
 
 API Documentation
