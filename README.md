@@ -63,7 +63,8 @@ Use `before`, `after`, `beforeEach`, and `afterEach` hooks to reuse code and tes
 Full access to all [Chai-JS](http://chaijs.com/api/bdd/) and [Chai-HTTP](http://chaijs.com/plugins/chai-http/#assertions) assertions
 
 - **Custom Assertions**<br>
-Define custom Chai-JS assertions for your API to encapsulate logic and make tests more readabile (e.g. `response.body.should.be.a.customer`)
+Define custom Chai-JS assertions for your API to encapsulate logic and make tests more readabile<br>
+(e.g. `response.body.should.be.a.customer`)
 
 - **Automatic Error Handling**<br>
 If a script error occurs, only that _one_ test fails. Other tests still run.
