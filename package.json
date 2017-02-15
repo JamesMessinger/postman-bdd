@@ -42,7 +42,7 @@
     "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
     "test": "npm run tape && npm run newman && npm run lint",
     "cover": "istanbul cover tape test/specs/*.js && npm run newman",
-    "tape": "tape test/specs/*.js",
+    "tape": "tape test/specs/*.js | tap-spec",
     "newman": "newman run test/newman/postman_bdd_collection.json -r cli,html --reporter-html-export test/newman/report.html",
     "newman-local": "newman run test/newman/postman_bdd_collection.json -e test/newman/postman_bdd_localhost_environment.json -r cli,html --reporter-html-export test/newman/report.html",
     "start": "npm run build -- --watch & http-server -o -c-1",
@@ -66,6 +66,7 @@
     "newman": "^3.4.3",
     "npm-check": "^5.4.0",
     "simplifyify": "^3.2.1",
+    "tap-spec": "4.1.1",
     "tape": "4.6.3",
     "version-bump-prompt": "^3.0.1"
   }
