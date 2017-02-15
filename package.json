@@ -41,7 +41,7 @@
     "lint": "eslint lib test --fix",
     "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
     "test": "npm run tape && npm run newman && npm run lint",
-    "cover": "istanbul cover tape test/specs/*.js && npm run newman",
+    "cover": "istanbul cover tape test/specs/*.js | tap-spec && npm run newman",
     "tape": "tape test/specs/*.js | tap-spec",
     "newman": "newman run test/newman/postman_bdd_collection.json -r cli,html --reporter-html-export test/newman/report.html",
     "newman-local": "newman run test/newman/postman_bdd_collection.json -e test/newman/postman_bdd_localhost_environment.json -r cli,html --reporter-html-export test/newman/report.html",
