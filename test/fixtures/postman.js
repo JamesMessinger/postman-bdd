@@ -5,7 +5,6 @@
  */
 module.exports = class Postman {
   /**
-   *
    * @param {object} test - A Tape test instance
    */
   constructor (test) {
@@ -105,19 +104,20 @@ function checkTestOrder (test, actual, expected) {
   for (let i = 0; i < length; i++) {
     let actualKey = actualKeys[i];
     let expectedKey = expectedKeys[i];
+    let msg = `tests[${i}] is named "${actualKey}"`;
 
-    if (actualKey !== expectedKey) {
-      // Fail the test
-      let msg = `tests[${i}] is named "${actualKey}", not "${expectedKey}"`;
+    if (actualKey === expectedKey) {
       test.equal(actualKey, expectedKey, msg);
-
-      // Bail immediately
+    }
+    else {
+      msg += `, not "${expectedKey}"`;
+      test.equal(actualKey, expectedKey, msg);
       process.exit(1);
     }
   }
 
   // Compare the entire arrays, just to be sure
-  test.deepEqual(actualKeys, expectedKeys, 'All of the expected tests were run');
+  test.deepEqual(actualKeys, expectedKeys, `All ${length} tests were run`);
 }
 
 /**
@@ -128,22 +128,27 @@ function checkTestOrder (test, actual, expected) {
  * @param {object} expected - The expected Postman `tests` object
  */
 function checkTestResults (test, actual, expected) {
+  let actualKeys = Object.keys(actual);
+  let expectedKeys = Object.keys(expected);
+  let length = Math.max(actualKeys.length, expectedKeys.length);
+
   // Check each test one-by-one,
   // so we can throw a nicer error message if the results don't match.
-  for (let key of Object.keys(expected)) {
+  for (let key of expectedKeys) {
     let actualResult = actual[key] ? 'passed' : 'failed';
     let expectedResult = expected[key] ? 'passed' : 'failed';
 
-    if (actualResult !== expectedResult) {
-      // Fail the test
+    if (actualResult === expectedResult) {
+      let msg = `${key} ${expectedResult}`;
+      test.equal(actualResult, expectedResult, msg);
+    }
+    else {
       let msg = `${key} should have ${expectedResult}, but it ${actualResult}`;
       test.equal(actualResult, expectedResult, msg);
-
-      // Bail immediately
       process.exit(1);
     }
   }
 
   // Compare the entire objects, just to be sure
-  test.deepEqual(actual, expected, 'All of the test results are correct');
+  test.deepEqual(actual, expected, `All ${length} test results are correct`);
 }
