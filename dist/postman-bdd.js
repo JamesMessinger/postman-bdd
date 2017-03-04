@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v1.5.4 (February 6th 2017)
+ * Postman BDD v1.5.5 (March 4th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -175,13 +175,11 @@ function chaiHttp (chai, _) {
    * @name redirect
    */
   Assertion.addProperty('redirect', function () {
-    var redirectCodes = [301, 302, 303];
     var status = this._obj.status;
-    var redirects = this._obj.redirects;
 
     this.assert(
-      redirectCodes.indexOf(status) >= 0 || redirects && redirects.length,
-      'expected redirect with 30{1-3} status code but got ' + status,
+      wasRedirected(this._obj),
+      'expected redirect status code but got ' + status,
       'expected not to redirect but got ' + status + ' status'
     );
   });
@@ -200,8 +198,9 @@ function chaiHttp (chai, _) {
    */
   Assertion.addMethod('redirectTo', function (destination) {
     var redirects = this._obj.redirects;
-
-    new Assertion(this._obj).to.redirect;
+    var isARedirect = wasRedirected(this._obj);
+    var status = this._obj.status;
+    var location = getHeader(this._obj, 'location');
 
     if (redirects && redirects.length) {
       this.assert(
@@ -211,9 +210,13 @@ function chaiHttp (chai, _) {
       );
     }
     else {
-      var assertion = new Assertion(this._obj);
-      _.transferFlags(this, assertion);
-      assertion.with.header('location', destination);
+      this.assert(
+        isARedirect && location === destination,
+        'expected redirect to #{exp} but got #{act}',
+        'expected not to redirect to #{exp}',
+        destination,
+        isARedirect ? location : status
+      );
     }
   });
 
@@ -338,6 +341,20 @@ function getCookie (obj, key) {
   var cookie = Cookie.CookieJar();
   cookie.setCookies(header);
   return cookie.getCookie(key, new Cookie.CookieAccessInfo());
+}
+
+/**
+ * Determines whether a `Request` or `Response` object has been redirected.
+ *
+ * @param {Request|Response} object
+ * @returns {Boolean}
+ */
+function wasRedirected (obj) {
+  var redirectCodes = [301, 302, 303, 307, 308];
+  var redirects = obj.redirects;
+  var status = obj.status;
+
+  return redirectCodes.indexOf(status) >= 0 || redirects && redirects.length;
 }
 
 },{"cookiejar":46,"is-ip":47,"qs":50,"url":62}],2:[function(require,module,exports){
@@ -691,6 +708,17 @@ module.exports = function SuperAgent () {
      */
     ok: function () {
       return superAgent.response.statusType === 2;
+    },
+
+    /**
+     * Indicates whether the response is an HTTP "redirect" status
+     *
+     * https://visionmedia.github.io/superagent/#response-status
+     *
+     * @type {boolean}
+     */
+    redirect: function () {
+      return superAgent.response.statusType === 3;
     },
 
     /**
@@ -7631,7 +7659,7 @@ var defaults = {
     strictNullHandling: false
 };
 
-var parseValues = function parseValues(str, options) {
+var parseValues = function parseQueryStringValues(str, options) {
     var obj = {};
     var parts = str.split(options.delimiter, options.parameterLimit === Infinity ? undefined : options.parameterLimit);
 
@@ -7657,7 +7685,7 @@ var parseValues = function parseValues(str, options) {
     return obj;
 };
 
-var parseObject = function parseObject(chain, val, options) {
+var parseObject = function parseObjectRecursive(chain, val, options) {
     if (!chain.length) {
         return val;
     }
@@ -7670,7 +7698,7 @@ var parseObject = function parseObject(chain, val, options) {
         obj = obj.concat(parseObject(chain, val, options));
     } else {
         obj = options.plainObjects ? Object.create(null) : {};
-        var cleanRoot = root[0] === '[' && root[root.length - 1] === ']' ? root.slice(1, root.length - 1) : root;
+        var cleanRoot = root.charAt(0) === '[' && root.charAt(root.length - 1) === ']' ? root.slice(1, -1) : root;
         var index = parseInt(cleanRoot, 10);
         if (
             !isNaN(index) &&
@@ -7689,18 +7717,18 @@ var parseObject = function parseObject(chain, val, options) {
     return obj;
 };
 
-var parseKeys = function parseKeys(givenKey, val, options) {
+var parseKeys = function parseQueryStringKeys(givenKey, val, options) {
     if (!givenKey) {
         return;
     }
 
     // Transform dot notation to bracket notation
-    var key = options.allowDots ? givenKey.replace(/\.([^\.\[]+)/g, '[$1]') : givenKey;
+    var key = options.allowDots ? givenKey.replace(/\.([^.[]+)/g, '[$1]') : givenKey;
 
     // The regex chunks
 
-    var parent = /^([^\[\]]*)/;
-    var child = /(\[[^\[\]]*\])/g;
+    var parent = /^([^[]*)/;
+    var child = /(\[[^[\]]*])/g;
 
     // Get the parent
 
@@ -7726,9 +7754,9 @@ var parseKeys = function parseKeys(givenKey, val, options) {
     var i = 0;
     while ((segment = child.exec(key)) !== null && i < options.depth) {
         i += 1;
-        if (!options.plainObjects && has.call(Object.prototype, segment[1].replace(/\[|\]/g, ''))) {
+        if (!options.plainObjects && has.call(Object.prototype, segment[1].slice(1, -1))) {
             if (!options.allowPrototypes) {
-                continue;
+                return;
             }
         }
         keys.push(segment[1]);
@@ -7787,13 +7815,13 @@ var utils = require('./utils');
 var formats = require('./formats');
 
 var arrayPrefixGenerators = {
-    brackets: function brackets(prefix) {
+    brackets: function brackets(prefix) { // eslint-disable-line func-name-matching
         return prefix + '[]';
     },
-    indices: function indices(prefix, key) {
+    indices: function indices(prefix, key) { // eslint-disable-line func-name-matching
         return prefix + '[' + key + ']';
     },
-    repeat: function repeat(prefix) {
+    repeat: function repeat(prefix) { // eslint-disable-line func-name-matching
         return prefix;
     }
 };
@@ -7804,14 +7832,26 @@ var defaults = {
     delimiter: '&',
     encode: true,
     encoder: utils.encode,
-    serializeDate: function serializeDate(date) {
+    serializeDate: function serializeDate(date) { // eslint-disable-line func-name-matching
         return toISO.call(date);
     },
     skipNulls: false,
     strictNullHandling: false
 };
 
-var stringify = function stringify(object, prefix, generateArrayPrefix, strictNullHandling, skipNulls, encoder, filter, sort, allowDots, serializeDate, formatter) {
+var stringify = function stringify( // eslint-disable-line func-name-matching
+    object,
+    prefix,
+    generateArrayPrefix,
+    strictNullHandling,
+    skipNulls,
+    encoder,
+    filter,
+    sort,
+    allowDots,
+    serializeDate,
+    formatter
+) {
     var obj = object;
     if (typeof filter === 'function') {
         obj = filter(prefix, obj);
@@ -7890,6 +7930,11 @@ var stringify = function stringify(object, prefix, generateArrayPrefix, strictNu
 module.exports = function (object, opts) {
     var obj = object;
     var options = opts || {};
+
+    if (options.encoder !== null && options.encoder !== undefined && typeof options.encoder !== 'function') {
+        throw new TypeError('Encoder has to be a function.');
+    }
+
     var delimiter = typeof options.delimiter === 'undefined' ? defaults.delimiter : options.delimiter;
     var strictNullHandling = typeof options.strictNullHandling === 'boolean' ? options.strictNullHandling : defaults.strictNullHandling;
     var skipNulls = typeof options.skipNulls === 'boolean' ? options.skipNulls : defaults.skipNulls;
@@ -7906,10 +7951,6 @@ module.exports = function (object, opts) {
     var formatter = formats.formatters[options.format];
     var objKeys;
     var filter;
-
-    if (options.encoder !== null && options.encoder !== undefined && typeof options.encoder !== 'function') {
-        throw new TypeError('Encoder has to be a function.');
-    }
 
     if (typeof options.filter === 'function') {
         filter = options.filter;
@@ -8098,7 +8139,7 @@ exports.encode = function (str) {
 
         i += 1;
         c = 0x10000 + (((c & 0x3FF) << 10) | (string.charCodeAt(i) & 0x3FF));
-        out += hexTable[0xF0 | (c >> 18)] + hexTable[0x80 | ((c >> 12) & 0x3F)] + hexTable[0x80 | ((c >> 6) & 0x3F)] + hexTable[0x80 | (c & 0x3F)];
+        out += hexTable[0xF0 | (c >> 18)] + hexTable[0x80 | ((c >> 12) & 0x3F)] + hexTable[0x80 | ((c >> 6) & 0x3F)] + hexTable[0x80 | (c & 0x3F)]; // eslint-disable-line max-len
     }
 
     return out;
