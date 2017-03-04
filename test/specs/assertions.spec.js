@@ -398,122 +398,171 @@ test('text assertion (fail)', (t) => {
   t.end();
 });
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('text assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-//   // Redirect
-//   response = { status: 200 };
-//   response.should.not.redirect;
+  t.throws(() =>
+    response.should.be.text,
+    /expected the response type to be 'text' but got '<content-type-not-set>'/
+  );
 
-//   t.end();
-// });
+  postman.responseHeaders['content-type'] = 'application/xml; charset=utf-8';
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  t.throws(() =>
+    expect(response).to.be.text,
+    /expected the response type to be 'text' but got 'application\/xml; charset=utf-8'/
+  );
 
-//   [301, 302, 303].forEach((status) => {
-//     response = { status };
-//     response.should.redirect;
-//   });
+  t.end();
+});
 
-//   t.end();
-// });
+const nonRedirectCodes = [200, 201, 400, 404, 500];
+const redirectCodes = [301, 302, 303, 307, 308];
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+test('redirect assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-//   ({
-//     status: 200,
-//     redirects: ['http://example.com']
-//   }).should.redirect;
+  t.doesNotThrow(() => {
+    response.should.not.redirect;
+  });
 
-//   t.end();
-// });
+  for (let code of nonRedirectCodes) {
+    postman.responseCode.code = code;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+    t.doesNotThrow(() => {
+      response.should.not.redirect;
+    }, `HTTP ${code} is not a redirect`);
+  }
 
-//   ({
-//     status: 200,
-//     redirects: []
-//   }).should.not.redirect;
+  for (let code of redirectCodes) {
+    postman.responseCode.code = code;
 
-//   t.end();
-// });
+    t.doesNotThrow(() => {
+      response.should.redirect;
+      expect(response).to.redirect;
+    }, `HTTP ${code} is a redirect`);
+  }
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  t.end();
+});
 
-//   (() => {
-//     response = { status: 200 };
-//     response.should.redirect;
-//   }).should.throw('expected redirect with 30{1-3} status code but got 200');
+test('redirect assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-//   t.end();
-// });
+  t.throws(() =>
+    response.should.redirect,
+    /expected redirect status code but got 0/
+  );
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  for (let code of nonRedirectCodes) {
+    postman.responseCode.code = code;
 
-//   (() => {
-//     response = { status: 301 };
-//     response.should.not.redirect;
-//   }).should.throw('expected not to redirect but got 301 status');
+    t.throws(() =>
+      response.should.redirect,
+      new RegExp(`expected redirect status code but got ${code}`)
+    );
+  }
 
-//   t.end();
-// });
+  for (let code of redirectCodes) {
+    postman.responseCode.code = code;
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+    t.throws(() =>
+      response.should.not.redirect,
+      new RegExp(`expected not to redirect but got ${code} status`)
+    );
+  }
 
-//   // RedirectTo
-//   response = { status: 301, headers: { location: 'foo' } };
-//   response.should.redirectTo('foo');
+  t.end();
+});
 
-//   response = { status: 301, headers: { location: 'bar' } };
-//   response.should.not.redirectTo('foo');
+test('redirectTo assertion (pass)', (t) => {
+  let postman = new Postman(t);
 
-//   response = { status: 200, redirects: ['bar'] };
-//   response.should.redirectTo('bar');
+  t.doesNotThrow(() => {
+    response.should.not.redirectTo('http://foo.com/bar/baz');
+  });
 
-//   response = { status: 200, redirects: ['bar'] };
-//   response.should.not.redirectTo('foo');
+  for (let code of nonRedirectCodes) {
+    postman.responseCode.code = code;
+    postman.responseHeaders.location = 'http://foo.com/bar/baz';
 
-//   t.end();
-// });
+    t.doesNotThrow(() => {
+      response.should.not.redirect;
+      response.should.not.redirectTo('http://foo.com/bar/baz');
+      expect(response).not.to.redirectTo('http://foo.com');
+      response.should.not.redirectTo('/bar/baz');
+    });
+  }
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  for (let code of redirectCodes) {
+    postman.responseCode.code = code;
+    postman.responseHeaders.location = 'http://foo.com/bar/baz';
 
-//   t.throws(() =>
-//     response = { status: 301, headers: { location: 'foo' } };
-//     response.should.not.redirectTo('foo');
-//   }).should.throw('expected header 'location' to not have value foo');
+    t.doesNotThrow(() => {
+      response.should.redirect;
+      response.should.redirectTo('http://foo.com/bar/baz');
+      expect(response).to.redirectTo('http://foo.com/bar/baz');
 
-//   t.end();
-// });
+      response.should.not.redirectTo('http://foo.com');
+      expect(response).not.to.redirectTo('http://foo.com');
+      response.should.not.redirectTo('/bar/baz');
+      expect(response).not.to.redirectTo('/bar/baz');
+    });
+  }
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  t.end();
+});
 
-//   t.throws(() =>
-//     response = { status: 301, headers: { location: 'bar' } };
-//     response.should.redirectTo('foo');
-//   }).should.throw('expected header 'location' to have value foo');
+test('redirectTo assertion (fail)', (t) => {
+  let postman = new Postman(t);
 
-//   t.end();
-// });
+  t.throws(() =>
+    response.should.redirectTo('http://foo.com/bar/baz'),
+    /expected redirect to 'http:\/\/foo.com\/bar\/baz' but got 0/
+  );
 
-// test('XXXXXXXXXXXXXXXXXX', (t) => {
-//   let postman = new Postman(t);
+  for (let code of nonRedirectCodes) {
+    postman.responseCode.code = code;
+    postman.responseHeaders.location = 'http://foo.com/bar/baz';
 
-//   t.throws(() =>
-//     response = { status: 200, redirects: ['bar', 'baz'] };
-//     response.should.redirectTo('foo');
-//   }).should.throw('expected redirect to foo but got bar then baz');
+    t.throws(() =>
+      response.should.redirectTo('http://foo.com/bar/baz'),
+      new RegExp(`expected redirect to 'http:\/\/foo.com\/bar\/baz' but got ${code}`)
+    );
 
-//   t.end();
-// });
+    t.throws(() =>
+      expect(response).to.redirectTo('http://foo.com'),
+      new RegExp(`expected redirect to 'http:\/\/foo.com' but got ${code}`)
+    );
+
+    t.throws(() =>
+      expect(response).to.redirectTo('/bar/baz'),
+      new RegExp(`expected redirect to '\/bar\/baz' but got ${code}`)
+    );
+  }
+
+  for (let code of redirectCodes) {
+    postman.responseCode.code = code;
+    postman.responseHeaders.location = 'http://foo.com/bar/baz';
+
+    t.throws(() =>
+      response.should.not.redirectTo('http://foo.com/bar/baz'),
+      /expected not to redirect to 'http:\/\/foo.com\/bar\/baz'/
+    );
+
+    t.throws(() =>
+      expect(response).to.redirectTo('http://foo.com'),
+      /expected redirect to 'http:\/\/foo.com' but got 'http:\/\/foo.com\/bar\/baz'/
+    );
+
+    t.throws(() =>
+      expect(response).to.redirectTo('/bar/baz'),
+      /expected redirect to '\/bar\/baz' but got 'http:\/\/foo.com\/bar\/baz'/
+    );
+  }
+
+  t.end();
+});
 
 // test('XXXXXXXXXXXXXXXXXX', (t) => {
 //   let postman = new Postman(t);
