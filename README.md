@@ -59,15 +59,18 @@ Makes tests easier to write and read
 - **BDD Hooks**<br>
 Use `before`, `after`, `beforeEach`, and `afterEach` hooks to reuse code and tests
 
+- **Automatic Error Handling**<br>
+If a script error occurs, only that _one_ test fails. Other tests still run.
+
+- **Automatic Response Parsing**<br>
+If the response is JSON, then it is automatically parsed for you.  No need to call `JSON.parse()` first.
+
 - **Lots of Assertions**<br>
 Full access to all [Chai-JS](http://chaijs.com/api/bdd/) and [Chai-HTTP](http://chaijs.com/plugins/chai-http/#assertions) assertions
 
 - **Custom Assertions**<br>
 Define custom Chai-JS assertions for your API to encapsulate logic and make tests more readabile<br>
 (e.g. `response.body.should.be.a.customer`)
-
-- **Automatic Error Handling**<br>
-If a script error occurs, only that _one_ test fails. Other tests still run.
 
 - **Nested `describe` blocks**<br>
 You can nest `describe` blocks to logically group your tests
