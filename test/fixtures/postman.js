@@ -88,14 +88,6 @@ function initPostmanSandbox () {
     headers: {},
     data: {},
   };
-
-  global.postman = {
-    getResponseHeader (name) {
-      return global.responseHeaders[(name || '').toLowerCase()];
-    },
-
-    getResponseCookie () {},
-  };
 }
 
 /**

@@ -35,4 +35,5 @@ globals:
   responseBody: false
   responseCode: false
   responseHeaders: false
+  responseCookies: false
   responseTime: false
