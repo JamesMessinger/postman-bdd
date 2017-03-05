@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "codacy-coverage": "^2.0.1",
-    "coveralls": "^2.11.16",
+    "coveralls": "^2.12.0",
     "eslint": "^3.17.0",
     "eslint-config-modular": "^2.0.1",
     "http-server": "^0.9.0",
