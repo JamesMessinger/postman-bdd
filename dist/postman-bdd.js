@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v2.0.0 (March 5th 2017)
+ * Postman BDD v2.1.0 (March 5th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -11,7 +11,7 @@
 
 var isIP = require('is-ip');
 var url = require('url');
-var Cookie = require('cookiejar');
+var cookies = require('./cookies');
 
 var contentTypes = {
   json: 'application/json',
@@ -287,6 +287,25 @@ function chaiHttp (chai) {
   });
 
   /**
+   * Assert that a `Response` or `Request` object has cookies.
+   *
+   * @example:
+   * expect(req).to.have.cookies;
+   *
+   * @name cookies
+   */
+  Assertion.addProperty('cookies', function () {
+    var type = this._obj.method ? 'request' : 'response';
+    var allCookies = getCookies(this._obj);
+
+    this.assert(
+      allCookies.length > 0,
+      'expected the ' + type + ' to have cookies',
+      'expected the ' + type + ' to not have any cookies'
+    );
+  });
+
+  /**
    * Assert that a `Request` or `Response` object has a cookie header with a
    * given key, (optionally) equal to value
    *
@@ -302,23 +321,35 @@ function chaiHttp (chai) {
    * @param {String} parameter value
    * @name cookie
    */
-  Assertion.addMethod('cookie', function (key, value) {
-    var cookie = getCookie(this._obj, key);
+  Assertion.addMethod('cookie', function (name, value) {
+    var cookie = getCookie(this._obj, name) || {};
+    var cookieExists = cookie.value !== undefined && cookie.value !== null;
 
-    if (arguments.length === 2) {
+    if (arguments.length < 2) {
       this.assert(
-        cookie.value === value,
-        'expected cookie \'' + key + '\' to have value #{exp} but got #{act}',
-        'expected cookie \'' + key + '\' to not have value #{exp}',
-        value,
+        cookieExists,
+        'expected cookie #{exp} to exist',
+        'expected cookie #{exp} to not exist',
+        name,
         cookie.value
+      );
+    }
+    else if (value instanceof RegExp) {
+      this.assert(
+        cookieExists && value.test(cookie.value),
+        "expected cookie '" + name + "' to match #{exp} but got #{act}",
+        "expected cookie '" + name + "' to not match #{exp} but got #{act}",
+        value,
+        cookieExists ? cookie.value : '<cookie-not-set>'
       );
     }
     else {
       this.assert(
-        typeof cookie !== 'undefined' || cookie === null,
-        'expected cookie \'' + key + '\' to exist',
-        'expected cookie \'' + key + '\' to not exist'
+        cookieExists && cookie.value === value,
+        "expected cookie '" + name + "' to have value #{exp} but got #{act}",
+        "expected cookie '" + name + "' to not have value #{exp}",
+        value,
+        cookieExists ? cookie.value : '<cookie-not-set>'
       );
     }
   });
@@ -348,8 +379,12 @@ function chaiHttp (chai) {
  * @returns {String|Undefined}
  */
 function getHeader (obj, key) {
-  if (obj.getHeader) { return obj.getHeader(key); }
+  // SuperAgent `response` object
+  if (obj.getHeader) {
+    return obj.getHeader(key);
+  }
 
+  // Postman `request` object
   key = (key || '').toLowerCase();
   var keys = Object.keys(obj.headers);
   for (var i = 0; i < keys.length; i++) {
@@ -360,25 +395,38 @@ function getHeader (obj, key) {
 }
 
 /**
+ * Returns ALL cookies from a `Request` or `Response` object.
+ *
+ * @param {Request|Response} object
+ * @returns {object[]}
+ */
+function getCookies (obj) {
+  // SuperAgent `response` object
+  if (obj.cookies) {
+    return obj.cookies;
+  }
+
+  // Postman `request` object
+  var header = getHeader(obj, 'cookie');
+  return cookies.parseRequestCookies(header);
+}
+
+/**
  * Returns a cookie from `Request` or `Response` object.
  *
  * @param {Request|Response} object
- * @param {String} Cookie
+ * @param {String} name
  * @returns {String|Undefined}
  */
-function getCookie (obj, key) {
-  if (obj.getCookie) { return obj.getCookie(key); }
-
-  var header = getHeader(obj, 'set-cookie');
-
-  if (!header) {
-    header = (getHeader(obj, 'cookie') || '').split(';');
+function getCookie (obj, name) {
+  // SuperAgent `response` object
+  if (obj.getCookie) {
+    return obj.getCookie(name);
   }
 
-  /* eslint new-cap: 0 */
-  var cookie = Cookie.CookieJar();
-  cookie.setCookies(header);
-  return cookie.getCookie(key, new Cookie.CookieAccessInfo());
+  // Postman `request` object
+  var allCookies = getCookies(obj);
+  return cookies.getCookie(allCookies, name);
 }
 
 /**
@@ -395,7 +443,7 @@ function wasRedirected (obj) {
   return redirectCodes.indexOf(status) >= 0 || redirects && redirects.length;
 }
 
-},{"cookiejar":46,"is-ip":47,"url":57}],2:[function(require,module,exports){
+},{"./cookies":3,"is-ip":48,"url":58}],2:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -521,7 +569,73 @@ PostmanBDD.prototype.oneTimeInitialization = function () {
 };
 
 
-},{"./hook":3,"./runnable":8,"./state":9}],3:[function(require,module,exports){
+},{"./hook":4,"./runnable":9,"./state":10}],3:[function(require,module,exports){
+'use strict';
+
+var CookieJar = require('cookiejar').CookieJar;
+var CookieAccessInfo = require('cookiejar').CookieAccessInfo;
+
+module.exports = {
+  /**
+   * Returns the cookie with the specified name from an array of cookies.
+   *
+   * @param {object[]} allCookies
+   * @param {string} name
+   * @returns {object|undefined}
+   */
+  getCookie: function (allCookies, name) {
+    name = (name || '').toLowerCase();
+
+    var foundCookie = allCookies.find(function (cookie) {
+      return cookie && cookie.name.toLowerCase() === name;
+    });
+
+    return foundCookie;
+  },
+
+  /**
+   * Parses a "Cookie" header and returns an array of cookie objects.
+   *
+   * @param {string} [header]
+   * @returns {object[]}
+   */
+  parseRequestCookies: function (header) {
+    var cookieJar = new CookieJar();
+
+    if (header) {
+      var cookies = header
+        .split(';')
+        .map(function (cookie) {
+          return cookie.trim();
+        });
+
+      cookieJar.setCookies(cookies);
+    }
+
+    var allCookies = cookieJar.getCookies(CookieAccessInfo.All);
+    return allCookies;
+  },
+
+  /**
+   * Parses one or more "Set-Cookie" headers and returns an array of cookie objects.
+   *
+   * @param {string|string[]} [headers] - The value of the "Set-Cookie" header(s)
+   * @returns {object[]}
+   */
+  parseResponseCookies: function (headers) {
+    var cookieJar = new CookieJar();
+
+    if (headers) {
+      // The `setCookies` method supports a string or array of strings
+      cookieJar.setCookies(headers);
+    }
+
+    var allCookies = cookieJar.getCookies(CookieAccessInfo.All);
+    return allCookies;
+  },
+};
+
+},{"cookiejar":47}],4:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -564,7 +678,7 @@ Hook.prototype.push = function (title, fn) {
   this.runnables.push(runnable);
 };
 
-},{"./runnable":8}],4:[function(require,module,exports){
+},{"./runnable":9}],5:[function(require,module,exports){
 // Disable "strict mode" for this file,
 // so we can define variables with global scope
 /* eslint strict:off */
@@ -628,7 +742,7 @@ function initChai () {
   chai.use(assertions);
 }
 
-},{"./assertions":1,"./bdd":2,"./log":5,"./options":6,"./response":7,"chai":10}],5:[function(require,module,exports){
+},{"./assertions":1,"./bdd":2,"./log":6,"./options":7,"./response":8,"chai":11}],6:[function(require,module,exports){
 'use strict';
 
 var options = require('./options');
@@ -660,7 +774,7 @@ levels.forEach(function (level) {
   };
 });
 
-},{"./options":6}],6:[function(require,module,exports){
+},{"./options":7}],7:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -672,8 +786,10 @@ module.exports = {
   logLevel: 'warn',
 };
 
-},{}],7:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 'use strict';
+
+var cookies = require('./cookies');
 
 /**
  * SuperAgent's Response API
@@ -694,8 +810,13 @@ module.exports = function SuperAgent () {
      * @returns {?string}
      */
     getHeader: function (name) {
-      name = (name || '').toLowerCase();
-      return getResponseHeader(name) || superAgent.response.header[name];
+      if (typeof postman === 'object' && typeof postman.getResponseHeader === 'function') {
+        return postman.getResponseHeader(name);
+      }
+      else {
+        name = (name || '').toLowerCase();
+        return superAgent.response.headers[name];
+      }
     },
 
     /**
@@ -705,7 +826,12 @@ module.exports = function SuperAgent () {
      * @returns {?string}
      */
     getCookie: function (name) {
-      return getResponseCookie(name);
+      if (typeof postman === 'object' && typeof postman.getResponseCookie === 'function') {
+        return postman.getResponseCookie(name);
+      }
+      else {
+        return cookies.getCookie(superAgent.response.cookies, name);
+      }
     },
   };
 
@@ -939,6 +1065,20 @@ module.exports = function SuperAgent () {
       if (!match) { return ''; }
       return match[1];
     },
+
+    /**
+     * The parsed response cookies.
+     *
+     * @type {object[]}
+     */
+    cookies: function () {
+      if (typeof responseCookies === 'object' && responseCookies.length > 0) {
+        return responseCookies;
+      }
+
+      var header = this.getHeader('set-cookie');
+      return cookies.parseResponseCookies(header);
+    },
   });
 };
 
@@ -957,31 +1097,7 @@ function defineProperties (obj, getters) {
   });
 }
 
-/**
- * Calls {@link postman.getResponseHeader}, if it exists
- *
- * @param {string} name
- * @returns {string|undefined}
- */
-function getResponseHeader (name) {
-  if (typeof postman === 'object' && typeof postman.getResponseHeader === 'function') {
-    return postman.getResponseHeader(name);
-  }
-}
-
-/**
- * Calls {@link postman.getResponseCookie}, if it exists
- *
- * @param {string} name
- * @returns {string|undefined}
- */
-function getResponseCookie (name) {
-  if (typeof postman === 'object' && typeof postman.getResponseCookie === 'function') {
-    return postman.getResponseCookie(name);
-  }
-}
-
-},{}],8:[function(require,module,exports){
+},{"./cookies":3}],9:[function(require,module,exports){
 'use strict';
 
 var log = require('./log');
@@ -1090,7 +1206,7 @@ function errorToPOJO (err) {
   }
 }
 
-},{"./log":5}],9:[function(require,module,exports){
+},{"./log":6}],10:[function(require,module,exports){
 'use strict';
 
 module.exports = State;
@@ -1196,10 +1312,10 @@ function resetTests () {
   return tests;
 }
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 module.exports = require('./lib/chai');
 
-},{"./lib/chai":11}],11:[function(require,module,exports){
+},{"./lib/chai":12}],12:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -1294,7 +1410,7 @@ exports.use(should);
 var assert = require('./chai/interface/assert');
 exports.use(assert);
 
-},{"./chai/assertion":12,"./chai/config":13,"./chai/core/assertions":14,"./chai/interface/assert":15,"./chai/interface/expect":16,"./chai/interface/should":17,"./chai/utils":31,"assertion-error":39}],12:[function(require,module,exports){
+},{"./chai/assertion":13,"./chai/config":14,"./chai/core/assertions":15,"./chai/interface/assert":16,"./chai/interface/expect":17,"./chai/interface/should":18,"./chai/utils":32,"assertion-error":40}],13:[function(require,module,exports){
 /*!
  * chai
  * http://chaijs.com
@@ -1427,7 +1543,7 @@ module.exports = function (_chai, util) {
   });
 };
 
-},{"./config":13}],13:[function(require,module,exports){
+},{"./config":14}],14:[function(require,module,exports){
 module.exports = {
 
   /**
@@ -1484,7 +1600,7 @@ module.exports = {
 
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 /*!
  * chai
  * http://chaijs.com
@@ -3346,7 +3462,7 @@ module.exports = function (chai, _) {
   });
 };
 
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -4993,7 +5109,7 @@ module.exports = function (chai, util) {
   ('isNotFrozen', 'notFrozen');
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5029,7 +5145,7 @@ module.exports = function (chai, util) {
   };
 };
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5232,7 +5348,7 @@ module.exports = function (chai, util) {
   chai.Should = loadShould;
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*!
  * Chai - addChainingMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5346,7 +5462,7 @@ module.exports = function (ctx, name, method, chainingBehavior) {
   });
 };
 
-},{"../config":13,"./flag":22,"./transferFlags":38}],19:[function(require,module,exports){
+},{"../config":14,"./flag":23,"./transferFlags":39}],20:[function(require,module,exports){
 /*!
  * Chai - addMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5392,7 +5508,7 @@ module.exports = function (ctx, name, method) {
   };
 };
 
-},{"../config":13,"./flag":22}],20:[function(require,module,exports){
+},{"../config":14,"./flag":23}],21:[function(require,module,exports){
 /*!
  * Chai - addProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5442,7 +5558,7 @@ module.exports = function (ctx, name, getter) {
   });
 };
 
-},{"../config":13,"./flag":22}],21:[function(require,module,exports){
+},{"../config":14,"./flag":23}],22:[function(require,module,exports){
 /*!
  * Chai - expectTypes utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5486,7 +5602,7 @@ module.exports = function (obj, types) {
   }
 };
 
-},{"./flag":22,"assertion-error":39,"type-detect":44}],22:[function(require,module,exports){
+},{"./flag":23,"assertion-error":40,"type-detect":45}],23:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5521,7 +5637,7 @@ module.exports = function (obj, key, value) {
   }
 };
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 /*!
  * Chai - getActual utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5543,7 +5659,7 @@ module.exports = function (obj, args) {
   return args.length > 4 ? args[4] : obj._obj;
 };
 
-},{}],24:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /*!
  * Chai - getEnumerableProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5571,7 +5687,7 @@ module.exports = function getEnumerableProperties(object) {
   return result;
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 /*!
  * Chai - message composition utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5624,7 +5740,7 @@ module.exports = function (obj, args) {
   return flagMsg ? flagMsg + ': ' + msg : msg;
 };
 
-},{"./flag":22,"./getActual":23,"./inspect":32,"./objDisplay":33}],26:[function(require,module,exports){
+},{"./flag":23,"./getActual":24,"./inspect":33,"./objDisplay":34}],27:[function(require,module,exports){
 /*!
  * Chai - getName utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5648,7 +5764,7 @@ module.exports = function (func) {
   return match && match[1] ? match[1] : "";
 };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /*!
  * Chai - getPathInfo utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5761,7 +5877,7 @@ function _getPathValue (parsed, obj, index) {
   return res;
 }
 
-},{"./hasProperty":30}],28:[function(require,module,exports){
+},{"./hasProperty":31}],29:[function(require,module,exports){
 /*!
  * Chai - getPathValue utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5806,7 +5922,7 @@ module.exports = function(path, obj) {
   return info.value;
 };
 
-},{"./getPathInfo":27}],29:[function(require,module,exports){
+},{"./getPathInfo":28}],30:[function(require,module,exports){
 /*!
  * Chai - getProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5844,7 +5960,7 @@ module.exports = function getProperties(object) {
   return result;
 };
 
-},{}],30:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
 /*!
  * Chai - hasProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -5910,7 +6026,7 @@ module.exports = function hasProperty(name, obj) {
   return name in obj;
 };
 
-},{"type-detect":44}],31:[function(require,module,exports){
+},{"type-detect":45}],32:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>
@@ -6042,7 +6158,7 @@ exports.addChainableMethod = require('./addChainableMethod');
 
 exports.overwriteChainableMethod = require('./overwriteChainableMethod');
 
-},{"./addChainableMethod":18,"./addMethod":19,"./addProperty":20,"./expectTypes":21,"./flag":22,"./getActual":23,"./getMessage":25,"./getName":26,"./getPathInfo":27,"./getPathValue":28,"./hasProperty":30,"./inspect":32,"./objDisplay":33,"./overwriteChainableMethod":34,"./overwriteMethod":35,"./overwriteProperty":36,"./test":37,"./transferFlags":38,"deep-eql":40,"type-detect":44}],32:[function(require,module,exports){
+},{"./addChainableMethod":19,"./addMethod":20,"./addProperty":21,"./expectTypes":22,"./flag":23,"./getActual":24,"./getMessage":26,"./getName":27,"./getPathInfo":28,"./getPathValue":29,"./hasProperty":31,"./inspect":33,"./objDisplay":34,"./overwriteChainableMethod":35,"./overwriteMethod":36,"./overwriteProperty":37,"./test":38,"./transferFlags":39,"deep-eql":41,"type-detect":45}],33:[function(require,module,exports){
 // This is (almost) directly from Node.js utils
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
 
@@ -6379,7 +6495,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-},{"./getEnumerableProperties":24,"./getName":26,"./getProperties":29}],33:[function(require,module,exports){
+},{"./getEnumerableProperties":25,"./getName":27,"./getProperties":30}],34:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -6431,7 +6547,7 @@ module.exports = function (obj) {
   }
 };
 
-},{"../config":13,"./inspect":32}],34:[function(require,module,exports){
+},{"../config":14,"./inspect":33}],35:[function(require,module,exports){
 /*!
  * Chai - overwriteChainableMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -6487,7 +6603,7 @@ module.exports = function (ctx, name, method, chainingBehavior) {
   };
 };
 
-},{}],35:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
 /*!
  * Chai - overwriteMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -6541,7 +6657,7 @@ module.exports = function (ctx, name, method) {
   }
 };
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 /*!
  * Chai - overwriteProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -6598,7 +6714,7 @@ module.exports = function (ctx, name, getter) {
   });
 };
 
-},{}],37:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 /*!
  * Chai - test utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -6628,7 +6744,7 @@ module.exports = function (obj, args) {
   return negate ? !expr : expr;
 };
 
-},{"./flag":22}],38:[function(require,module,exports){
+},{"./flag":23}],39:[function(require,module,exports){
 /*!
  * Chai - transferFlags utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -6675,7 +6791,7 @@ module.exports = function (assertion, object, includeAll) {
   }
 };
 
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 /*!
  * assertion-error
  * Copyright(c) 2013 Jake Luer <jake@qualiancy.com>
@@ -6793,10 +6909,10 @@ AssertionError.prototype.toJSON = function (stack) {
   return props;
 };
 
-},{}],40:[function(require,module,exports){
+},{}],41:[function(require,module,exports){
 module.exports = require('./lib/eql');
 
-},{"./lib/eql":41}],41:[function(require,module,exports){
+},{"./lib/eql":42}],42:[function(require,module,exports){
 /*!
  * deep-eql
  * Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com>
@@ -7055,10 +7171,10 @@ function objectEqual(a, b, m) {
   return true;
 }
 
-},{"buffer":49,"type-detect":42}],42:[function(require,module,exports){
+},{"buffer":50,"type-detect":43}],43:[function(require,module,exports){
 module.exports = require('./lib/type');
 
-},{"./lib/type":43}],43:[function(require,module,exports){
+},{"./lib/type":44}],44:[function(require,module,exports){
 /*!
  * type-detect
  * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
@@ -7202,9 +7318,9 @@ Library.prototype.test = function (obj, type) {
   }
 };
 
-},{}],44:[function(require,module,exports){
-arguments[4][42][0].apply(exports,arguments)
-},{"./lib/type":45,"dup":42}],45:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
+arguments[4][43][0].apply(exports,arguments)
+},{"./lib/type":46,"dup":43}],46:[function(require,module,exports){
 /*!
  * type-detect
  * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
@@ -7340,7 +7456,7 @@ Library.prototype.test = function(obj, type) {
   }
 };
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 /* jshint node: true */
 (function () {
     "use strict";
@@ -7607,7 +7723,7 @@ Library.prototype.test = function(obj, type) {
     };
 }());
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 'use strict';
 var ipRegex = require('ip-regex');
 
@@ -7623,7 +7739,7 @@ ip.v6 = function (str) {
 	return ipRegex.v6({exact: true}).test(str);
 };
 
-},{"ip-regex":48}],48:[function(require,module,exports){
+},{"ip-regex":49}],49:[function(require,module,exports){
 'use strict';
 
 var v4 = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}';
@@ -7645,7 +7761,7 @@ ip.v6 = function (opts) {
 	return opts.exact ? new RegExp('^' + v6 + '$') : new RegExp(v6, 'g');
 };
 
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 (function (global){
 /*!
  * The buffer module from node.js, for the browser.
@@ -9439,7 +9555,7 @@ function isnan (val) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{"base64-js":50,"ieee754":51,"isarray":52}],50:[function(require,module,exports){
+},{"base64-js":51,"ieee754":52,"isarray":53}],51:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -9555,7 +9671,7 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],51:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -9641,14 +9757,14 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],52:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 var toString = {}.toString;
 
 module.exports = Array.isArray || function (arr) {
   return toString.call(arr) == '[object Array]';
 };
 
-},{}],53:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -10186,7 +10302,7 @@ module.exports = Array.isArray || function (arr) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],54:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -10272,7 +10388,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],55:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -10359,13 +10475,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":54,"./encode":55}],57:[function(require,module,exports){
+},{"./decode":55,"./encode":56}],58:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -11099,7 +11215,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":58,"punycode":53,"querystring":56}],58:[function(require,module,exports){
+},{"./util":59,"punycode":54,"querystring":57}],59:[function(require,module,exports){
 'use strict';
 
 module.exports = {
@@ -11117,6 +11233,6 @@ module.exports = {
   }
 };
 
-},{}]},{},[4])(4)
+},{}]},{},[5])(5)
 });
 //# sourceMappingURL=postman-bdd.js.map
