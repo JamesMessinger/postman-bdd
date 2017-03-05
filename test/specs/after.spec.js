@@ -10,8 +10,7 @@ test('`after` hook without any args', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'after #1': false,
-    'this.fn is not a function': false
+    'after #1 (this.fn is not a function)': false,
   });
 
   t.end();
@@ -24,8 +23,7 @@ test('`after` hook with only a name', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'my hook': false,
-    'this.fn is not a function': false
+    'my hook (this.fn is not a function)': false,
   });
 
   t.end();
@@ -60,8 +58,7 @@ test('Error in `after` hook', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'my hook': false,
-    'BOOM!': false
+    'my hook (BOOM!)': false,
   });
 
   t.end();
@@ -76,8 +73,7 @@ test('Error in unnamed `after` hook', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'after #1': false,
-    'BOOM!': false
+    'after #1 (BOOM!)': false,
   });
 
   t.end();
@@ -110,8 +106,7 @@ test('`after` hook with failed assertions', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'my hook': false,
-    'expected false to be truthy': false,
+    'my hook (expected false to be truthy)': false,
   });
 
   t.end();
@@ -129,8 +124,7 @@ test('Passed assertions + failed `after` hook', (t) => {
 
   postman.checkTests({
     'my test suite my test': true,
-    'my hook': false,
-    'expected false to be truthy': false,
+    'my hook (expected false to be truthy)': false,
   });
 
   t.end();
@@ -149,10 +143,8 @@ test('Failed assertions + failed `after` hook', (t) => {
   });
 
   postman.checkTests({
-    'my test suite my test': false,
-    'expected 1 to equal 2': false,
-    'my hook': false,
-    'expected false to be truthy': false,
+    'my test suite my test (expected 1 to equal 2)': false,
+    'my hook (expected false to be truthy)': false,
   });
 
   t.end();
@@ -209,8 +201,7 @@ test('`after` hooks run in correct order even if there are failed assertions', (
 
   postman.checkTests({
     'my test suite my test': true,
-    'my second hook': false,
-    'expected 3 to equal 9999': false,
+    'my second hook (expected 3 to equal 9999)': false,
   });
 
   t.end();
@@ -240,8 +231,7 @@ test('`after` hooks run in correct order even if an error occurs', (t) => {
 
   postman.checkTests({
     'my test suite my test': true,
-    'my second hook': false,
-    BOOM: false,
+    'my second hook (BOOM)': false,
   });
 
   t.end();

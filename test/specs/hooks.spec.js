@@ -145,35 +145,26 @@ test('Hooks run in the correct order even if there are failed assertions', (t) =
   t.equal(i, 29);
 
   postman.checkTests({
-    'before #1': false,
-    'expected 1 to equal 9999': false,
-    'describe #1 beforeEach #1': false,
-    'expected 3 to equal 9999': false,
+    'before #1 (expected 1 to equal 9999)': false,
+    'describe #1 beforeEach #1 (expected 3 to equal 9999)': false,
     'describe #1 test #1': true,
-    'describe #1 afterEach #1': false,
-    'expected 6 to equal 9999': false,
+    'describe #1 afterEach #1 (expected 6 to equal 9999)': false,
 
-    'describe #1 describe #2 beforeEach #1': false,
-    'expected 8 to equal 9999': false,
+    'describe #1 describe #2 beforeEach #1 (expected 8 to equal 9999)': false,
     'describe #1 describe #2 test #2': true,
-    'describe #1 describe #2 afterEach #1': false,
-    'expected 11 to equal 9999': false,
+    'describe #1 describe #2 afterEach #1 (expected 11 to equal 9999)': false,
 
-    'describe #1 describe #2 describe #3 beforeEach #1': false,
-    'expected 13 to equal 9999': false,
+    'describe #1 describe #2 describe #3 beforeEach #1 (expected 13 to equal 9999)': false,
     'describe #1 describe #2 describe #3 test #3': true,
-    'describe #1 describe #2 describe #3 afterEach #1': false,
-    'expected 16 to equal 9999': false,
+    'describe #1 describe #2 describe #3 afterEach #1 (expected 16 to equal 9999)': false,
 
-    'expected 18 to equal 9999': false,
+    'describe #1 describe #2 beforeEach #1 (expected 18 to equal 9999)': false,
     'describe #1 describe #2 test #4': true,
-    'expected 21 to equal 9999': false,
-
-    'expected 23 to equal 9999': false,
+    'describe #1 describe #2 afterEach #1 (expected 21 to equal 9999)': false,
+    'describe #1 beforeEach #1 (expected 23 to equal 9999)': false,
     'describe #1 test #5': true,
-    'expected 26 to equal 9999': false,
-    'after #1': false,
-    'expected 28 to equal 9999': false,
+    'describe #1 afterEach #1 (expected 26 to equal 9999)': false,
+    'after #1 (expected 28 to equal 9999)': false,
   });
 
   t.end();
@@ -249,27 +240,22 @@ test('Hooks run in the correct order even if an error occurs', (t) => {
   t.equal(i, 29);
 
   postman.checkTests({
-    'before #1': false,
-    'error in before hook': false,
-    'describe #1 beforeEach #1': false,
-    'error in beforeEach hook': false,
+    'before #1 (error in before hook)': false,
+    'describe #1 beforeEach #1 (error in beforeEach hook)': false,
     'describe #1 test #1': true,
-    'describe #1 afterEach #1': false,
-    'error in afterEach hook': false,
+    'describe #1 afterEach #1 (error in afterEach hook)': false,
 
-    'describe #1 describe #2 beforeEach #1': false,
+    'describe #1 describe #2 beforeEach #1 (error in beforeEach hook)': false,
     'describe #1 describe #2 test #2': true,
-    'describe #1 describe #2 afterEach #1': false,
-
-    'describe #1 describe #2 describe #3 beforeEach #1': false,
+    'describe #1 describe #2 afterEach #1 (error in afterEach hook)': false,
+    'describe #1 describe #2 describe #3 beforeEach #1 (error in beforeEach hook)': false,
     'describe #1 describe #2 describe #3 test #3': true,
-    'describe #1 describe #2 describe #3 afterEach #1': false,
+    'describe #1 describe #2 describe #3 afterEach #1 (error in afterEach hook)': false,
 
     'describe #1 describe #2 test #4': true,
 
     'describe #1 test #5': true,
-    'after #1': false,
-    'error in after hook': false,
+    'after #1 (error in after hook)': false,
   });
 
   t.end();

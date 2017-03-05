@@ -9,8 +9,7 @@ test('`describe` without any args', (t) => {
   describe();
 
   postman.checkTests({
-    'describe #1': false,
-    'this.fn is not a function': false
+    'describe #1 (this.fn is not a function)': false,
   });
 
   t.end();
@@ -22,8 +21,7 @@ test('`describe` with only a name', (t) => {
   describe('my test suite');
 
   postman.checkTests({
-    'my test suite': false,
-    'this.fn is not a function': false
+    'my test suite (this.fn is not a function)': false,
   });
 
   t.end();
@@ -57,8 +55,7 @@ test('Error in `describe` block', (t) => {
   });
 
   postman.checkTests({
-    'my test suite': false,
-    'BOOM!': false
+    'my test suite (BOOM!)': false,
   });
 
   t.end();
@@ -72,8 +69,7 @@ test('Error in unnamed `describe` block', (t) => {
   });
 
   postman.checkTests({
-    'describe #1': false,
-    'BOOM!': false
+    'describe #1 (BOOM!)': false,
   });
 
   t.end();

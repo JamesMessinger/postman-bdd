@@ -11,8 +11,7 @@ test('`it` without any args', (t) => {
   });
 
   postman.checkTests({
-    'my test suite test #1': false,
-    'this.fn is not a function': false
+    'my test suite test #1 (this.fn is not a function)': false,
   });
 
   t.end();
@@ -26,8 +25,7 @@ test('`it` with only a name', (t) => {
   });
 
   postman.checkTests({
-    'my test suite my test': false,
-    'this.fn is not a function': false
+    'my test suite my test (this.fn is not a function)': false,
   });
 
   t.end();
@@ -86,8 +84,7 @@ test('Error in `it`', (t) => {
   });
 
   postman.checkTests({
-    'my test suite my test': false,
-    'BOOM!': false
+    'my test suite my test (BOOM!)': false,
   });
 
   t.end();
@@ -103,8 +100,7 @@ test('Error in unnamed `it`', (t) => {
   });
 
   postman.checkTests({
-    'my test suite test #1': false,
-    'BOOM!': false
+    'my test suite test #1 (BOOM!)': false,
   });
 
   t.end();
@@ -140,8 +136,7 @@ test('`it` with failed assertions', (t) => {
   });
 
   postman.checkTests({
-    'my test suite my test': false,
-    'expected \'hello\' to equal \'world\'': false,
+    'my test suite my test (expected \'hello\' to equal \'world\')': false,
   });
 
   t.end();
@@ -198,8 +193,7 @@ test('`it` runs in the corret order even if there are failed assertions', (t) =>
 
   postman.checkTests({
     'my test suite my first test': true,
-    'my test suite my second test': false,
-    'expected 2 to equal 9999': false,
+    'my test suite my second test (expected 2 to equal 9999)': false,
     'my test suite my third test': true,
   });
 
@@ -229,8 +223,7 @@ test('`it` runs in the corret order even if an error occurs', (t) => {
 
   postman.checkTests({
     'my test suite my first test': true,
-    'my test suite my second test': false,
-    BOOM: false,
+    'my test suite my second test (BOOM)': false,
     'my test suite my third test': true,
   });
 

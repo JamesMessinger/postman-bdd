@@ -10,8 +10,7 @@ test('`before` hook without any args', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'before #1': false,
-    'this.fn is not a function': false
+    'before #1 (this.fn is not a function)': false,
   });
 
   t.end();
@@ -24,8 +23,7 @@ test('`before` hook with only a name', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'my hook': false,
-    'this.fn is not a function': false
+    'my hook (this.fn is not a function)': false,
   });
 
   t.end();
@@ -60,8 +58,7 @@ test('Error in `before` hook', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'my hook': false,
-    'BOOM!': false
+    'my hook (BOOM!)': false,
   });
 
   t.end();
@@ -76,8 +73,7 @@ test('Error in unnamed `before` hook', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'before #1': false,
-    'BOOM!': false
+    'before #1 (BOOM!)': false,
   });
 
   t.end();
@@ -110,8 +106,7 @@ test('`before` hook with failed assertions', (t) => {
   describe('my test suite', () => { });
 
   postman.checkTests({
-    'my hook': false,
-    'expected false to be truthy': false
+    'my hook (expected false to be truthy)': false,
   });
 
   t.end();
@@ -128,8 +123,7 @@ test('Passed assertions + failed `before` hook', (t) => {
   });
 
   postman.checkTests({
-    'my hook': false,
-    'expected false to be truthy': false,
+    'my hook (expected false to be truthy)': false,
     'my test suite my test': true,
   });
 
@@ -149,10 +143,8 @@ test('Failed assertions + failed `before` hook', (t) => {
   });
 
   postman.checkTests({
-    'my hook': false,
-    'expected false to be truthy': false,
-    'my test suite my test': false,
-    'expected 1 to equal 2': false,
+    'my hook (expected false to be truthy)': false,
+    'my test suite my test (expected 1 to equal 2)': false,
   });
 
   t.end();
@@ -208,8 +200,7 @@ test('`before` hooks run in correct order even if there are failed assertions', 
   t.equal(i, 4);
 
   postman.checkTests({
-    'my second hook': false,
-    'expected 2 to equal 9999': false,
+    'my second hook (expected 2 to equal 9999)': false,
     'my test suite my test': true,
   });
 
@@ -239,8 +230,7 @@ test('`before` hooks run in correct order even if an error occurs', (t) => {
   t.equal(i, 4);
 
   postman.checkTests({
-    'my second hook': false,
-    BOOM: false,
+    'my second hook (BOOM)': false,
     'my test suite my test': true,
   });
 
