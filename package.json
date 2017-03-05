@@ -27,9 +27,6 @@
   },
   "license": "MIT",
   "main": "lib/index.js",
-  "browser": {
-    "querystring": "qs"
-  },
   "files": [
     "dist/postman-bdd.js",
     "dist/postman-bdd.js.map",
@@ -53,8 +50,7 @@
   "dependencies": {
     "chai": "^3.5.0",
     "cookiejar": "^2.0.6",
-    "is-ip": "^1.0.0",
-    "qs": "^6.3.1"
+    "is-ip": "^1.0.0"
   },
   "devDependencies": {
     "codacy-coverage": "^2.0.1",
