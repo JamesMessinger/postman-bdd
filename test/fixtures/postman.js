@@ -23,6 +23,13 @@ module.exports = class Postman {
   }
 
   /**
+   * Allows tests to set modify Postman's `request` object
+   */
+  get request () {
+    return global.request;
+  }
+
+  /**
    * Allows tests to set modify Postman's `responseCode` object
    */
   get responseCode () {
@@ -74,6 +81,12 @@ function initPostmanSandbox () {
     code: 0,
     name: '',
     detail: '',
+  };
+  global.request = {
+    method: '',
+    url: '',
+    headers: {},
+    data: {},
   };
 
   global.postman = {
