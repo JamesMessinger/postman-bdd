@@ -1,114 +1,618 @@
 {
 	"variables": [],
 	"info": {
-		"name": "Postman BDD",
-		"_postman_id": "d49b90ac-097b-9a91-14d1-f363c1b66147",
-		"description": "",
+		"name": "Postman BDD Examples",
+		"_postman_id": "edb43a11-5926-0980-05a4-ac4077f27e8a",
+		"description": "This collection demonstrates how to use [Postman BDD](https://github.com/BigstickCarpet/postman-bdd) for both simple and complex API test cases.  It also serves as a suite of tests to make sure Postman BDD works correctly in the Postman Chrome app, the Postman native apps, the Newman CLI, and Postman Monitors.\n\n# Environment\nThis collection is intended to be used with either the \"_Postman BDD (GitHub)_\" or \"_Postman BDD (localhost)_\" environment, which will determine whether it loads the currently-published version of Postman BDD (from GitHub), or the in-development version (from localhost).\n\nIf the collection is run without either of these environments, then it will load Postman BDD from GitHub by default.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "Install Postman BDD",
-			"event": [
+			"name": "001 - Setup",
+			"description": "",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							"// \"install\" Postman BDD",
-							"postman.setGlobalVariable('postmanBDD', responseBody);",
-							""
-						]
-					}
-				},
-				{
-					"listen": "prerequest",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							"// If the \"postman_bdd_path\" environment variable is set, then we'll use it.",
-							"// Otherwise, we'll default to the published version",
-							"if (!environment.postman_bdd_path) {",
-							"    postman.setGlobalVariable('postman_bdd_path', 'http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js');",
-							"}",
-							""
-						]
-					}
+					"name": "Install Postman BDD",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// \"install\" Postman BDD",
+									"postman.setGlobalVariable('postmanBDD', responseBody);",
+									""
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// If the \"postman_bdd_path\" environment variable is set, then we'll use it.",
+									"// Otherwise, we'll default to the published version",
+									"if (!environment.postman_bdd_path) {",
+									"    postman.setGlobalVariable('postman_bdd_path', 'http://bigstickcarpet.com/postman-bdd/dist/postman-bdd.min.js');",
+									"}",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "{{postman_bdd_path}}",
+						"method": "GET",
+						"header": [
+							{
+								"key": "Cache-Control",
+								"value": "no-cache",
+								"description": ""
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"description": "This request downloads [Postman BDD](https://github.com/BigstickCarpet/postman-bdd) and then \"installs\" it by setting a global variable\n"
+					},
+					"response": []
 				}
-			],
-			"request": {
-				"url": "{{postman_bdd_path}}",
-				"method": "GET",
-				"header": [
-					{
-						"key": "Cache-Control",
-						"value": "no-cache",
-						"description": ""
-					}
-				],
-				"body": {},
-				"description": "Downloads [Postman BDD](https://github.com/BigstickCarpet/postman-bdd) and then \"installs\" it by setting a global variable\n"
-			},
-			"response": []
+			]
 		},
 		{
-			"name": "Chai HTTP Assertions",
-			"event": [
+			"name": "002 - Chai HTTP Assertions",
+			"description": "The requests in this folder demonstrate how to use [Chai HTTP assertions](https://github.com/chaijs/chai-http#assertions) to to test various aspects of your API responses, such as as status codes, response time, headers, body content, etc.",
+			"item": [
 				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"exec": [
-							"eval(globals.postmanBDD);",
-							"",
-							"chai.Assertion.addMethod('dateString', function() {",
-							"  var dateStringPattern = /^\\d{4}-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d(\\.\\d+)?Z$/i;",
-							"  var value = chai.util.flag(this, 'object');",
-							"  var negate = chai.util.flag(this, 'negate');",
-							"  if (negate) {",
-							"      value.should.not.match(dateStringPattern);",
-							"  }",
-							"  else {",
-							"      value.should.match(dateStringPattern);",
-							"  }",
-							"});",
-							"",
-							"describe('Chai HTTP assertions', function() {",
-							"    it('should detect content type', function() {",
-							"        response.should.be.json;",
-							"        response.should.not.be.text;",
-							"        response.should.not.be.html;",
-							"    });",
-							"    ",
-							"    it('should parse the body', function() {",
-							"        response.text.should.be.a('string').with.length.above(100);",
-							"        response.body.should.be.an('object');",
-							"        response.body.url.should.equal('https://httpbin.org/get');",
-							"    });",
-							"    ",
-							"    it('should parse headers', function() {",
-							"        response.should.have.header('content-length');",
-							"        response.should.have.header('content-type', 'application/json');",
-							"    });",
-							"    ",
-							"    it('should support custom assertions', function() {",
-							"       ('2016-04-22T05:30:00.123Z').should.be.a.dateString();",
-							"       ('hello world').should.not.be.a.dateString();",
-							"    });",
-							"});",
-							""
-						]
-					}
+					"name": "Successful response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"it('should be a successful response', () => {",
+									"    response.ok.should.be.true;",
+									"    response.should.have.status(200);",
+									"    response.statusType.should.equal(2);",
+									"    response.error.should.be.false;",
+									"});",
+									"",
+									"it('should respond in a timely manner', () => {",
+									"    response.time.should.be.below(500);",
+									"});",
+									"",
+									"it('should return HTML', () => {",
+									"    response.should.be.html;",
+									"    response.should.have.header('Content-Type', 'text/html; charset=utf-8');",
+									"    response.type.should.equal('text/html');",
+									"    response.charset.should.equal('utf-8');",
+									"});",
+									"",
+									"it('should contain the expected content', () => {",
+									"    response.text.should.be.a('string').with.length.above(100);",
+									"    response.text.should.contain('<html>');",
+									"    response.text.should.match(/^<\\!DOCTYPE html>(.*\\n)+<\\/html>$/);",
+									"",
+									"    // response.body and response.text are both strings, since the response is HTML.",
+									"    // If the response were JSON or XML, then response.body would be the parsed structure instead.",
+									"    response.body.should.equal(response.text);",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://httpbin.org/html",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request returns a successful response and performs some basic assertions on it, such as testing the status code, response time, body contents, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Error response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"it('should be an error response', () => {",
+									"    response.ok.should.be.false;            // 2XX",
+									"    response.error.should.be.true;          // 4XX or 5XX",
+									"    response.clientError.should.be.true;    // 4XX",
+									"    response.serverError.should.be.false;   // 5XX",
+									"    response.should.have.status(404);",
+									"    response.statusType.should.equal(4);",
+									"});",
+									"",
+									"it('should be an empty response', () => {",
+									"    response.text.should.have.lengthOf(0);",
+									"    response.should.have.header('Content-Length', '0');",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://httpbin.org/status/404",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request returns an error response and performs some basic assertions on it, such as testing the status code, headers, body contents, etc."
+					},
+					"response": []
+				},
+				{
+					"name": "Redirect response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"// NOTE: These tests will only pass if you disable the \"Automatically follow redirects\" option in Postman",
+									"",
+									"it('should be a redirect response', () => {",
+									"    response.redirect.should.be.true;",
+									"    response.should.have.status(301);",
+									"    response.statusType.should.equal(3);",
+									"});",
+									"",
+									"it('should redirect to wikipedia.org', () => {",
+									"    response.should.have.header('Location', 'http://www.wikipedia.org/');",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "http://wikipedia.com",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request attempts to load `wikipedia.com`, which automatically redirects to `wikipedia.org`.  The test script checks whether the response is an HTTP redirect.\n\n> **NOTE:** By default, Postman automatically follows redirects (e.g. HTTP status codes 301, 302, 303, 307, 308).  So, if your API uses redirects, and you want to be able to test that functionality, then you'll need to disable the \"_Automatically follow redirects_\" option in Postman."
+					},
+					"response": []
+				},
+				{
+					"name": "JSON response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"it('should return JSON', () => {",
+									"    response.should.be.json;",
+									"    response.should.have.header('Content-Type', 'application/json');",
+									"    response.type.should.equal('application/json');",
+									"});",
+									"",
+									"it('should contain the un-parsed JSON text', () => {",
+									"    response.text.should.be.a('string').with.length.above(100);",
+									"    response.text.should.contain('\"args\": {}');",
+									"    response.text.should.match(/^\\{\\n(.*\\n)+\\}\\n$/);",
+									"});",
+									"",
+									"it('should contain the parsed JSON object', () => {",
+									"    response.body.should.be.an('object').with.keys(['args', 'headers', 'origin', 'url']);",
+									"    response.body.args.should.be.an('object').and.empty;",
+									"    response.body.headers.should.be.an('object').and.not.empty;",
+									"    response.body.origin.should.be.an.ip;",
+									"    response.body.url.should.equal('https://httpbin.org/get');",
+									"});",
+									"",
+									"it('should match against a JSON Schema', () => {",
+									"    // For more information about JSON Schema, see https://spacetelescope.github.io/understanding-json-schema/basics.html",
+									"    response.body.should.have.schema({",
+									"        type: 'object',",
+									"        required: ['args', 'headers', 'origin', 'url'],",
+									"        properties: {",
+									"            args: {",
+									"                type: 'object',",
+									"            },",
+									"            headers: {",
+									"                type: 'object',",
+									"            },",
+									"            origin: {",
+									"                type: 'string',",
+									"                minLength: 7,",
+									"                pattern: '\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3}\\\\.\\\\d{1,3}'",
+									"            },",
+									"            url: {",
+									"                type: 'string',",
+									"                minLength: 1,",
+									"                pattern: 'https?://(\\\\w+\\\\.)+\\\\w+(/\\\\w+)*'",
+									"            }",
+									"        }",
+									"    });",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://httpbin.org/get",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request returns a JSON response.  Postman BDD automatically recognizes JSON responses and parses them for you.  The original text response is exposed as `response.text`, and the parsed JSON structure is exposed as `response.body`."
+					},
+					"response": []
+				},
+				{
+					"name": "XML response",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"it('should return XML', () => {",
+									"    response.should.be.xml;",
+									"    response.should.have.header('Content-Type', 'application/xml');",
+									"    response.type.should.equal('application/xml');",
+									"});",
+									"",
+									"it('should contain the un-parsed XML text', () => {",
+									"    response.text.should.be.a('string').with.length.above(100);",
+									"    response.text.should.contain('<!-- TITLE SLIDE -->');",
+									"    response.text.should.match(/^<\\?xml version='1.0' /);",
+									"});",
+									"",
+									"it('should contain the parsed XML object', () => {",
+									"    response.body.should.be.an('object').with.keys(['slideshow']);",
+									"    response.body.slideshow.$.title.should.equal('Sample Slide Show');",
+									"    response.body.slideshow.slide.should.be.an('array').with.lengthOf(2);",
+									"    response.body.slideshow.slide[0].title.should.equal('Wake up to WonderWidgets!');",
+									"    response.body.slideshow.slide[1].title.should.equal('Overview');",
+									"});",
+									"",
+									"it('should match against a JSON Schema', () => {",
+									"    // For more information about JSON Schema, see https://spacetelescope.github.io/understanding-json-schema/basics.html",
+									"    response.body.should.have.schema({",
+									"        type: 'object',",
+									"        required: ['slideshow'],",
+									"        properties: {",
+									"            slideshow: {",
+									"                type: 'object',",
+									"                required: ['$', 'slide'],",
+									"                properties: {",
+									"                    $: {",
+									"                        type: 'object',",
+									"                        required: ['title', 'date', 'author'],",
+									"                    },",
+									"                    slide: {",
+									"                        type: 'array',",
+									"                        minItems: 1,",
+									"                        items: {",
+									"                            type: 'object',",
+									"                            required: ['$', 'title']",
+									"                        }",
+									"                    }",
+									"                }",
+									"            },",
+									"        }",
+									"    });",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://httpbin.org/xml",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request returns an XML response.  Postman BDD automatically recognizes XML responses and parses them for you.  The original text response is exposed as `response.text`, and the parsed XML structure is exposed as `response.body`."
+					},
+					"response": []
+				},
+				{
+					"name": "Cookies",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"it('should have cookies', () => {",
+									"    response.should.have.cookies;",
+									"    response.should.have.cookie('myCookieA');",
+									"    response.should.have.cookie('myCookieB');",
+									"});",
+									"",
+									"it('should set the cookies to the correct values', () => {",
+									"    response.should.have.cookie('myCookieA', '12345');",
+									"    response.should.have.cookie('myCookieB', 'xyz');",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "http://httpbin.org/cookies/set?myCookieA=12345&myCookieB=xyz",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request sets some cookies, and the test script checks to verify that they were set correctly.\n\n> **NOTE:** If you're using the Postman Chrome app, then you will need to enable the [Postman Interceptor](https://www.getpostman.com/docs/interceptor_cookies); otherwise, cookies cannot be read.  This limitation does _not_ apply to the Postman native apps, the Newman CLI, or Postman Monitors."
+					},
+					"response": []
 				}
-			],
-			"request": {
-				"url": "https://httpbin.org/get",
-				"method": "GET",
-				"header": [],
-				"body": {},
-				"description": ""
-			},
-			"response": []
+			]
+		},
+		{
+			"name": "003 - Custom Assertions",
+			"description": "",
+			"item": [
+				{
+					"name": "How to create custom assertions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"// Load the \"myCustomAssertions\" Chai.js plug-in that we defined in the Pre-request script",
+									"eval(globals.myCustomAssertions);",
+									"chai.use(myCustomAssertions);",
+									"",
+									"// Now we can use our custom assertions in tests...",
+									"it('should have valid date/time properties', () => {",
+									"    let user = response.body.results[0];",
+									"    user.dob.should.be.a.dateString;",
+									"    user.registered.should.be.a.dateString;",
+									"});",
+									"",
+									"it('should be a valid user resource', () => {",
+									"    response.body.results[0].should.be.a.userResource();",
+									"});",
+									""
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Storing the custom assertions in a Postman global variable",
+									"// allows you to re-use them on subsequent requests",
+									"postman.setGlobalVariable('myCustomAssertions', myCustomAssertions);",
+									"",
+									"/**",
+									" * For more information about creating custom Chai.js assertions, see",
+									" * http://chaijs.com/guide/plugins/#composing-an-assertion",
+									" * ",
+									" * @param {object} chai - The Chai.js library",
+									" * @param {object} util - Chai.js utility functions for writing custom assertions",
+									" */",
+									"function myCustomAssertions (chai, util) {",
+									"    ",
+									"    // This is a simple assertion that checks whether a value is a date/time string",
+									"    // (e.g. \"1947-07-01 06:35:55\")",
+									"    chai.Assertion.addProperty('dateString', function () {",
+									"        const dateStringPattern = /^\\d{4}-\\d\\d-\\d\\d \\d\\d:\\d\\d:\\d\\d$/;",
+									"",
+									"        this.assert(",
+									"            dateStringPattern.test(this._obj),",
+									"            'expected #{act} to be a date/time string',",
+									"            'expected #{act} not to be a date/time string'",
+									"        );",
+									"    });",
+									"    ",
+									"    ",
+									"    // This assertion checks whether a value is a valid User resource.",
+									"    // This is an example of defining custom API-specific assertions.",
+									"    chai.Assertion.addMethod('userResource', function () {",
+									"        let assertion = new chai.Assertion(this._obj);",
+									"        util.transferFlags(this, assertion);",
+									"        ",
+									"        assertion.has.schema({",
+									"           type: 'object',",
+									"           required: ['id', 'name', 'gender', 'location', 'email', 'dob', 'phone', 'cell'],",
+									"           properties: {",
+									"               name: {",
+									"                   type: 'object',",
+									"                   required: ['title', 'first', 'last'],",
+									"               },",
+									"               gender: {",
+									"                   type: 'string',",
+									"                   enum: ['male', 'female'],",
+									"               },",
+									"               email: {",
+									"                   type: 'string',",
+									"                   minLength: 5,",
+									"                   maxLength: 100,",
+									"                   pattern: '^.+@example\\\\.com$',",
+									"               }",
+									"           }",
+									"        });",
+									"    });",
+									"    ",
+									"}",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://randomuser.me/api",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "[Chai.js](http://chaijs.com/) allows you to define your own [custom assertions](http://chaijs.com/guide/plugins/#composing-an-assertion), in addition to all the [built-in assertions](http://chaijs.com/api/bdd/) that it already has.  This makes it *super easy* to create your own API-specific assertions that test for specific structure or business rules.\n\nThis request demonstrates how to create a couple custom assertions and store them in a Postman global variable so that you can use them in subsequent requests.  If you didn't store them in a global variable, then the assertions would _only_ be available for the _current_ request, which is far less useful."
+					},
+					"response": []
+				},
+				{
+					"name": "Re-using assertions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"// Load the \"myCustomAssertions\" Chai.js plug-in that we defined in the previous request",
+									"eval(globals.myCustomAssertions);",
+									"chai.use(myCustomAssertions);",
+									"",
+									"describe('Validate multiple users', () => {",
+									"",
+									"    it('should return an array of users', () => {",
+									"        response.body.results.should.be.an('array').with.length.at.least(1);",
+									"    });",
+									"",
+									"    // Loop through each user and make sure they're all valid",
+									"    for (let i = 0; i < response.body.results.length; i++) {",
+									"        describe(`User #${i+1}`, () => {",
+									"    ",
+									"            it('should have valid date/time properties', () => {",
+									"                let user = response.body.results[i];",
+									"                user.dob.should.be.a.dateString;",
+									"                user.registered.should.be.a.dateString;",
+									"            });",
+									"            ",
+									"            it('should be a valid user resource', () => {",
+									"                response.body.results[i].should.be.a.userResource();",
+									"            });",
+									"            ",
+									"        });",
+									"    }",
+									"",
+									"});",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://randomuser.me/api/?results=5",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "This request demonstrates how to re-use custom assertions that were defined in a previous request. Normally in Postman, any functions that you define in a script are only available for _that_ script.  But by storing a function in a Postman global variable, you can re-use it across multiple requests in your collection."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "004 - Advanced Stuff",
+			"description": "",
+			"item": [
+				{
+					"name": "Before/After Hooks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									"",
+									"var counter;",
+									"",
+									"// The \"before\" hook runs ONCE, before the first test suite or test",
+									"before('Initialize the counter', () => {",
+									"    counter = 0;",
+									"})",
+									"",
+									"// The \"beforeEach\" hook runs before EACH test",
+									"beforeEach('Increment the counter before each test', () => {",
+									"    counter++;",
+									"    counter.should.be.at.least(1);",
+									"});",
+									"",
+									"// The \"afterEach\" hook runs after EACH test",
+									"afterEach('Increment the counter again after each test', () => {",
+									"    counter++;",
+									"    counter.should.be.at.least(2);",
+									"});",
+									"",
+									"// The \"after\" hook runs ONCE, after the test suite finishes",
+									"after('Check the counter after all tests finish', () => {",
+									"    counter.should.equal(4);",
+									"});",
+									"",
+									"// A \"describe\" block marks the start & end of a test suite",
+									"describe('My test suite', () => {",
+									"    ",
+									"    it('first test', () => {",
+									"        counter.should.equal(1);",
+									"    });",
+									"    ",
+									"    it('second test', () => {",
+									"        counter.should.equal(3);",
+									"    });",
+									"    ",
+									"});",
+									"",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://httpbin.org/html",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "TODO: Add a description here"
+					},
+					"response": []
+				},
+				{
+					"name": "Reusing Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"eval(globals.postmanBDD);",
+									""
+								]
+							}
+						}
+					],
+					"request": {
+						"url": "https://httpbin.org/html",
+						"method": "GET",
+						"header": [],
+						"body": {},
+						"description": "TODO: Add a description here"
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

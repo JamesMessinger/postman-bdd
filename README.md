@@ -112,7 +112,7 @@ You now have Postman BDD installed globally.  You can use it in any Postman requ
 eval(globals.postmanBDD);
 ```
 
-After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](docs/sample_collection.json):
+After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](test/newman/postman_bdd.collection.json):
 
 ![Postman BDD Example](docs/example.gif)
 
