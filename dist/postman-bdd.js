@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v2.1.0 (March 5th 2017)
+ * Postman BDD v3.0.0 (March 5th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -28,7 +28,7 @@ module.exports = chaiHttp;
  * Copyright(c) 2011-2012 Jake Luer <jake@alogicalparadox.com>
  * MIT Licensed
  */
-function chaiHttp (chai) {
+function chaiHttp (chai, _) {
   var Assertion = chai.Assertion;
 
   /**
@@ -365,8 +365,22 @@ function chaiHttp (chai) {
    */
   chai.Assertion.addMethod('schema', function (schema) {
     var valid = tv4.validate(this._obj, schema);
-    if (!valid) {
-      throw tv4.error;
+    var negate = _.flag(this, 'negate');
+
+    if ((valid && negate) || (!valid && !negate)) {
+      var dataPath = tv4.error.dataPath;
+      var schemaPath = tv4.error.schemaPath;
+      var message = tv4.error.message;
+
+      if (dataPath) {
+        var propPath = dataPath.substr(1).split('/').join('.');
+        message = propPath + ' is invalid. ' + message;
+      }
+
+      var error = new SyntaxError(message);
+      error.dataPath = dataPath;
+      error.schemaPath = schemaPath;
+      throw error;
     }
   });
 }
@@ -759,6 +773,23 @@ var log = module.exports = {
   isEnabled: function (level) {
     return levels.indexOf(options.logLevel) >= levels.indexOf(level);
   },
+
+  /**
+   * Returns a POJO containing all the properties of the given Error object.
+   * This is necessary because Postman's `console.log()` methods don't include
+   * properties from the Error prototype.
+   *
+   * @param {Error} err
+   * @returns {object|undefined}
+   */
+  errorToPOJO: function (err) {
+    if (err && typeof err === 'object') {
+      return Object.keys(err).concat(['name', 'message', 'stack']).reduce(function (pojo, key) {
+        pojo[key] = err[key];
+        return pojo;
+      }, {});
+    }
+  },
 };
 
 levels.forEach(function (level) {
@@ -789,6 +820,7 @@ module.exports = {
 },{}],8:[function(require,module,exports){
 'use strict';
 
+var log = require('./log');
 var cookies = require('./cookies');
 
 /**
@@ -815,7 +847,7 @@ module.exports = function SuperAgent () {
       }
       else {
         name = (name || '').toLowerCase();
-        return superAgent.response.headers[name];
+        return this.headers[name];
       }
     },
 
@@ -830,7 +862,7 @@ module.exports = function SuperAgent () {
         return postman.getResponseCookie(name);
       }
       else {
-        return cookies.getCookie(superAgent.response.cookies, name);
+        return cookies.getCookie(this.cookies, name);
       }
     },
   };
@@ -849,7 +881,7 @@ module.exports = function SuperAgent () {
      * @type {number}
      */
     statusType: function () {
-      return Math.floor(superAgent.response.status / 100);
+      return Math.floor(this.status / 100);
     },
 
     /**
@@ -860,7 +892,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     info: function () {
-      return superAgent.response.statusType === 1;
+      return this.statusType === 1;
     },
 
     /**
@@ -871,7 +903,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     ok: function () {
-      return superAgent.response.statusType === 2;
+      return this.statusType === 2;
     },
 
     /**
@@ -882,7 +914,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     redirect: function () {
-      return superAgent.response.statusType === 3;
+      return this.statusType === 3;
     },
 
     /**
@@ -893,7 +925,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     clientError: function () {
-      return superAgent.response.statusType === 4;
+      return this.statusType === 4;
     },
 
     /**
@@ -904,7 +936,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     serverError: function () {
-      return superAgent.response.statusType === 5;
+      return this.statusType === 5;
     },
 
     /**
@@ -915,7 +947,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     error: function () {
-      return superAgent.response.clientError || superAgent.response.serverError;
+      return this.clientError || this.serverError;
     },
 
     /**
@@ -926,7 +958,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     accepted: function () {
-      return superAgent.response.status === 202;
+      return this.status === 202;
     },
 
     /**
@@ -937,7 +969,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     noContent: function () {
-      return superAgent.response.status === 204 || superAgent.response.status === 1223;
+      return this.status === 204 || this.status === 1223;
     },
 
     /**
@@ -948,7 +980,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     badRequest: function () {
-      return superAgent.response.status === 400;
+      return this.status === 400;
     },
 
     /**
@@ -959,7 +991,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     unauthorized: function () {
-      return superAgent.response.status === 401;
+      return this.status === 401;
     },
 
     /**
@@ -970,7 +1002,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     notAcceptable: function () {
-      return superAgent.response.status === 406;
+      return this.status === 406;
     },
 
     /**
@@ -981,7 +1013,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     notFound: function () {
-      return superAgent.response.status === 404;
+      return this.status === 404;
     },
 
     /**
@@ -992,7 +1024,7 @@ module.exports = function SuperAgent () {
      * @type {boolean}
      */
     forbidden: function () {
-      return superAgent.response.status === 403;
+      return this.status === 403;
     },
 
     /**
@@ -1008,12 +1040,17 @@ module.exports = function SuperAgent () {
      * @type {object}
      */
     body: function () {
-      try {
-        return JSON.parse(superAgent.response.text);
-      }
-      catch (e) {
-        return {};
-      }
+      var parsedBody = parseResponeBody(this);
+
+      // Replace this getter function with the parsed response body
+      Object.defineProperty(this, 'body', {
+        configurable: true,
+        enumerable: true,
+        writable: true,
+        value: parsedBody,
+      });
+
+      return parsedBody;
     },
 
     /**
@@ -1051,7 +1088,7 @@ module.exports = function SuperAgent () {
      * @type {string}
      */
     type: function () {
-      var contentType = superAgent.response.getHeader('content-type') || '';
+      var contentType = this.getHeader('content-type') || '';
       return contentType.split(';')[0];
     },
 
@@ -1060,7 +1097,7 @@ module.exports = function SuperAgent () {
      * @type {string}
      */
     charset: function () {
-      var contentType = superAgent.response.getHeader('content-type') || '';
+      var contentType = this.getHeader('content-type') || '';
       var match = /charset=([a-zA-Z0-9_-]+)/i.exec(contentType);
       if (!match) { return ''; }
       return match[1];
@@ -1097,7 +1134,43 @@ function defineProperties (obj, getters) {
   });
 }
 
-},{"./cookies":3}],9:[function(require,module,exports){
+/**
+ * Parses the response body as JSON, XML, or plain-text
+ *
+ * @param {object} response
+ * @returns {object|string}
+ */
+function parseResponeBody (response) {
+  if (response.type.indexOf('json') >= 0) {
+    // The response looks like a JSON mime type (e.g. "text/json", "application/hal+json", etc.)
+    try {
+      return JSON.parse(response.text);
+    }
+    catch (err) {
+      log.error('Unable to parse the response body as JSON', log.errorToPOJO(err));
+    }
+  }
+
+  if (response.type.indexOf('xml') >= 0) {
+    // The response looks like an XML mime type (e.g. "text/xml", "application/soap+xml", etc.)
+    try {
+      var json = xml2Json(response.text);
+
+      // NOTE: The objects that xml2Json returns don't inherit from the Object prototype,
+      // which means they don't work with Chai's `should` syntax.  So we re-parse the JSON
+      // structure to convert the objects to "normal" objects that work with Chai.
+      return JSON.parse(JSON.stringify(json));
+    }
+    catch (err) {
+      log.error('Unable to parse the response body as XML', log.errorToPOJO(err));
+    }
+  }
+
+  // If all else fails, just return the response body as plain-text
+  return response.text;
+}
+
+},{"./cookies":3,"./log":6}],9:[function(require,module,exports){
 'use strict';
 
 var log = require('./log');
@@ -1181,30 +1254,13 @@ Runnable.prototype.success = function (fullTitle) {
  * @param {string} [fullTitle] - The full title (including any parent Runnables)
  */
 Runnable.prototype.failure = function (err, fullTitle) {
-  log.error('failed: ' + fullTitle, errorToPOJO(err));
+  fullTitle = fullTitle || this.title;
+  log.error('failed: ' + fullTitle, log.errorToPOJO(err));
 
   this.result = false;
   this.error = err;
-  this.state.results[fullTitle || this.title] = false;
-  this.state.results[err.message] = false;
+  this.state.results[fullTitle + ' (' + err.message + ')'] = false;
 };
-
-/**
- * Returns a POJO containing all the properties of the given Error object.
- * This is necessary because Postman's `console.log()` methods don't include
- * properties from the Error prototype.
- *
- * @param {Error} err
- * @returns {object|undefined}
- */
-function errorToPOJO (err) {
-  if (err && typeof err === 'object') {
-    return Object.keys(err).concat(['name', 'message', 'stack']).reduce(function (pojo, key) {
-      pojo[key] = err[key];
-      return pojo;
-    }, {});
-  }
-}
 
 },{"./log":6}],10:[function(require,module,exports){
 'use strict';
