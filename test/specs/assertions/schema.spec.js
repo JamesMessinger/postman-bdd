@@ -43,20 +43,33 @@ test('JSON schema assertion without Content-Type header', (t) => {
   t.end();
 });
 
-test('JSON schema assertion with non-JSON content', (t) => {
+test('JSON schema assertion with XML content', (t) => {
   let postman = new Postman(t);
 
   postman.responseHeaders['content-type'] = 'text/xml';
   postman.responseBody = '<person><name>John Doe</name><age>35</age></person>';
 
   t.doesNotThrow(() => {
-    response.body.should.have.schema({ type: 'string', minLength: 10 });
-    expect(response.body).to.have.schema({ type: 'string' });
+    response.body.should.have.schema({
+      type: 'object',
+      required: ['person'],
+      properties: {
+        person: {
+          type: 'object',
+          properties: {
+            name: {
+              type: 'string',
+              minLength: 1,
+            }
+          }
+        }
+      }
+    });
   });
 
   t.throws(() =>
-    response.body.should.have.schema({ type: 'object' }),
-    /Invalid type: string \(expected object\)/
+    response.body.should.have.schema({ type: 'string' }),
+    /Invalid type: object \(expected string\)/
   );
 
   t.end();

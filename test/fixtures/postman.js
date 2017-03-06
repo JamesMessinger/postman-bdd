@@ -1,6 +1,7 @@
 'use strict';
 
 const tv4 = require('tv4');
+const xml2js = require('xml2js');
 
 /**
  * A mock instance of the Postman scripting runtime for tests.
@@ -75,7 +76,6 @@ module.exports = class Postman {
  * @link https://www.getpostman.com/docs/sandbox
  */
 function initPostmanSandbox () {
-  global.tv4 = tv4;
   global.tests = {};
   global.responseBody = '';
   global.responseTime = 0;
@@ -90,6 +90,20 @@ function initPostmanSandbox () {
     url: '',
     headers: {},
     data: {},
+  };
+
+  global.tv4 = tv4;
+  global.xml2Json = function (xml) {
+    let options = {
+      explicitArray: false,
+      async: false,
+      trim: true,
+      mergeAttrs: false
+    };
+
+    let JSON = {};
+    xml2js.parseString(xml, options, (err, result) => JSON = result);
+    return JSON;
   };
 }
 
