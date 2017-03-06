@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v4.0.0 (March 6th 2017)
+ * Postman BDD v4.0.1 (March 6th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -2673,7 +2673,7 @@ module.exports = function (chai, _) {
    *     expect([ 1, 2, 3 ]).to.have.length.within(2,4);
    *
    * *Deprecation notice:* Using `length` as an assertion will be deprecated
-   * in version 2.4.0 and removed in 4.0.0. Code using the old style of
+   * in version 2.4.0 and removed in 3.0.0. Code using the old style of
    * asserting for `length` property value using `length(value)` should be
    * switched to use `lengthOf(value)` instead.
    *

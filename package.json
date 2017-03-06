@@ -1,6 +1,6 @@
 {
   "name": "postman-bdd",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "BDD test framework for Postman and Newman",
   "keywords": [
     "rest",
