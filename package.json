@@ -42,7 +42,7 @@
     "tape": "tape \"test/**/*.spec.js\" | tap-spec",
     "newman": "newman run test/newman/postman_bdd_collection.json -r cli,html --reporter-html-export test/newman/report.html",
     "newman-local": "newman run test/newman/postman_bdd_collection.json -e test/newman/postman_bdd_localhost_environment.json -r cli,html --reporter-html-export test/newman/report.html",
-    "start": "npm run build -- --watch & http-server -o -c-1",
+    "start": "npm run build -- --watch & http-server -c-1",
     "upgrade": "npm-check -u",
     "bump": "bump --prompt --grep dist/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
