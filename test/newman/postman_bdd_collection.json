@@ -366,7 +366,7 @@
 		},
 		{
 			"name": "003 - Custom Assertions",
-			"description": "",
+			"description": "[Chai.js](http://chaijs.com/) allows you to define your own [custom assertions](http://chaijs.com/guide/plugins/#composing-an-assertion), in addition to all the [built-in assertions](http://chaijs.com/api/bdd/) that it already has.  This makes it *super easy* to create your own API-specific assertions that test for specific structure or business rules.\n",
 			"item": [
 				{
 					"name": "How to create custom assertions",
@@ -525,11 +525,11 @@
 			]
 		},
 		{
-			"name": "004 - Advanced Stuff",
-			"description": "",
+			"name": "004 - Before/After Hooks",
+			"description": "Postman-BDD provides four \"hooks\" that make it easy to automatically run certain tests or setup/teardown code for every request and/or every test.\n\n|Hook        |Description\n|:-----------|:------------------------------------\n|`before`    |Runs once per request, before any tests\n|`after`     |Runs once per request, after the test suite finishes\n|`beforeEach`|Runs before every test\n|`afterEach` |Runs after every test\n",
 			"item": [
 				{
-					"name": "Before/After Hooks",
+					"name": "Simple example",
 					"event": [
 						{
 							"listen": "test",
@@ -585,12 +585,12 @@
 						"method": "GET",
 						"header": [],
 						"body": {},
-						"description": "TODO: Add a description here"
+						"description": "This request demonstrates the order that each of the Postman BDD hooks runs."
 					},
 					"response": []
 				},
 				{
-					"name": "Reusing Code",
+					"name": "Re-using hooks",
 					"event": [
 						{
 							"listen": "test",
@@ -598,13 +598,51 @@
 								"type": "text/javascript",
 								"exec": [
 									"eval(globals.postmanBDD);",
+									"",
+									"// Load the hooks that we defined in the Pre-request script",
+									"eval(globals.myHooks);",
+									"myHooks();",
+									"",
+									"// The two \"before\" hooks will automatically run before this test",
+									"it('should be a valid response', () => {",
+									"    response.body.should.be.an('object').with.keys(['results', 'info']);",
+									"    response.body.results.should.be.an('array').with.lengthOf(1);",
+									"});",
+									""
+								]
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Storing the hooks in a Postman global variable",
+									"// allows you to re-use them on subsequent requests",
+									"postman.setGlobalVariable('myHooks', myHooks);",
+									"",
+									"function myHooks () {",
+									"    ",
+									"    // These hooks enforce certain rules for every API response.",
+									"",
+									"    before('ensure valid response code', () => {",
+									"        // Only allow certain HTTP status codes",
+									"        response.status.should.be.oneOf([200, 404, 500]);",
+									"    });",
+									"    ",
+									"    before('ensure valid content type', () => {",
+									"        // Only allow JSON responses",
+									"        response.type.should.equal('application/json');",
+									"    });",
+									"",
+									"}",
 									""
 								]
 							}
 						}
 					],
 					"request": {
-						"url": "https://httpbin.org/html",
+						"url": "https://randomuser.me/api",
 						"method": "GET",
 						"header": [],
 						"body": {},

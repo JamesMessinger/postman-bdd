@@ -112,21 +112,25 @@ You now have Postman BDD installed globally.  You can use it in any Postman requ
 eval(globals.postmanBDD);
 ```
 
-After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](test/newman/postman_bdd.collection.json):
+After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6YtyvYo):
 
 ![Postman BDD Example](docs/example.gif)
 
 
-API Documentation
+Writing Tests
 --------------------------
-The Postman BDD API is identical to [Chai HTTP's API](https://github.com/chaijs/chai-http#assertions), which is in-turn based on [SuperAgent's API](https://visionmedia.github.io/superagent/#response-properties).
+Postman BDD uses [Chai.js](http://chaijs.com/api/bdd/), [Chai-HTTP](https://github.com/chaijs/chai-http#assertions), and [SuperAgent](https://visionmedia.github.io/superagent/#response-properties) under the hood, so you have access to all three of those libraries to write your tests.  Of course, you also have access to the [Postman scripting environment](https://www.getpostman.com/docs/sandbox), which provides several helpful utility functions and libraries.
+
+The best way to learn how to use Postman-BDD is to [check out this sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6YtyvYo), which includes several examples of both simple and complex API test cases.  It also demonstrates some advanced usage, such as re-using code, writing your own custom assertions, etc.  Click this button to open the sample collection in Postman:
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/4f7ef0bf0b743b4df863)
 
 ### `response` object
-The [`response` object](https://visionmedia.github.io/superagent/#response-properties) is what you'll be doing most of your assertions on.  It contains all the information about your HTTP response, such as [`response.text`](https://visionmedia.github.io/superagent/#response-text), [`response.body`](https://visionmedia.github.io/superagent/#response-body) (for JSON responses), [`response.status`](https://visionmedia.github.io/superagent/#response-status), and even a few shortcut properties like [`response.ok`](https://visionmedia.github.io/superagent/#response-status) and [`response.error`](https://visionmedia.github.io/superagent/#response-status).
+The [`response` object](https://visionmedia.github.io/superagent/#response-properties) is what you'll be doing most of your assertions on.  It contains all the information about your HTTP response, such as [`response.text`](https://visionmedia.github.io/superagent/#response-text), [`response.body`](https://visionmedia.github.io/superagent/#response-body), [`response.status`](https://visionmedia.github.io/superagent/#response-status), and even a few shortcut properties like [`response.ok`](https://visionmedia.github.io/superagent/#response-status) and [`response.error`](https://visionmedia.github.io/superagent/#response-status).
 
 
 ### `expect` and `should` assertions
-You can use any of the [Chai HTTP assertions](https://github.com/chaijs/chai-http#assertions) via Chai's [`expect` interface](http://chaijs.com/guide/styles/#expect) or [`should` interface](http://chaijs.com/guide/styles/#should).  It's just a matter of personal preference.  For example, the following two assertions are identical:
+You can use any of the [Chai-HTTP assertions](https://github.com/chaijs/chai-http#assertions) via Chai's [`expect` interface](http://chaijs.com/guide/styles/#expect) or [`should` interface](http://chaijs.com/guide/styles/#should).  It's just a matter of personal preference.  For example, the following two assertions are identical:
 
 ```javascript
 // expect interface
@@ -135,8 +139,6 @@ expect(response).to.have.header('content-type', 'application/json');
 // should interface
 response.should.have.header('content-type', 'application/json');
 ```
-
-Other assertsions you can do include `response.should.be.html`, `response.should.have.status(200)`, and `response.should.redirectTo("http://example.com")`
 
 
 Running tests in bulk
