@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v3.0.0 (March 5th 2017)
+ * Postman BDD v4.0.0 (March 6th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -17,6 +17,7 @@ var contentTypes = {
   json: 'application/json',
   text: 'text/plain',
   html: 'text/html',
+  xml: 'application/xml',
 };
 
 module.exports = chaiHttp;
@@ -537,9 +538,11 @@ PostmanBDD.prototype.afterEach = function (title, fn) {
  * @returns {object} - An object with test names as keys, and boolean results as values
  */
 PostmanBDD.prototype.describe = function (title, fn) {
+  var runnable = new Runnable('describe', this.state, title, fn);
+  this.state.stack.push(runnable);
+
   this.oneTimeInitialization();
 
-  var runnable = new Runnable('describe', this.state, title, fn);
   runnable.run();
 
   if (this.state.isFinished()) {
@@ -547,6 +550,7 @@ PostmanBDD.prototype.describe = function (title, fn) {
     this.hooks.after.run();
   }
 
+  this.state.stack.pop();
   return this.state.results;
 };
 
@@ -560,13 +564,16 @@ PostmanBDD.prototype.describe = function (title, fn) {
  * @returns {boolean} - The boolean result of the test
  */
 PostmanBDD.prototype.it = function (title, fn) {
+  var runnable = new Runnable('it', this.state, title, fn);
+  this.state.stack.push(runnable);
+
   this.oneTimeInitialization();
   this.hooks.beforeEach.run();
 
-  var runnable = new Runnable('it', this.state, title, fn);
   runnable.run();
 
   this.hooks.afterEach.run();
+  this.state.stack.pop();
   return runnable.result;
 };
 
@@ -576,8 +583,7 @@ PostmanBDD.prototype.it = function (title, fn) {
  */
 PostmanBDD.prototype.oneTimeInitialization = function () {
   if (!this.state.isStarted()) {
-    // This is the first Runnable in a new test script,
-    // so reset all state and run any `before` hooks
+    // This is the first Runnable, so run the `before` hooks
     this.hooks.before.run();
   }
 };
@@ -672,10 +678,14 @@ function Hook (type, state) {
  * Runs all of this hook's runnables
  */
 Hook.prototype.run = function () {
+  var me = this;
+
   // Don't run if we're already in a hook
   if (!this.state.inAHook()) {
     this.runnables.forEach(function (runnable) {
+      me.state.stack.push(runnable);
       runnable.run();
+      me.state.stack.pop();
     });
   }
 };
@@ -1193,10 +1203,13 @@ function Runnable (type, state, title, fn) {
     title = '';
   }
 
+  state.counters[type]++;
+  var friendlyType = type === 'it' ? 'test' : type;
+
   this.type = type;
   this.state = state;
   this.isHook = false;
-  this.title = title;
+  this.title = title || (friendlyType + ' #' + state.counters[type]);
   this.fn = fn;
   this.result = null;
   this.error = null;
@@ -1212,38 +1225,34 @@ function Runnable (type, state, title, fn) {
  * {@link State.results}, even for hooks and test suites.
  */
 Runnable.prototype.run = function run () {
-  this.state.counters[this.type]++;
-  this.title = this.title ||
-    ((this.type === 'it' ? 'test' : this.type) + ' #' + this.state.counters[this.type]);
+  var path = this.state.currentPath();
+  log.debug('Running ' + path);
 
-  this.state.stack.push(this);
-  var fullTitle = this.state.stack.toString();
-  log.debug('Running ' + fullTitle);
+  if (this.type !== 'describe') {
+    this.state.results[path] = null;
+  }
 
   try {
     this.fn();
-    this.success(fullTitle);
+    this.success(path);
   }
   catch (e) {
-    this.failure(e, fullTitle);
-  }
-  finally {
-    this.state.stack.pop();
+    this.failure(e, path);
   }
 };
 
 /**
  * Records a successful result for this runnable.
  *
- * @param {string} [fullTitle] - The full title (including any parent Runnables)
+ * @param {string} [path] - The full path of the runnable
  */
-Runnable.prototype.success = function (fullTitle) {
-  log.info('passed: ' + fullTitle);
+Runnable.prototype.success = function (path) {
+  log.info('passed: ' + path);
 
   this.result = true;
 
-  if (this.type === 'it') {
-    this.state.results[fullTitle || this.title] = true;
+  if (this.type !== 'describe') {
+    this.state.results[path] = true;
   }
 };
 
@@ -1251,15 +1260,15 @@ Runnable.prototype.success = function (fullTitle) {
  * Records a failure result for this runnable.
  *
  * @param {Error} err - The error that occurred
- * @param {string} [fullTitle] - The full title (including any parent Runnables)
+ * @param {string} [path] - The full path of the runnable
  */
-Runnable.prototype.failure = function (err, fullTitle) {
-  fullTitle = fullTitle || this.title;
-  log.error('failed: ' + fullTitle, log.errorToPOJO(err));
+Runnable.prototype.failure = function (err, path) {
+  log.error('failed: ' + path, log.errorToPOJO(err));
 
   this.result = false;
   this.error = err;
-  this.state.results[fullTitle + ' (' + err.message + ')'] = false;
+  delete this.state.results[path];
+  this.state.results[path + ' (' + err.message + ')'] = false;
 };
 
 },{"./log":6}],10:[function(require,module,exports){
@@ -1295,32 +1304,30 @@ function State () {
   };
 
   /**
-   * Pretty formatting for the stack
+   * Used to build unique paths for each Runnable
    */
-  this.stack.toString = function () {
-    return this.map(function (r) { return r.title; }).join(' ');
-  };
+  this._pathCounter = 0;
 }
 
 /**
- * Determines whether the test script has started
- * (i.e. at least one `describe`, `it`, or hook has started)
+ * Returns the full path of the current Runnable (the top one on the stack)
  *
- * @returns {boolean}
+ * @returns {string}
  */
-State.prototype.isStarted = function () {
-  var me = this;
+State.prototype.currentPath = function () {
+  var currentRunnable = this.stack[this.stack.length - 1];
+  var path = '';
 
-  if (this.stack.length > 0) {
-    // We're currently in a Runnable
-    return true;
+  if (currentRunnable.type !== 'describe') {
+    path = ++this._pathCounter + '. ';
   }
-  else {
-    // Have any Runnables ran yet?
-    return Object.keys(this.counters).some(function (key) {
-      return me.counters[key] > 0;
-    });
-  }
+
+  path += this.stack.map(function (runnable) { return runnable.title; }).join(' - ');
+  return path;
+};
+
+State.prototype.isStarted = function () {
+  return this._pathCounter > 0;
 };
 
 /**
@@ -1330,7 +1337,7 @@ State.prototype.isStarted = function () {
  * @returns {boolean}
  */
 State.prototype.isFinished = function () {
-  return this.stack.length === 0 && this.counters.describe > 0;
+  return this.stack.length === 1 && this.counters.describe > 0;
 };
 
 /**
@@ -2666,7 +2673,7 @@ module.exports = function (chai, _) {
    *     expect([ 1, 2, 3 ]).to.have.length.within(2,4);
    *
    * *Deprecation notice:* Using `length` as an assertion will be deprecated
-   * in version 2.4.0 and removed in 3.0.0. Code using the old style of
+   * in version 2.4.0 and removed in 4.0.0. Code using the old style of
    * asserting for `length` property value using `length(value)` should be
    * switched to use `lengthOf(value)` instead.
    *
