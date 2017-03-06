@@ -19,6 +19,8 @@ test('JSON response body', (t) => {
   `;
 
   t.doesNotThrow(() => {
+    response.should.be.json;
+
     response.body.name.should.equal('John Doe');
 
     expect(response.body).to.have.keys(['name', 'age', 'address']);
@@ -34,7 +36,7 @@ test('JSON response body', (t) => {
 test('XML response body', (t) => {
   let postman = new Postman(t);
 
-  postman.responseHeaders['content-type'] = 'text/xml';
+  postman.responseHeaders['content-type'] = 'application/xml';
   postman.responseBody = `
     <person>
       <name>John Doe</name>
@@ -47,6 +49,8 @@ test('XML response body', (t) => {
   `;
 
   t.doesNotThrow(() => {
+    response.should.be.xml;
+
     response.body.person.name.should.equal('John Doe');
 
     expect(response.body.person).to.have.keys(['name', 'age', 'address']);
