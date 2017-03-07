@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v4.2.0 (March 7th 2017)
+ * Postman BDD v4.2.1 (March 7th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -1065,6 +1065,7 @@ function Runnable (type, state, title, fn) {
   this.type = type;
   this.state = state;
   this.isHook = false;
+  this.isNamed = !!title;
   this.title = title || (friendlyType + ' #' + state.counters[type]);
   this.fn = fn;
   this.result = null;
@@ -1176,6 +1177,18 @@ State.prototype.currentPath = function () {
 
   if (currentRunnable.type !== 'describe') {
     path = ++this._pathCounter + '. ';
+  }
+
+  // SPECIAL CASE: If we're in a "before" or "after" hook,
+  // and there's no meaningful test suite name, then only return the hook's name.
+  if (currentRunnable.type === 'before' || currentRunnable.type === 'after') {
+    var inANamedTestSuite = this.stack.some(function (runnable) {
+      return runnable.type === 'describe' && runnable.isNamed;
+    });
+
+    if (!inANamedTestSuite) {
+      return path + currentRunnable.title;
+    }
   }
 
   path += this.stack.map(function (runnable) { return runnable.title; }).join(' - ');
