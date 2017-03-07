@@ -69,8 +69,8 @@ test('Hooks run in the correct order', (t) => {
   t.equal(i, 29);
 
   postman.checkTests({
-    '1. describe #1 - before #1': true,
-    '2. describe #1 - before #2': true,
+    '1. before #1': true,
+    '2. before #2': true,
     '3. describe #1 - test #1 - beforeEach #1': true,
     '4. describe #1 - test #1 - beforeEach #2': true,
     '5. describe #1 - test #1': true,
@@ -96,8 +96,8 @@ test('Hooks run in the correct order', (t) => {
     '25. describe #1 - test #5': true,
     '26. describe #1 - test #5 - afterEach #1': true,
     '27. describe #1 - test #5 - afterEach #2': true,
-    '28. describe #1 - after #1': true,
-    '29. describe #1 - after #2': true,
+    '28. after #1': true,
+    '29. after #2': true,
   });
 
   t.end();
@@ -169,8 +169,8 @@ test('Hooks run in the correct order even if there are failed assertions', (t) =
   t.equal(i, 29);
 
   postman.checkTests({
-    '1. describe #1 - before #1 (expected 1 to equal 9999)': false,
-    '2. describe #1 - before #2': true,
+    '1. before #1 (expected 1 to equal 9999)': false,
+    '2. before #2': true,
     '3. describe #1 - test #1 - beforeEach #1 (expected 3 to equal 9999)': false,
     '4. describe #1 - test #1 - beforeEach #2': true,
     '5. describe #1 - test #1': true,
@@ -196,8 +196,8 @@ test('Hooks run in the correct order even if there are failed assertions', (t) =
     '25. describe #1 - test #5': true,
     '26. describe #1 - test #5 - afterEach #1 (expected 26 to equal 9999)': false,
     '27. describe #1 - test #5 - afterEach #2': true,
-    '28. describe #1 - after #1 (expected 28 to equal 9999)': false,
-    '29. describe #1 - after #2': true,
+    '28. after #1 (expected 28 to equal 9999)': false,
+    '29. after #2': true,
   });
 
   t.end();
@@ -273,8 +273,8 @@ test('Hooks run in the correct order even if an error occurs', (t) => {
   t.equal(i, 29);
 
   postman.checkTests({
-    '1. describe #1 - before #1 (error in before hook)': false,
-    '2. describe #1 - before #2': true,
+    '1. before #1 (error in before hook)': false,
+    '2. before #2': true,
     '3. describe #1 - test #1 - beforeEach #1 (error in beforeEach hook)': false,
     '4. describe #1 - test #1 - beforeEach #2': true,
     '5. describe #1 - test #1': true,
@@ -300,8 +300,8 @@ test('Hooks run in the correct order even if an error occurs', (t) => {
     '25. describe #1 - test #5': true,
     '26. describe #1 - test #5 - afterEach #1 (error in afterEach hook)': false,
     '27. describe #1 - test #5 - afterEach #2': true,
-    '28. describe #1 - after #1 (error in after hook)': false,
-    '29. describe #1 - after #2': true,
+    '28. after #1 (error in after hook)': false,
+    '29. after #2': true,
   });
 
   t.end();

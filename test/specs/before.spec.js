@@ -50,6 +50,25 @@ test('`before` hook with only a function', (t) => {
   t.end();
 });
 
+test('`before` hook without a `describe` block', (t) => {
+  let postman = new Postman(t);
+  let called = false;
+
+  before('my hook', () => {
+    called = true;
+  });
+  it('should pass', () => { });
+
+  t.equal(called, true);
+
+  postman.checkTests({
+    '1. my hook': true,
+    '2. should pass': true,
+  });
+
+  t.end();
+});
+
 test('Error in `before` hook', (t) => {
   let postman = new Postman(t);
 
