@@ -4,8 +4,11 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('cookie value assertion with empty request/response', (t) => {
-  let postman = new Postman(t);
-  postman.request.method = 'GET';
+  new Postman(t, {
+    request: {
+      method: 'GET',
+    }
+  });
 
   t.doesNotThrow(() => {
     request.should.not.have.cookie('foo', undefined);
@@ -41,9 +44,13 @@ test('cookie value assertion with empty request/response', (t) => {
 });
 
 test('request cookie value assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.headers.cookie = 'x=y; foo=bar; empty=';
+  new Postman(t, {
+    request: {
+      headers: {
+        cookie: 'x=y; foo=bar; empty=',
+      }
+    }
+  });
 
   t.doesNotThrow(() => {
     request.should.have.cookie('foo', 'bar');
@@ -65,13 +72,15 @@ test('request cookie value assertion (pass)', (t) => {
 });
 
 test('response cookie value assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['set-cookie'] = [
-    'x=y;',
-    'foo=bar; path=/; expires=Sat, 31 Dec 2050 00:00:00 -0000; secure; HttpOnly; SameSite=Strict',
-    'empty=',
-  ];
+  new Postman(t, {
+    responseHeaders: {
+      'set-cookie': [
+        'x=y;',
+        'foo=bar; path=/; expires=Sat, 31 Dec 2050 00:00:00 -0000; secure; HttpOnly; SameSite=Strict',
+        'empty=',
+      ],
+    }
+  });
 
   t.doesNotThrow(() => {
     response.should.have.cookie('foo', 'bar');
@@ -93,9 +102,13 @@ test('response cookie value assertion (pass)', (t) => {
 });
 
 test('request cookie value assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.headers.cookie = 'x=y; foo=bar; empty=';
+  new Postman(t, {
+    request: {
+      headers: {
+        cookie: 'x=y; foo=bar; empty=',
+      }
+    }
+  });
 
   t.throws(() =>
     request.should.not.have.cookie('foo', 'bar'),
@@ -126,13 +139,15 @@ test('request cookie value assertion (fail)', (t) => {
 });
 
 test('response cookie value assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['set-cookie'] = [
-    'x=y;',
-    'foo=bar; path=/; expires=Sat, 31 Dec 2050 00:00:00 -0000; secure; HttpOnly; SameSite=Strict',
-    'empty=',
-  ];
+  new Postman(t, {
+    responseHeaders: {
+      'set-cookie': [
+        'x=y;',
+        'foo=bar; path=/; expires=Sat, 31 Dec 2050 00:00:00 -0000; secure; HttpOnly; SameSite=Strict',
+        'empty=',
+      ],
+    }
+  });
 
   t.throws(() =>
     response.should.not.have.cookie('foo', 'bar'),

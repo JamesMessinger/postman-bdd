@@ -4,7 +4,7 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('request header value assertion with empty request/response', (t) => {
-  new Postman(t);  // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     request.should.not.have.header('foo', undefined);
@@ -40,12 +40,16 @@ test('request header value assertion with empty request/response', (t) => {
 });
 
 test('request header value assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.headers.foo = 'bar';
-  postman.request.headers['content-type'] = '';
-  postman.request.headers['x-powered-by'] = 'my cool web server';
-  postman.request.headers['set-cookie'] = 'myCookie=hello';
+  new Postman(t, {
+    request: {
+      headers: {
+        foo: 'bar',
+        'content-type': '',
+        'x-powered-by': 'my cool web server',
+        'set-cookie': 'myCookie=hello',
+      }
+    }
+  });
 
   t.doesNotThrow(() => {
     request.should.have.header('foo', 'bar');
@@ -66,12 +70,14 @@ test('request header value assertion (pass)', (t) => {
 });
 
 test('response header value assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders.foo = 'bar';
-  postman.responseHeaders['content-type'] = '';
-  postman.responseHeaders['x-powered-by'] = 'my cool web server';
-  postman.responseHeaders['set-cookie'] = 'myCookie=hello';
+  new Postman(t, {
+    responseHeaders: {
+      foo: 'bar',
+      'content-type': '',
+      'x-powered-by': 'my cool web server',
+      'set-cookie': 'myCookie=hello',
+    }
+  });
 
   t.doesNotThrow(() => {
     response.should.have.header('foo', 'bar');
@@ -92,12 +98,16 @@ test('response header value assertion (pass)', (t) => {
 });
 
 test('request header value assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.headers.foo = 'bar';
-  postman.request.headers['content-type'] = 'application/json';
-  postman.request.headers['x-powered-by'] = 'my cool web server';
-  postman.request.headers['set-cookie'] = 'myCookie=hello';
+  new Postman(t, {
+    request: {
+      headers: {
+        foo: 'bar',
+        'content-type': '',
+        'x-powered-by': 'my cool web server',
+        'set-cookie': 'myCookie=hello',
+      }
+    }
+  });
 
   t.throws(() =>
     request.should.not.have.header('foo', 'bar'),
@@ -138,12 +148,14 @@ test('request header value assertion (fail)', (t) => {
 });
 
 test('response header value assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders.foo = 'bar';
-  postman.responseHeaders['content-type'] = 'application/json';
-  postman.responseHeaders['x-powered-by'] = 'my cool web server';
-  postman.responseHeaders['set-cookie'] = 'myCookie=hello';
+  new Postman(t, {
+    responseHeaders: {
+      foo: 'bar',
+      'content-type': '',
+      'x-powered-by': 'my cool web server',
+      'set-cookie': 'myCookie=hello',
+    }
+  });
 
   t.throws(() =>
     response.should.not.have.header('foo', 'bar'),

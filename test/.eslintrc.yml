@@ -5,3 +5,7 @@
 extends:
   - modular/es6
   - modular/node
+
+rules:
+  # Disable this rule so we can use "new Postman()" in tests
+  no-new: off

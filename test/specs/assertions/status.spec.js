@@ -4,8 +4,11 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('status assertion (pass)', (t) => {
-  let postman = new Postman(t);
-  postman.responseCode.code = 200;
+  new Postman(t, {
+    responseCode: {
+      code: 200,
+    }
+  });
 
   t.doesNotThrow(() => {
     expect(response).to.have.status(200);
@@ -19,8 +22,11 @@ test('status assertion (pass)', (t) => {
 });
 
 test('status assertion (fail)', (t) => {
-  let postman = new Postman(t);
-  postman.responseCode.code = 200;
+  new Postman(t, {
+    responseCode: {
+      code: 200,
+    }
+  });
 
   t.throws(() =>
     response.should.have.status(404),

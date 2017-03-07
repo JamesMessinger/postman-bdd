@@ -3,14 +3,27 @@
 const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
-test('html assertion (pass)', (t) => {
-  let postman = new Postman(t);
+test('html assertion with empty response', (t) => {
+  new Postman(t);
 
   t.doesNotThrow(() => {
     response.should.not.be.html;
   });
 
-  postman.responseHeaders['content-type'] = 'text/html; charset=utf-8';
+  t.throws(() =>
+    response.should.be.html,
+    /expected the response type to be 'html' but got '<content-type-not-set>'/
+  );
+
+  t.end();
+});
+
+test('html assertion with HTML response', (t) => {
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'text/html; charset=utf-8',
+    }
+  });
 
   t.doesNotThrow(() => {
     response.should.be.html;
@@ -20,28 +33,23 @@ test('html assertion (pass)', (t) => {
     expect(response).not.to.be.text;
   });
 
-  postman.responseHeaders['content-type'] = 'text/xhtml; charset=utf-8';
+  t.end();
+});
+
+test('html assertion with non-HTML response', (t) => {
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'text/xhtml; charset=utf-8',
+    }
+  });
 
   t.doesNotThrow(() => {
     response.should.not.be.html;
   });
 
-  t.end();
-});
-
-test('html assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  t.throws(() =>
-    response.should.be.html,
-    /expected the response type to be 'html' but got '<content-type-not-set>'/
-  );
-
-  postman.responseHeaders['content-type'] = 'application/xml; charset=utf-8';
-
   t.throws(() =>
     expect(response).to.be.html,
-    /expected the response type to be 'html' but got 'application\/xml; charset=utf-8'/
+    /expected the response type to be 'html' but got 'text\/xhtml; charset=utf-8'/
   );
 
   t.end();

@@ -4,7 +4,7 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('param value assertion with empty request', (t) => {
-  new Postman(t);   // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     request.should.not.have.param('foo', undefined);
@@ -26,9 +26,11 @@ test('param value assertion with empty request', (t) => {
 });
 
 test('param value assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.url = 'http://foo.com/bar/baz?x=y&foo=bar&person.name[first]=John&name-only&empty=';
+  new Postman(t, {
+    request: {
+      url: 'http://foo.com/bar/baz?x=y&foo=bar&person.name[first]=John&name-only&empty=',
+    }
+  });
 
   t.doesNotThrow(() => {
     request.should.have.param('foo', 'bar');
@@ -59,9 +61,11 @@ test('param value assertion (pass)', (t) => {
 });
 
 test('param value assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.url = 'http://foo.com/bar/baz?x=y&foo=bar&person.name[first]=John&name-only&empty=';
+  new Postman(t, {
+    request: {
+      url: 'http://foo.com/bar/baz?x=y&foo=bar&person.name[first]=John&name-only&empty=',
+    }
+  });
 
   t.throws(() =>
     request.should.not.have.param('foo', 'bar'),

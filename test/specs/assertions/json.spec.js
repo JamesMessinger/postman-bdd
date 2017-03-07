@@ -3,14 +3,27 @@
 const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
-test('json assertion (pass)', (t) => {
-  let postman = new Postman(t);
+test('json assertion with empty response', (t) => {
+  new Postman(t);
 
   t.doesNotThrow(() => {
     response.should.not.be.json;
   });
 
-  postman.responseHeaders['content-type'] = 'application/json; charset=utf-8';
+  t.throws(() =>
+    response.should.be.json,
+    /expected the response type to be 'json' but got '<content-type-not-set>'/
+  );
+
+  t.end();
+});
+
+test('json assertion with JSON response', (t) => {
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'application/json; charset=utf-8',
+    }
+  });
 
   t.doesNotThrow(() => {
     response.should.be.json;
@@ -20,28 +33,23 @@ test('json assertion (pass)', (t) => {
     expect(response).not.to.be.text;
   });
 
-  postman.responseHeaders['content-type'] = 'application/hal+json; charset=utf-8';
+  t.end();
+});
+
+test('json assertion with non-JSON response', (t) => {
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'application/hal+json; charset=utf-8',
+    }
+  });
 
   t.doesNotThrow(() => {
     response.should.not.be.json;
   });
 
-  t.end();
-});
-
-test('json assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  t.throws(() =>
-    response.should.be.json,
-    /expected the response type to be 'json' but got '<content-type-not-set>'/
-  );
-
-  postman.responseHeaders['content-type'] = 'application/xml; charset=utf-8';
-
   t.throws(() =>
     expect(response).to.be.json,
-    /expected the response type to be 'json' but got 'application\/xml; charset=utf-8'/
+    /expected the response type to be 'json' but got 'application\/hal\+json; charset=utf-8'/
   );
 
   t.end();

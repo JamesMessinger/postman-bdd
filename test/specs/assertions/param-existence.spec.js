@@ -4,7 +4,7 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('param existence assertion with empty request', (t) => {
-  new Postman(t);   // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     request.should.not.have.params;
@@ -27,9 +27,11 @@ test('param existence assertion with empty request', (t) => {
 });
 
 test('param existence assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.url = 'http://foo.com/bar/baz?x=y&foo=bar&name-only&empty=';
+  new Postman(t, {
+    request: {
+      url: 'http://foo.com/bar/baz?x=y&foo=bar&name-only&empty=',
+    }
+  });
 
   t.doesNotThrow(() => {
     request.should.have.params;
@@ -48,9 +50,11 @@ test('param existence assertion (pass)', (t) => {
 });
 
 test('deep param existence assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.url = 'http://foo.com/bar/baz?person.firstName=John&person[lastName]=Doe';
+  new Postman(t, {
+    request: {
+      url: 'http://foo.com/bar/baz?person.firstName=John&person[lastName]=Doe',
+    }
+  });
 
   t.doesNotThrow(() => {
     request.should.have.params;
@@ -73,9 +77,11 @@ test('deep param existence assertion (pass)', (t) => {
 });
 
 test('param existence assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.url = 'http://foo.com/bar/baz?x=y&foo=bar&name-only&empty=';
+  new Postman(t, {
+    request: {
+      url: 'http://foo.com/bar/baz?x=y&foo=bar&name-only&empty=',
+    }
+  });
 
   t.throws(() =>
     expect(request).not.to.have.params,
@@ -116,9 +122,11 @@ test('param existence assertion (fail)', (t) => {
 });
 
 test('deep param existence assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.request.url = 'http://foo.com/bar/baz?person.firstName=John&person[lastName]=Doe';
+  new Postman(t, {
+    request: {
+      url: 'http://foo.com/bar/baz?person.firstName=John&person[lastName]=Doe',
+    }
+  });
 
   t.throws(() =>
     expect(request).not.to.have.params,

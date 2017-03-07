@@ -4,19 +4,21 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('JSON response body', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['content-type'] = 'application/json';
-  postman.responseBody = `
-    {
-      "name": "John Doe",
-      "age": 35,
-      "address": {
-        "city": "San Francisco",
-        "state": "CA"
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'application/json',
+    },
+    responseBody: `
+      {
+        "name": "John Doe",
+        "age": 35,
+        "address": {
+          "city": "San Francisco",
+          "state": "CA"
+        }
       }
-    }
-  `;
+    `,
+  });
 
   t.doesNotThrow(() => {
     response.should.be.json;
@@ -34,19 +36,21 @@ test('JSON response body', (t) => {
 });
 
 test('XML response body', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['content-type'] = 'application/xml';
-  postman.responseBody = `
-    <person>
-      <name>John Doe</name>
-      <age>35</age>
-      <address>
-        <city>San Francisco</city>
-        <state>CA</state>
-      </address>
-    </person>
-  `;
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'application/xml',
+    },
+    responseBody: `
+      <person>
+        <name>John Doe</name>
+        <age>35</age>
+        <address>
+          <city>San Francisco</city>
+          <state>CA</state>
+        </address>
+      </person>
+    `,
+  });
 
   t.doesNotThrow(() => {
     response.should.be.xml;

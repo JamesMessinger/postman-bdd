@@ -9,13 +9,14 @@ const xml2js = require('xml2js');
 module.exports = class Postman {
   /**
    * @param {object} test - A Tape test instance
+   * @param {object} [globals] - Overrides for Postman sandbox globals
    */
-  constructor (test) {
+  constructor (test, globals) {
     // Store the Tape test instance, so we can perform assertions on it later
     this.test = test;
 
     // Re-initialize the mock Postman's test sandbox
-    initPostmanSandbox();
+    initPostmanSandbox(globals || {});
 
     // Re-initialize Postman BDD, to clear any previous hooks or test state
     let postmanBDD = require('../../');
@@ -23,41 +24,6 @@ module.exports = class Postman {
 
     // Turn off Postman BDD logging
     postmanBDD.logLevel = 'silent';
-  }
-
-  /**
-   * Allows tests to set modify Postman's `request` object
-   */
-  get request () {
-    return global.request;
-  }
-
-  /**
-   * Allows tests to set modify Postman's `responseCode` object
-   */
-  get responseCode () {
-    return global.responseCode;
-  }
-
-  /**
-   * Allows tests to set modify Postman's `responseHeaders` object
-   */
-  get responseHeaders () {
-    return global.responseHeaders;
-  }
-
-  /**
-   * Allows tests to set modify Postman's `responseBody` property
-   */
-  set responseBody (value) {
-    global.responseBody = value;
-  }
-
-  /**
-   * Allows tests to set modify Postman's `responseTime` property
-   */
-  set responseTime (value) {
-    global.responseTime = value;
   }
 
   /**
@@ -73,26 +39,41 @@ module.exports = class Postman {
 
 /**
  * Creates global objects to simulate Postman's test sandbox
- * @link https://www.getpostman.com/docs/sandbox
+ *
+ * {@link https://www.getpostman.com/docs/sandbox}
+ * @param {object} [globals] - Overrides for Postman sandbox globals
  */
-function initPostmanSandbox () {
-  global.tests = {};
-  global.responseBody = '';
-  global.responseTime = 0;
-  global.responseHeaders = {};
-  global.responseCode = {
-    code: 0,
-    name: '',
-    detail: '',
-  };
-  global.request = {
-    method: '',
-    url: '',
-    headers: {},
-    data: {},
-  };
+function initPostmanSandbox (globals) {
+  global.responseBody = globals.responseBody || '';
+  global.responseTime = globals.responseTime || 0;
+  global.responseHeaders = globals.responseHeaders || {};
 
+  global.responseCode = Object.assign(
+    {
+      code: 0,
+      name: '',
+      detail: '',
+    },
+    globals.responseCode
+  );
+
+  global.request = Object.assign(
+    {
+      method: '',
+      url: '',
+      headers: {},
+      data: {},
+    },
+    globals.request
+  );
+
+  // The `tests` object always starts-off empty
+  global.tests = {};
+
+  // Expose tv4 directly
   global.tv4 = tv4;
+
+  // Expose xml2js indirectly
   global.xml2Json = function (xml) {
     let options = {
       explicitArray: false,

@@ -4,7 +4,7 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('JSON schema assertion with empty body', (t) => {
-  new Postman(t);   // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     response.body.should.have.schema({ type: 'string', maxLength: 0 });
@@ -26,9 +26,9 @@ test('JSON schema assertion with empty body', (t) => {
 });
 
 test('JSON schema assertion without Content-Type header', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseBody = 'hello world';
+  new Postman(t, {
+    responseBody: 'hello world',
+  });
 
   t.doesNotThrow(() => {
     response.body.should.have.schema({ type: 'string', minLength: 10 });
@@ -44,10 +44,12 @@ test('JSON schema assertion without Content-Type header', (t) => {
 });
 
 test('JSON schema assertion with XML content', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['content-type'] = 'text/xml';
-  postman.responseBody = '<person><name>John Doe</name><age>35</age></person>';
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'text/xml',
+    },
+    responseBody: '<person><name>John Doe</name><age>35</age></person>',
+  });
 
   t.doesNotThrow(() => {
     response.body.should.have.schema({
@@ -76,10 +78,12 @@ test('JSON schema assertion with XML content', (t) => {
 });
 
 test('JSON schema assertion (pass)', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['content-type'] = 'application/json';
-  postman.responseBody = '{"name":"John Doe","age":35}';
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'application/json',
+    },
+    responseBody: '{"name":"John Doe","age":35}',
+  });
 
   let jsonSchema = {
     type: 'object',
@@ -106,10 +110,12 @@ test('JSON schema assertion (pass)', (t) => {
 });
 
 test('JSON schema assertion (fail)', (t) => {
-  let postman = new Postman(t);
-
-  postman.responseHeaders['content-type'] = 'application/hal+json';
-  postman.responseBody = '{"name":"","age":999,"address":{"street":{}}}';
+  new Postman(t, {
+    responseHeaders: {
+      'content-type': 'application/hal+json',
+    },
+    responseBody: '{"name":"","age":999,"address":{"street":{}}}',
+  });
 
   t.throws(() =>
     response.body.should.have.schema({

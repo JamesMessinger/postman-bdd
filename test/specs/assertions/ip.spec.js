@@ -4,7 +4,7 @@ const test = require('tape');
 const Postman = require('../../fixtures/postman');
 
 test('ip assertion supports IPv4', (t) => {
-  new Postman(t);   // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     '127.0.0.1'.should.be.an.ip;
@@ -30,7 +30,7 @@ test('ip assertion supports IPv4', (t) => {
 });
 
 test('ip assertion supports IPv6', (t) => {
-  new Postman(t);   // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     '2001:0db8:85a3:0000:0000:8a2e:0370:7334'.should.be.an.ip;
@@ -46,7 +46,7 @@ test('ip assertion supports IPv6', (t) => {
 });
 
 test('ip assertion (invalid)', (t) => {
-  new Postman(t);   // eslint-disable-line no-new
+  new Postman(t);
 
   t.doesNotThrow(() => {
     'hello world'.should.not.be.an.ip;
