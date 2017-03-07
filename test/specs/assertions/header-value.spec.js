@@ -45,8 +45,8 @@ test('request header value assertion (pass)', (t) => {
       headers: {
         foo: 'bar',
         'content-type': '',
-        'x-powered-by': 'my cool web server',
-        'set-cookie': 'myCookie=hello',
+        'X-Powered-By': 'my cool web server',
+        'Set-Cookie': 'myCookie=hello',
       }
     }
   });
@@ -74,8 +74,8 @@ test('response header value assertion (pass)', (t) => {
     responseHeaders: {
       foo: 'bar',
       'content-type': '',
-      'x-powered-by': 'my cool web server',
-      'set-cookie': 'myCookie=hello',
+      'X-Powered-By': 'my cool web server',
+      'Set-Cookie': 'myCookie=hello',
     }
   });
 
@@ -103,8 +103,8 @@ test('request header value assertion (fail)', (t) => {
       headers: {
         foo: 'bar',
         'content-type': '',
-        'x-powered-by': 'my cool web server',
-        'set-cookie': 'myCookie=hello',
+        'X-Powered-By': 'my cool web server',
+        'Set-Cookie': 'myCookie=hello',
       }
     }
   });
@@ -152,8 +152,8 @@ test('response header value assertion (fail)', (t) => {
     responseHeaders: {
       foo: 'bar',
       'content-type': '',
-      'x-powered-by': 'my cool web server',
-      'set-cookie': 'myCookie=hello',
+      'X-Powered-By': 'my cool web server',
+      'Set-Cookie': 'myCookie=hello',
     }
   });
 
