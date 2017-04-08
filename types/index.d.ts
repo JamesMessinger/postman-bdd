@@ -2,7 +2,7 @@
 // Project: https://github.com/BigstickCarpet/postman-bdd
 // Definitions by: Uroš Jarc <https://github.com/urosjarc/>,
 //                 James Messinger <https://github.com/BigstickCarpet/>
-// Definitions: https://github.com/BigstickCarpet/postman-bdd/types
+// Definitions: https://github.com/BigstickCarpet/postman-bdd/tree/master/types
 
 
 /**
