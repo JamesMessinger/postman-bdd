@@ -130,6 +130,6 @@ declare const response: {
   cookies: Object|Should;
   text: string|Should;
   body: Object|Should;
-  getHeader: (name: string) => string|Should;
-  getCookie: (name: string) => any|Should; //TODO: Any or string?
+  getHeader(name: string) : string|Should;
+  getCookie(name: string) : any|Should; //TODO: Any or string?
 };
