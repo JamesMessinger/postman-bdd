@@ -32,19 +32,6 @@ declare class Should {
   //TODO: Add more methods for should. http://chaijs.com/api/assert/
 }
 
-declare class Assert {
-    constructor(expression?: any);
-    isOk: (expression: boolean, msg: string) => void|Error;
-    isNotOk: (expression: boolean, msg: string) => void|Error;
-    equal: (expression: boolean, msg: string) => void|Error;
-    notEqual: (expression: boolean, msg: string) => void|Error;
-    strictEqual: (expression: boolean, msg: string) => void|Error;
-    notStrictEqual: (expression: boolean, msg: string) => void|Error;
-    deepEqual: (expression: boolean, msg: string) => void|Error;
-    notDeepEqual: (expression: boolean, msg: string) => void|Error;
-    //TODO: Add more methods for assert. http://chaijs.com/api/bdd/
-}
-
 /**
  * CORE
  */
@@ -82,8 +69,19 @@ declare function afterEach(msg: string, cb: Function): void;
  * TODO: Connect those with CHAI.Should.
  */
 declare function expect(expression: boolean, msg?: string): Should;
-declare const assert: Assert; //TODO: How to define multiple assert variables?
 declare function assert(expression: boolean, msg?: string): void;
+
+declare namespace assert {
+    export function isOk(expression: boolean, msg: string) : void|Error;
+    export function isNotOk(expression: boolean, msg: string) : void|Error;
+    export function equal(expression: boolean, msg: string) : void|Error;
+    export function notEqual(expression: boolean, msg: string) : void|Error;
+    export function strictEqual(expression: boolean, msg: string) : void|Error;
+    export function notStrictEqual(expression: boolean, msg: string) : void|Error;
+    export function deepEqual(expression: boolean, msg: string) : void|Error;
+    export function notDeepEqual(expression: boolean, msg: string) : void|Error;
+    //TODO: Add more methods for assert. http://chaijs.com/api/bdd/
+}
 
 declare namespace chai {
   export function should(expression: boolean): Should; //TODO: Is this right?
