@@ -28,6 +28,7 @@
   "license": "MIT",
   "main": "lib/index.js",
   "files": [
+    "types/index.d.ts",
     "dist/postman-bdd.js",
     "dist/postman-bdd.js.map",
     "dist/postman-bdd.min.js",
@@ -37,7 +38,7 @@
   "scripts": {
     "lint": "eslint lib test --fix",
     "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
-    "test": "npm run tape && npm run newman && npm run lint",
+    "test": "npm run tape && npm run newman && npm run lint && tsc types/index.d.ts",
     "cover": "istanbul cover tape \"test/**/*.spec.js\" tap-spec && npm run newman",
     "tape": "tape \"test/**/*.spec.js\" | tap-spec",
     "newman": "newman run test/newman/postman_bdd_collection.json -r cli,html --reporter-html-export test/newman/report.html --ignore-redirects",
@@ -65,6 +66,7 @@
     "tap-spec": "4.1.1",
     "tape": "4.6.3",
     "tv4": "^1.2.7",
+    "typescript": "~2.0.10",
     "version-bump-prompt": "^3.0.1",
     "xml2js": "^0.4.17"
   }
