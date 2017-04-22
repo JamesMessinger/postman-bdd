@@ -1,5 +1,6 @@
 ![Postman BDD](docs/logo.gif)
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ac55fea9e51b4f29ac83c4cd7ed30020)](https://www.codacy.com/app/jamesmessinger/postman-bdd?utm_source=github.com&utm_medium=referral&utm_content=BigstickCarpet/postman-bdd&utm_campaign=badger)
 [![Build Status](https://api.travis-ci.org/BigstickCarpet/postman-bdd.svg)](https://travis-ci.org/BigstickCarpet/postman-bdd)
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/bigstickcarpet/postman-bdd?svg=true&failingText=Windows%20build%20failing&passingText=Windows%20build%20passing)](https://ci.appveyor.com/project/BigstickCarpet/postman-bdd)
 
