@@ -58,7 +58,7 @@
     "coveralls": "^2.13.0",
     "eslint": "^3.19.0",
     "eslint-config-modular": "^4.0.0",
-    "http-server": "^0.9.0",
+    "http-server": "^0.10.0",
     "istanbul": "^0.4.2",
     "newman": "^3.5.2",
     "npm-check": "^5.4.0",
