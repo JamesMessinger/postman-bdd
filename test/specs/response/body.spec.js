@@ -59,7 +59,7 @@ test('XML response body', (t) => {
 
     expect(response.body.person).to.have.keys(['name', 'age', 'address']);
 
-    response.body.person.age.should.be.above(30).and.below(40);
+    parseInt(response.body.person.age).should.be.above(30).and.below(40);
 
     expect(response.body.person.address.city).to.match(/^San/);
   });

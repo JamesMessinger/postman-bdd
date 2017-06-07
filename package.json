@@ -49,7 +49,7 @@
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
   },
   "dependencies": {
-    "chai": "^3.5.0",
+    "chai": "^4.0.2",
     "cookiejar": "^2.1.1",
     "is-ip": "^1.0.0"
   },
