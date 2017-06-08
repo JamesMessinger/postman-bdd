@@ -69,7 +69,7 @@ If a script error occurs, only that _one_ test fails. Other tests still run.
 Full access to all [Chai-JS](http://chaijs.com/api/bdd/) and [Chai-HTTP](http://chaijs.com/plugins/chai-http/#assertions) assertions
 
 - **Custom Assertions**<br>
-Define custom Chai-JS assertions for your API to encapsulate logic and make tests more readabile<br>
+Define custom Chai-JS assertions for your API to encapsulate logic and make tests more readable<br>
 (e.g. `response.body.should.be.a.customer`)
 
 - **Nested `describe` blocks**<br>
