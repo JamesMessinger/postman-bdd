@@ -33,7 +33,7 @@
   ],
   "scripts": {
     "lint": "eslint lib test --fix",
-    "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify",
+    "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify && cp dist/*.* dist/v5",
     "test": "npm run tape && npm run newman && npm run lint && tsc types/index.d.ts",
     "cover": "istanbul cover tape \"test/**/*.spec.js\" tap-spec && npm run newman",
     "tape": "tape \"test/**/*.spec.js\" | tap-spec",
@@ -41,7 +41,7 @@
     "newman-local": "newman run test/newman/postman_bdd_collection.json -e test/newman/postman_bdd_localhost_environment.json -r cli,html --reporter-html-export test/newman/report.html --ignore-redirects",
     "start": "npm run build -- --watch & http-server -c-1",
     "upgrade": "npm-check -u",
-    "bump": "bump --prompt --grep dist/* --tag --push --all && cp dist/*.* dist/v5",
+    "bump": "bump --prompt --grep dist/* dist/v5/* --tag --push --all",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
   },
   "dependencies": {
