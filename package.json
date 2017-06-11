@@ -1,6 +1,6 @@
 {
   "name": "postman-bdd",
-  "version": "4.3.0",
+  "version": "5.0.0-prerelease.1",
   "description": "BDD test framework for Postman and Newman",
   "keywords": [
     "rest",
@@ -28,12 +28,8 @@
   "license": "MIT",
   "main": "lib/index.js",
   "files": [
-    "types/index.d.ts",
-    "dist/postman-bdd.js",
-    "dist/postman-bdd.js.map",
-    "dist/postman-bdd.min.js",
-    "dist/postman-bdd.min.js.map",
-    "lib"
+    "lib",
+    "types/index.d.ts"
   ],
   "scripts": {
     "lint": "eslint lib test --fix",
@@ -45,7 +41,7 @@
     "newman-local": "newman run test/newman/postman_bdd_collection.json -e test/newman/postman_bdd_localhost_environment.json -r cli,html --reporter-html-export test/newman/report.html --ignore-redirects",
     "start": "npm run build -- --watch & http-server -c-1",
     "upgrade": "npm-check -u",
-    "bump": "bump --prompt --grep dist/* --tag --push --all",
+    "bump": "bump --prompt --grep dist/* --tag --push --all && cp dist/*.* dist/v5",
     "release": "npm run upgrade && npm run build && npm test && npm run bump && npm publish"
   },
   "dependencies": {
