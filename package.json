@@ -56,7 +56,7 @@
     "eslint-config-modular": "^4.0.0",
     "http-server": "^0.10.0",
     "istanbul": "^0.4.2",
-    "newman": "^3.5.2",
+    "newman": "^3.6.1",
     "npm-check": "^5.4.0",
     "simplifyify": "^3.2.1",
     "tap-spec": "4.1.1",
