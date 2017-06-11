@@ -123,7 +123,7 @@ Postman BDD uses [Chai.js](http://chaijs.com/api/bdd/), [Chai-HTTP](https://gith
 
 The best way to learn how to use Postman-BDD is to [check out this sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6Z3uY71), which includes several examples of both simple and complex API test cases.  It also demonstrates some advanced usage, such as re-using code, writing your own custom assertions, etc.  Click this button to open the sample collection in Postman:
 
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/4f7ef0bf0b743b4df863)
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/3aa9116ba36136628303)
 
 ### `response` object
 The [`response` object](https://visionmedia.github.io/superagent/#response-properties) is what you'll be doing most of your assertions on.  It contains all the information about your HTTP response, such as [`response.text`](https://visionmedia.github.io/superagent/#response-text), [`response.body`](https://visionmedia.github.io/superagent/#response-body), [`response.status`](https://visionmedia.github.io/superagent/#response-status), and even a few shortcut properties like [`response.ok`](https://visionmedia.github.io/superagent/#response-status) and [`response.error`](https://visionmedia.github.io/superagent/#response-status).
