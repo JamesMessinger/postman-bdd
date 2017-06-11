@@ -112,7 +112,7 @@ You now have Postman BDD installed globally.  You can use it in any Postman requ
 eval(globals.postmanBDD);
 ```
 
-After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6YtyvYo):
+After you've loaded Postman BDD, you can write your tests using BDD syntax and [Chai-JS assertions](http://chaijs.com/api/bdd/). Here's an screenshot of [a sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6Z3uY71):
 
 ![Postman BDD Example](docs/example.gif)
 
@@ -121,7 +121,7 @@ Writing Tests
 --------------------------
 Postman BDD uses [Chai.js](http://chaijs.com/api/bdd/), [Chai-HTTP](https://github.com/chaijs/chai-http#assertions), and [SuperAgent](https://visionmedia.github.io/superagent/#response-properties) under the hood, so you have access to all three of those libraries to write your tests.  Of course, you also have access to the [Postman scripting environment](https://www.getpostman.com/docs/sandbox), which provides several helpful utility functions and libraries.
 
-The best way to learn how to use Postman-BDD is to [check out this sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6YtyvYo), which includes several examples of both simple and complex API test cases.  It also demonstrates some advanced usage, such as re-using code, writing your own custom assertions, etc.  Click this button to open the sample collection in Postman:
+The best way to learn how to use Postman-BDD is to [check out this sample collection](https://documenter.getpostman.com/view/220187/postman-bdd-examples/6Z3uY71), which includes several examples of both simple and complex API test cases.  It also demonstrates some advanced usage, such as re-using code, writing your own custom assertions, etc.  Click this button to open the sample collection in Postman:
 
 [![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/4f7ef0bf0b743b4df863)
 
