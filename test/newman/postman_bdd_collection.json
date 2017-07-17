@@ -82,7 +82,7 @@
 									"});",
 									"",
 									"it('should respond in a timely manner', () => {",
-									"    response.time.should.be.below(500);",
+									"    response.time.should.be.below(2000);",
 									"});",
 									"",
 									"it('should return HTML', () => {",
