@@ -27,17 +27,17 @@ for (let code of codes.nonRedirect) {
 
     t.throws(() =>
       response.should.redirectTo('http://foo.com/bar/baz'),
-      new RegExp(`expected redirect to 'http:\/\/foo.com\/bar\/baz' but got ${code}`)
+    new RegExp(`expected redirect to 'http:\/\/foo.com\/bar\/baz' but got ${code}`)
     );
 
     t.throws(() =>
       expect(response).to.redirectTo('http://foo.com'),
-      new RegExp(`expected redirect to 'http:\/\/foo.com' but got ${code}`)
+    new RegExp(`expected redirect to 'http:\/\/foo.com' but got ${code}`)
     );
 
     t.throws(() =>
       expect(response).to.redirectTo('/bar/baz'),
-      new RegExp(`expected redirect to '\/bar\/baz' but got ${code}`)
+    new RegExp(`expected redirect to '\/bar\/baz' but got ${code}`)
     );
 
     t.end();
@@ -67,17 +67,17 @@ for (let code of codes.redirect) {
 
     t.throws(() =>
       response.should.not.redirectTo('http://foo.com/bar/baz'),
-      /expected not to redirect to 'http:\/\/foo.com\/bar\/baz'/
+    /expected not to redirect to 'http:\/\/foo.com\/bar\/baz'/
     );
 
     t.throws(() =>
       expect(response).to.redirectTo('http://foo.com'),
-      /expected redirect to 'http:\/\/foo.com' but got 'http:\/\/foo.com\/bar\/baz'/
+    /expected redirect to 'http:\/\/foo.com' but got 'http:\/\/foo.com\/bar\/baz'/
     );
 
     t.throws(() =>
       expect(response).to.redirectTo('/bar/baz'),
-      /expected redirect to '\/bar\/baz' but got 'http:\/\/foo.com\/bar\/baz'/
+    /expected redirect to '\/bar\/baz' but got 'http:\/\/foo.com\/bar\/baz'/
     );
 
     t.end();

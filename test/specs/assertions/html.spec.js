@@ -12,7 +12,7 @@ test('html assertion with empty response', (t) => {
 
   t.throws(() =>
     response.should.be.html,
-    /expected the response type to be 'html' but got '<content-type-not-set>'/
+  /expected the response type to be 'html' but got '<content-type-not-set>'/
   );
 
   t.end();
@@ -49,7 +49,7 @@ test('html assertion with non-HTML response', (t) => {
 
   t.throws(() =>
     expect(response).to.be.html,
-    /expected the response type to be 'html' but got 'text\/xhtml; charset=utf-8'/
+  /expected the response type to be 'html' but got 'text\/xhtml; charset=utf-8'/
   );
 
   t.end();

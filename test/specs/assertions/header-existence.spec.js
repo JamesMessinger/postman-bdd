@@ -24,22 +24,22 @@ test('header existence assertion with empty request/response', (t) => {
 
   t.throws(() =>
     request.should.have.headers,
-    /expected the request to have headers/
+  /expected the request to have headers/
   );
 
   t.throws(() =>
     request.should.have.header('foo'),
-    /expected header 'foo' to exist/
+  /expected header 'foo' to exist/
   );
 
   t.throws(() =>
     response.should.have.headers,
-    /expected the response to have headers/
+  /expected the response to have headers/
   );
 
   t.throws(() =>
     response.should.have.header('foo'),
-    /expected header 'foo' to exist/
+  /expected header 'foo' to exist/
   );
 
   t.end();
@@ -117,32 +117,32 @@ test('request header existence assertion (fail)', (t) => {
 
   t.throws(() =>
     expect(request).not.to.have.headers,
-    /expected the request to not have any headers/
+  /expected the request to not have any headers/
   );
 
   t.throws(() =>
     request.should.not.have.header('Content-Type'),
-    /expected header 'Content-Type' to not exist/
+  /expected header 'Content-Type' to not exist/
   );
 
   t.throws(() =>
     expect(request).to.have.header('User-Agent'),
-    /expected header 'User-Agent' to exist/
+  /expected header 'User-Agent' to exist/
   );
 
   t.throws(() =>
     request.should.not.have.header('X-POWERED-BY'),
-    /expected header 'X-POWERED-BY' to not exist/
+  /expected header 'X-POWERED-BY' to not exist/
   );
 
   t.throws(() =>
     request.should.not.have.header('X-POWERED-BY'),
-    /expected header 'X-POWERED-BY' to not exist/
+  /expected header 'X-POWERED-BY' to not exist/
   );
 
   t.throws(() =>
     expect(request).not.to.have.header('Set-Cookie'),
-    /expected header 'Set-Cookie' to not exist/
+  /expected header 'Set-Cookie' to not exist/
   );
 
   t.end();
@@ -159,32 +159,32 @@ test('response header existence assertion (fail)', (t) => {
 
   t.throws(() =>
     expect(response).not.to.have.headers,
-    /expected the response to not have any headers/
+  /expected the response to not have any headers/
   );
 
   t.throws(() =>
     response.should.not.have.header('Content-Type'),
-    /expected header 'Content-Type' to not exist/
+  /expected header 'Content-Type' to not exist/
   );
 
   t.throws(() =>
     expect(response).to.have.header('User-Agent'),
-    /expected header 'User-Agent' to exist/
+  /expected header 'User-Agent' to exist/
   );
 
   t.throws(() =>
     response.should.not.have.header('X-POWERED-BY'),
-    /expected header 'X-POWERED-BY' to not exist/
+  /expected header 'X-POWERED-BY' to not exist/
   );
 
   t.throws(() =>
     response.should.not.have.header('X-POWERED-BY'),
-    /expected header 'X-POWERED-BY' to not exist/
+  /expected header 'X-POWERED-BY' to not exist/
   );
 
   t.throws(() =>
     expect(response).not.to.have.header('Set-Cookie'),
-    /expected header 'Set-Cookie' to not exist/
+  /expected header 'Set-Cookie' to not exist/
   );
 
   t.end();

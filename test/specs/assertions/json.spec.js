@@ -12,7 +12,7 @@ test('json assertion with empty response', (t) => {
 
   t.throws(() =>
     response.should.be.json,
-    /expected the response type to be 'json' but got '<content-type-not-set>'/
+  /expected the response type to be 'json' but got '<content-type-not-set>'/
   );
 
   t.end();
@@ -49,7 +49,7 @@ test('json assertion with non-JSON response', (t) => {
 
   t.throws(() =>
     expect(response).to.be.json,
-    /expected the response type to be 'json' but got 'application\/hal\+json; charset=utf-8'/
+  /expected the response type to be 'json' but got 'application\/hal\+json; charset=utf-8'/
   );
 
   t.end();

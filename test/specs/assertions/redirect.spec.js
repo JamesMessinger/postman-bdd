@@ -21,7 +21,7 @@ for (let code of codes.nonRedirect) {
 
     t.throws(() =>
       response.should.redirect,
-      new RegExp(`expected redirect status code but got ${code}`)
+    new RegExp(`expected redirect status code but got ${code}`)
     );
 
     t.end();
@@ -43,7 +43,7 @@ for (let code of codes.redirect) {
 
     t.throws(() =>
       response.should.not.redirect,
-      new RegExp(`expected not to redirect but got ${code} status`)
+    new RegExp(`expected not to redirect but got ${code} status`)
     );
 
     t.end();

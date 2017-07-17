@@ -18,22 +18,22 @@ test('request header value assertion with empty request/response', (t) => {
 
   t.throws(() =>
     request.should.have.header('foo', 'bar'),
-    /expected header 'foo' to have value 'bar'/
+  /expected header 'foo' to have value 'bar'/
   );
 
   t.throws(() =>
     request.should.have.header('foo', undefined),
-    /expected header 'foo' to have value undefined but got '<header-not-set>'/
+  /expected header 'foo' to have value undefined but got '<header-not-set>'/
   );
 
   t.throws(() =>
     response.should.have.header('foo', 'bar'),
-    /expected header 'foo' to have value 'bar'/
+  /expected header 'foo' to have value 'bar'/
   );
 
   t.throws(() =>
     response.should.have.header('foo', undefined),
-    /expected header 'foo' to have value undefined but got '<header-not-set>'/
+  /expected header 'foo' to have value undefined but got '<header-not-set>'/
   );
 
   t.end();
@@ -111,37 +111,37 @@ test('request header value assertion (fail)', (t) => {
 
   t.throws(() =>
     request.should.not.have.header('foo', 'bar'),
-    /expected header 'foo' to not have value 'bar'/
+  /expected header 'foo' to not have value 'bar'/
   );
 
   t.throws(() =>
     request.should.have.header('foo', 'zzzzz'),
-    /expected header 'foo' to have value 'zzzzz'/
+  /expected header 'foo' to have value 'zzzzz'/
   );
 
   t.throws(() =>
     expect(request).not.to.have.header('Set-Cookie', 'myCookie=hello'),
-    /expected header 'Set-Cookie' to not have value 'myCookie=hello'/
+  /expected header 'Set-Cookie' to not have value 'myCookie=hello'/
   );
 
   t.throws(() =>
     expect(request).to.have.header('Set-Cookie', 'someOtherCookie=goodbye'),
-    /expected header 'Set-Cookie' to have value 'someOtherCookie=goodbye'/
+  /expected header 'Set-Cookie' to have value 'someOtherCookie=goodbye'/
   );
 
   t.throws(() =>
     request.should.not.have.header('X-POWERED-BY', /^my (\w+ )+server$/),
-    /expected header 'X-POWERED-BY' to not match \/\^my \(\\w\+ \)\+server\$\//
+  /expected header 'X-POWERED-BY' to not match \/\^my \(\\w\+ \)\+server\$\//
   );
 
   t.throws(() =>
     expect(request).to.have.header('x-powered-by', /^my awesome server$/),
-    /expected header 'x-powered-by' to match \/\^my awesome server\$\//
+  /expected header 'x-powered-by' to match \/\^my awesome server\$\//
   );
 
   t.throws(() =>
     expect(request).to.have.header('xyz', /^some expression$/),
-    /expected header 'xyz' to match \/\^some expression\$\/ but got '<header-not-set>'/
+  /expected header 'xyz' to match \/\^some expression\$\/ but got '<header-not-set>'/
   );
 
   t.end();
@@ -159,37 +159,37 @@ test('response header value assertion (fail)', (t) => {
 
   t.throws(() =>
     response.should.not.have.header('foo', 'bar'),
-    /expected header 'foo' to not have value 'bar'/
+  /expected header 'foo' to not have value 'bar'/
   );
 
   t.throws(() =>
     response.should.have.header('foo', 'zzzzz'),
-    /expected header 'foo' to have value 'zzzzz'/
+  /expected header 'foo' to have value 'zzzzz'/
   );
 
   t.throws(() =>
     expect(response).not.to.have.header('Set-Cookie', 'myCookie=hello'),
-    /expected header 'Set-Cookie' to not have value 'myCookie=hello'/
+  /expected header 'Set-Cookie' to not have value 'myCookie=hello'/
   );
 
   t.throws(() =>
     expect(response).to.have.header('Set-Cookie', 'someOtherCookie=goodbye'),
-    /expected header 'Set-Cookie' to have value 'someOtherCookie=goodbye'/
+  /expected header 'Set-Cookie' to have value 'someOtherCookie=goodbye'/
   );
 
   t.throws(() =>
     response.should.not.have.header('X-POWERED-BY', /^my (\w+ )+server$/),
-    /expected header 'X-POWERED-BY' to not match \/\^my \(\\w\+ \)\+server\$\//
+  /expected header 'X-POWERED-BY' to not match \/\^my \(\\w\+ \)\+server\$\//
   );
 
   t.throws(() =>
     expect(response).to.have.header('x-powered-by', /^my awesome server$/),
-    /expected header 'x-powered-by' to match \/\^my awesome server\$\//
+  /expected header 'x-powered-by' to match \/\^my awesome server\$\//
   );
 
   t.throws(() =>
     expect(response).to.have.header('xyz', /^some expression$/),
-    /expected header 'xyz' to match \/\^some expression\$\/ but got '<header-not-set>'/
+  /expected header 'xyz' to match \/\^some expression\$\/ but got '<header-not-set>'/
   );
 
   t.end();

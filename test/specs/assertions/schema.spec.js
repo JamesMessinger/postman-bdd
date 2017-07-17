@@ -14,12 +14,12 @@ test('JSON schema assertion with empty body', (t) => {
 
   t.throws(() =>
     response.body.should.have.schema({ type: 'object' }),
-    /Invalid type: string \(expected object\)/
+  /Invalid type: string \(expected object\)/
   );
 
   t.throws(() =>
     response.body.should.have.schema({ type: 'string', minLength: 25 }),
-    /String is too short \(0 chars\)/
+  /String is too short \(0 chars\)/
   );
 
   t.end();
@@ -37,7 +37,7 @@ test('JSON schema assertion without Content-Type header', (t) => {
 
   t.throws(() =>
     response.body.should.have.schema({ type: 'object' }),
-    /Invalid type: string \(expected object\)/
+  /Invalid type: string \(expected object\)/
   );
 
   t.end();
@@ -71,7 +71,7 @@ test('JSON schema assertion with XML content', (t) => {
 
   t.throws(() =>
     response.body.should.have.schema({ type: 'string' }),
-    /Invalid type: object \(expected string\)/
+  /Invalid type: object \(expected string\)/
   );
 
   t.end();
@@ -127,7 +127,7 @@ test('JSON schema assertion (fail)', (t) => {
         },
       },
     }),
-    /name is invalid. String is too short \(0 chars\), minimum 1/
+  /name is invalid. String is too short \(0 chars\), minimum 1/
   );
 
   t.throws(() =>
@@ -141,7 +141,7 @@ test('JSON schema assertion (fail)', (t) => {
         },
       },
     }),
-    /age is invalid. Value 999 is greater than maximum 100/
+  /age is invalid. Value 999 is greater than maximum 100/
   );
 
   t.throws(() =>
@@ -149,7 +149,7 @@ test('JSON schema assertion (fail)', (t) => {
       type: 'object',
       required: ['name', 'age', 'occupation'],
     }),
-    /Missing required property: occupation/
+  /Missing required property: occupation/
   );
 
   t.throws(() =>
@@ -162,7 +162,7 @@ test('JSON schema assertion (fail)', (t) => {
         }
       },
     }),
-    /address is invalid. Missing required property: city/
+  /address is invalid. Missing required property: city/
   );
 
   t.throws(() =>
@@ -180,7 +180,7 @@ test('JSON schema assertion (fail)', (t) => {
         }
       },
     }),
-    /address.street is invalid. Missing required property: line1/
+  /address.street is invalid. Missing required property: line1/
   );
 
   t.end();

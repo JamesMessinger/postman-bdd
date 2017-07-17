@@ -24,22 +24,22 @@ test('cookie existence assertion with empty request/response', (t) => {
 
   t.throws(() =>
     request.should.have.cookies,
-    /expected the request to have cookies/
+  /expected the request to have cookies/
   );
 
   t.throws(() =>
     request.should.have.cookie('foo'),
-    /expected cookie 'foo' to exist/
+  /expected cookie 'foo' to exist/
   );
 
   t.throws(() =>
     response.should.have.cookies,
-    /expected the response to have cookies/
+  /expected the response to have cookies/
   );
 
   t.throws(() =>
     response.should.have.cookie('foo'),
-    /expected cookie 'foo' to exist/
+  /expected cookie 'foo' to exist/
   );
 
   t.end();
@@ -112,27 +112,27 @@ test('request cookie existence assertion (fail)', (t) => {
 
   t.throws(() =>
     request.should.not.have.cookies,
-    /expected the response to not have any cookies/
+  /expected the response to not have any cookies/
   );
 
   t.throws(() =>
     expect(request).not.to.have.cookie('foo'),
-    /expected cookie 'foo' to not exist/
+  /expected cookie 'foo' to not exist/
   );
 
   t.throws(() =>
     request.should.have.cookie('y'),
-    /expected cookie 'y' to exist/
+  /expected cookie 'y' to exist/
   );
 
   t.throws(() =>
     expect(request).not.to.have.cookie('empty'),
-    /expected cookie 'empty' to not exist/
+  /expected cookie 'empty' to not exist/
   );
 
   t.throws(() =>
     request.should.have.cookie('missing'),
-    /expected cookie 'missing' to exist/
+  /expected cookie 'missing' to exist/
   );
 
   t.end();
@@ -151,27 +151,27 @@ test('response cookie existence assertion (fail)', (t) => {
 
   t.throws(() =>
     response.should.not.have.cookies,
-    /expected the response to not have any cookies/
+  /expected the response to not have any cookies/
   );
 
   t.throws(() =>
     expect(response).not.to.have.cookie('foo'),
-    /expected cookie 'foo' to not exist/
+  /expected cookie 'foo' to not exist/
   );
 
   t.throws(() =>
     response.should.have.cookie('y'),
-    /expected cookie 'y' to exist/
+  /expected cookie 'y' to exist/
   );
 
   t.throws(() =>
     expect(response).not.to.have.cookie('empty'),
-    /expected cookie 'empty' to not exist/
+  /expected cookie 'empty' to not exist/
   );
 
   t.throws(() =>
     response.should.have.cookie('missing'),
-    /expected cookie 'missing' to exist/
+  /expected cookie 'missing' to exist/
   );
 
   t.end();

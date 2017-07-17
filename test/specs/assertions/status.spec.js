@@ -30,22 +30,22 @@ test('status assertion (fail)', (t) => {
 
   t.throws(() =>
     response.should.have.status(404),
-    /expected the response to have status code 404 but got 200/
+  /expected the response to have status code 404 but got 200/
   );
 
   t.throws(() =>
     expect(response).to.have.status(404),
-    /expected the response to have status code 404/
+  /expected the response to have status code 404/
   );
 
   t.throws(() =>
     response.should.not.have.status(200),
-    /expected the response to not have status code 200/
+  /expected the response to not have status code 200/
   );
 
   t.throws(() =>
     expect(response).not.to.have.status(200),
-    /expected the response to not have status code 200/
+  /expected the response to not have status code 200/
   );
 
   t.end();

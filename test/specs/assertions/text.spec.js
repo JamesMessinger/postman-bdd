@@ -12,7 +12,7 @@ test('text assertion with empty response', (t) => {
 
   t.throws(() =>
     response.should.be.text,
-    /expected the response type to be 'text' but got '<content-type-not-set>'/
+  /expected the response type to be 'text' but got '<content-type-not-set>'/
   );
 
   t.end();
@@ -49,7 +49,7 @@ test('text assertion with non-text response', (t) => {
 
   t.throws(() =>
     expect(response).to.be.text,
-    /expected the response type to be 'text' but got 'text\/rtf; charset=utf-8'/
+  /expected the response type to be 'text' but got 'text\/rtf; charset=utf-8'/
   );
 
   t.end();

@@ -15,12 +15,12 @@ test('param existence assertion with empty request', (t) => {
 
   t.throws(() =>
     request.should.have.params,
-    /expected the request to have query parameters/
+  /expected the request to have query parameters/
   );
 
   t.throws(() =>
     request.should.have.param('foo'),
-    /expected query parameter 'foo' to exist/
+  /expected query parameter 'foo' to exist/
   );
 
   t.end();
@@ -85,37 +85,37 @@ test('param existence assertion (fail)', (t) => {
 
   t.throws(() =>
     expect(request).not.to.have.params,
-    /expected the request to not have any query parameters/
+  /expected the request to not have any query parameters/
   );
 
   t.throws(() =>
     request.should.not.have.param('foo'),
-    /expected query parameter 'foo' to not exist/
+  /expected query parameter 'foo' to not exist/
   );
 
   t.throws(() =>
     expect(request).not.to.have.param('x'),
-    /expected query parameter 'x' to not exist/
+  /expected query parameter 'x' to not exist/
   );
 
   t.throws(() =>
     expect(request).not.to.have.param('name-only'),
-    /expected query parameter 'name-only' to not exist/
+  /expected query parameter 'name-only' to not exist/
   );
 
   t.throws(() =>
     expect(request).not.to.have.param('empty'),
-    /expected query parameter 'empty' to not exist/
+  /expected query parameter 'empty' to not exist/
   );
 
   t.throws(() =>
     request.should.have.param('bar'),
-    /expected query parameter 'bar' to exist/
+  /expected query parameter 'bar' to exist/
   );
 
   t.throws(() =>
     request.should.have.param('y'),
-    /expected query parameter 'y' to exist/
+  /expected query parameter 'y' to exist/
   );
 
   t.end();
@@ -130,27 +130,27 @@ test('deep param existence assertion (fail)', (t) => {
 
   t.throws(() =>
     expect(request).not.to.have.params,
-    /expected the request to not have any query parameters/
+  /expected the request to not have any query parameters/
   );
 
   t.throws(() =>
     request.should.not.have.param('person.firstName'),
-    /expected query parameter 'person.firstName' to not exist/
+  /expected query parameter 'person.firstName' to not exist/
   );
 
   t.throws(() =>
     expect(request).not.to.have.deep.param('person[lastName]'),
-    /expected query parameter 'person\[lastName\]' to not exist/
+  /expected query parameter 'person\[lastName\]' to not exist/
   );
 
   t.throws(() =>
     request.should.have.param('person'),
-    /expected query parameter 'person' to exist/
+  /expected query parameter 'person' to exist/
   );
 
   t.throws(() =>
     request.should.have.deep.param('lastName'),
-    /expected query parameter 'lastName' to exist/
+  /expected query parameter 'lastName' to exist/
   );
 
   t.end();

@@ -22,22 +22,22 @@ test('cookie value assertion with empty request/response', (t) => {
 
   t.throws(() =>
     request.should.have.cookie('foo', 'bar'),
-    /expected cookie 'foo' to have value 'bar'/
+  /expected cookie 'foo' to have value 'bar'/
   );
 
   t.throws(() =>
     request.should.have.cookie('foo', undefined),
-    /expected cookie 'foo' to have value undefined but got '<cookie-not-set>'/
+  /expected cookie 'foo' to have value undefined but got '<cookie-not-set>'/
   );
 
   t.throws(() =>
     response.should.have.cookie('foo', 'bar'),
-    /expected cookie 'foo' to have value 'bar'/
+  /expected cookie 'foo' to have value 'bar'/
   );
 
   t.throws(() =>
     response.should.have.cookie('foo', undefined),
-    /expected cookie 'foo' to have value undefined but got '<cookie-not-set>'/
+  /expected cookie 'foo' to have value undefined but got '<cookie-not-set>'/
   );
 
   t.end();
@@ -112,27 +112,27 @@ test('request cookie value assertion (fail)', (t) => {
 
   t.throws(() =>
     request.should.not.have.cookie('foo', 'bar'),
-    /expected cookie 'foo' to not have value 'bar'/
+  /expected cookie 'foo' to not have value 'bar'/
   );
 
   t.throws(() =>
     request.should.have.cookie('foo', 'zzzzz'),
-    /expected cookie 'foo' to have value 'zzzzz'/
+  /expected cookie 'foo' to have value 'zzzzz'/
   );
 
   t.throws(() =>
     expect(request).not.to.have.cookie('empty', ''),
-    /expected cookie 'empty' to not have value ''/
+  /expected cookie 'empty' to not have value ''/
   );
 
   t.throws(() =>
     expect(request).to.have.cookie('missing', /^Sarah|Alice|Yvonne$/),
-    /expected cookie 'missing' to match \/\^Sarah\|Alice\|Yvonne\$\/ but got '\<cookie-not-set\>'/
+  /expected cookie 'missing' to match \/\^Sarah\|Alice\|Yvonne\$\/ but got '\<cookie-not-set\>'/
   );
 
   t.throws(() =>
     request.should.not.have.cookie('empty', /^$/),
-    /expected cookie 'empty' to not match \/\^\$\//
+  /expected cookie 'empty' to not match \/\^\$\//
   );
 
   t.end();
@@ -151,27 +151,27 @@ test('response cookie value assertion (fail)', (t) => {
 
   t.throws(() =>
     response.should.not.have.cookie('foo', 'bar'),
-    /expected cookie 'foo' to not have value 'bar'/
+  /expected cookie 'foo' to not have value 'bar'/
   );
 
   t.throws(() =>
     response.should.have.cookie('foo', 'zzzzz'),
-    /expected cookie 'foo' to have value 'zzzzz'/
+  /expected cookie 'foo' to have value 'zzzzz'/
   );
 
   t.throws(() =>
     expect(response).not.to.have.cookie('empty', ''),
-    /expected cookie 'empty' to not have value ''/
+  /expected cookie 'empty' to not have value ''/
   );
 
   t.throws(() =>
     expect(response).to.have.cookie('missing', /^Sarah|Alice|Yvonne$/),
-    /expected cookie 'missing' to match \/\^Sarah\|Alice\|Yvonne\$\/ but got '\<cookie-not-set\>'/
+  /expected cookie 'missing' to match \/\^Sarah\|Alice\|Yvonne\$\/ but got '\<cookie-not-set\>'/
   );
 
   t.throws(() =>
     response.should.not.have.cookie('empty', /^$/),
-    /expected cookie 'empty' to not match \/\^\$\//
+  /expected cookie 'empty' to not match \/\^\$\//
   );
 
   t.end();
