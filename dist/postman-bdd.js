@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v5.0.1 (June 11th 2017)
+ * Postman BDD v5.0.2 (July 17th 2017)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
@@ -459,7 +459,7 @@ function wasRedirected (obj) {
   return redirectCodes.indexOf(status) >= 0 || redirects && redirects.length;
 }
 
-},{"./cookies":3,"is-ip":51,"url":57}],2:[function(require,module,exports){
+},{"./cookies":3,"is-ip":50,"url":57}],2:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -656,7 +656,7 @@ module.exports = {
   },
 };
 
-},{"cookiejar":48}],4:[function(require,module,exports){
+},{"cookiejar":45}],4:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -1378,7 +1378,7 @@ var used = [];
  * Chai version
  */
 
-exports.version = '4.0.2';
+exports.version = '4.1.0';
 
 /*!
  * Assertion Error
@@ -2055,6 +2055,16 @@ module.exports = function (chai, _) {
    *
    *     expect({a: 1, b: 2, c: 3}).to.include({a: 1, b: 2});
    *
+   * When the target is a Set or WeakSet, `.include` asserts that the given `val` is a
+   * member of the target. SameValueZero equality algorithm is used.
+   *
+   *     expect(new Set([1, 2])).to.include(2);
+   *
+   * When the target is a Map, `.include` asserts that the given `val` is one of
+   * the values of the target. SameValueZero equality algorithm is used.
+   *
+   *     expect(new Map([['a', 1], ['b', 2]])).to.include(2);
+   *
    * Because `.include` does different things based on the target's type, it's
    * important to check the target's type before using `.include`. See the `.a`
    * doc for info on testing a target's type.
@@ -2063,8 +2073,8 @@ module.exports = function (chai, _) {
    *
    * By default, strict (`===`) equality is used to compare array members and
    * object properties. Add `.deep` earlier in the chain to use deep equality
-   * instead. See the `deep-eql` project page for info on the deep equality
-   * algorithm: https://github.com/chaijs/deep-eql.
+   * instead (WeakSet targets are not supported). See the `deep-eql` project
+   * page for info on the deep equality algorithm: https://github.com/chaijs/deep-eql.
    *
    *     // Target array deeply (but not strictly) includes `{a: 1}`
    *     expect([{a: 1}]).to.deep.include({a: 1});
@@ -2174,25 +2184,24 @@ module.exports = function (chai, _) {
    * @api public
    */
 
-  function includeChainingBehavior () {
-    flag(this, 'contains', true);
+  function SameValueZero(a, b) {
+    return (_.isNaN(a) && _.isNaN(b)) || a === b;
   }
 
-  function isDeepIncluded (arr, val) {
-    return arr.some(function (arrVal) {
-      return _.eql(arrVal, val);
-    });
+  function includeChainingBehavior () {
+    flag(this, 'contains', true);
   }
 
   function include (val, msg) {
     if (msg) flag(this, 'message', msg);
 
-    _.expectTypes(this, ['array', 'object', 'string'], flag(this, 'ssfi'));
+    _.expectTypes(this, [
+      'array', 'object', 'string',
+      'map', 'set', 'weakset',
+    ]);
 
     var obj = flag(this, 'object')
-      , objType = _.type(obj).toLowerCase()
-      , isDeep = flag(this, 'deep')
-      , descriptor = isDeep ? 'deep ' : '';
+      , objType = _.type(obj).toLowerCase();
 
     // This block is for asserting a subset of properties in an object.
     if (objType === 'object') {
@@ -2229,10 +2238,62 @@ module.exports = function (chai, _) {
       return;
     }
 
-    // Assert inclusion in an array or substring in a string.
+    var isDeep = flag(this, 'deep')
+      , descriptor = isDeep ? 'deep ' : ''
+      , included = false;
+
+    switch (objType) {
+      case 'string':
+        included = obj.indexOf(val) !== -1;
+        break;
+
+      case 'weakset':
+        if (isDeep) {
+          var flagMsg = flag(this, 'message')
+            , ssfi = flag(this, 'ssfi');
+          flagMsg = flagMsg ? flagMsg + ': ' : '';
+
+          throw new AssertionError(
+            flagMsg + 'unable to use .deep.include with WeakSet',
+            undefined,
+            ssfi
+          );
+        }
+
+        included = obj.has(val);
+        break;
+
+      case 'map':
+        var isEql = isDeep ? _.eql : SameValueZero;
+        obj.forEach(function (item) {
+          included = included || isEql(item, val);
+        });
+        break;
+
+      case 'set':
+        if (isDeep) {
+          obj.forEach(function (item) {
+            included = included || _.eql(item, val);
+          });
+        } else {
+          included = obj.has(val);
+        }
+        break;
+
+      case 'array':
+        if (isDeep) {
+          included = obj.some(function (item) {
+            return _.eql(item, val);
+          })
+        } else {
+          included = obj.indexOf(val) !== -1;
+        }
+        break;
+    }
+
+    // Assert inclusion in collection or substring in a string.
     this.assert(
-        objType === 'string' || !isDeep ? ~obj.indexOf(val)
-                                        : isDeepIncluded(obj, val)
+      included
       , 'expected #{this} to ' + descriptor + 'include ' + _.inspect(val)
       , 'expected #{this} to not ' + descriptor + 'include ' + _.inspect(val));
   }
@@ -2749,7 +2810,7 @@ module.exports = function (chai, _) {
   /**
    * ### .above(n[, msg])
    *
-   * Asserts that the target is a number greater than the given number `n`.
+   * Asserts that the target is a number or a date greater than the given number or date `n` respectively.
    * However, it's often best to assert that the target is equal to its expected
    * value.
    *
@@ -2794,21 +2855,29 @@ module.exports = function (chai, _) {
     var obj = flag(this, 'object')
       , doLength = flag(this, 'doLength')
       , flagMsg = flag(this, 'message')
-      , ssfi = flag(this, 'ssfi');
+      , msgPrefix = ((flagMsg) ? flagMsg + ': ' : '')
+      , ssfi = flag(this, 'ssfi')
+      , objType = _.type(obj).toLowerCase()
+      , nType = _.type(n).toLowerCase()
+      , shouldThrow = true;
 
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
+    }
+    
+    if (!doLength && (objType === 'date' && nType !== 'date')) {
+      errorMessage = msgPrefix + 'the argument to above must be a date';
+    } else if (nType !== 'number' && (doLength || objType === 'number')) {
+      errorMessage = msgPrefix + 'the argument to above must be a number';
+    } else if (!doLength && (objType !== 'date' && objType !== 'number')) {
+      var printObj = (objType === 'string') ? "'" + obj + "'" : obj;
+      errorMessage = msgPrefix + 'expected ' + printObj + ' to be a number or a date';
     } else {
-      new Assertion(obj, flagMsg, ssfi, true).is.a('number');
+      shouldThrow = false;
     }
 
-    if (typeof n !== 'number') {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      throw new AssertionError(
-        flagMsg + 'the argument to above must be a number',
-        undefined,
-        ssfi
-      );
+    if (shouldThrow) {
+      throw new AssertionError(errorMessage, undefined, ssfi);
     }
 
     if (doLength) {
@@ -2823,8 +2892,9 @@ module.exports = function (chai, _) {
     } else {
       this.assert(
           obj > n
-        , 'expected #{this} to be above ' + n
-        , 'expected #{this} to be at most ' + n
+        , 'expected #{this} to be above #{exp}'
+        , 'expected #{this} to be at most #{exp}'
+        , n
       );
     }
   }
@@ -2836,8 +2906,8 @@ module.exports = function (chai, _) {
   /**
    * ### .least(n[, msg])
    *
-   * Asserts that the target is a number greater than or equal to the given
-   * number `n`. However, it's often best to assert that the target is equal to
+   * Asserts that the target is a number or a date greater than or equal to the given
+   * number or date `n` respectively. However, it's often best to assert that the target is equal to
    * its expected value.
    *
    *     expect(2).to.equal(2); // Recommended
@@ -2881,21 +2951,29 @@ module.exports = function (chai, _) {
     var obj = flag(this, 'object')
       , doLength = flag(this, 'doLength')
       , flagMsg = flag(this, 'message')
-      , ssfi = flag(this, 'ssfi');
+      , msgPrefix = ((flagMsg) ? flagMsg + ': ' : '')
+      , ssfi = flag(this, 'ssfi')
+      , objType = _.type(obj).toLowerCase()
+      , nType = _.type(n).toLowerCase()
+      , shouldThrow = true;
 
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
-    } else {
-      new Assertion(obj, flagMsg, ssfi, true).is.a('number');
     }
 
-    if (typeof n !== 'number') {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      throw new AssertionError(
-        flagMsg + 'the argument to least must be a number',
-        undefined,
-        ssfi
-      );
+    if (!doLength && (objType === 'date' && nType !== 'date')) {
+      errorMessage = msgPrefix + 'the argument to least must be a date';
+    } else if (nType !== 'number' && (doLength || objType === 'number')) {
+      errorMessage = msgPrefix + 'the argument to least must be a number';
+    } else if (!doLength && (objType !== 'date' && objType !== 'number')) {
+      var printObj = (objType === 'string') ? "'" + obj + "'" : obj;
+      errorMessage = msgPrefix + 'expected ' + printObj + ' to be a number or a date';
+    } else {
+      shouldThrow = false;
+    }
+
+    if (shouldThrow) {
+      throw new AssertionError(errorMessage, undefined, ssfi);
     }
 
     if (doLength) {
@@ -2910,8 +2988,9 @@ module.exports = function (chai, _) {
     } else {
       this.assert(
           obj >= n
-        , 'expected #{this} to be at least ' + n
-        , 'expected #{this} to be below ' + n
+        , 'expected #{this} to be at least #{exp}'
+        , 'expected #{this} to be below #{exp}'
+        , n
       );
     }
   }
@@ -2922,7 +3001,7 @@ module.exports = function (chai, _) {
   /**
    * ### .below(n[, msg])
    *
-   * Asserts that the target is a number less than the given number `n`.
+   * Asserts that the target is a number or a date less than the given number or date `n` respectively.
    * However, it's often best to assert that the target is equal to its expected
    * value.
    *
@@ -2967,21 +3046,29 @@ module.exports = function (chai, _) {
     var obj = flag(this, 'object')
       , doLength = flag(this, 'doLength')
       , flagMsg = flag(this, 'message')
-      , ssfi = flag(this, 'ssfi');
+      , msgPrefix = ((flagMsg) ? flagMsg + ': ' : '')
+      , ssfi = flag(this, 'ssfi')
+      , objType = _.type(obj).toLowerCase()
+      , nType = _.type(n).toLowerCase()
+      , shouldThrow = true;
 
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
-    } else {
-      new Assertion(obj, flagMsg, ssfi, true).is.a('number');
     }
 
-    if (typeof n !== 'number') {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      throw new AssertionError(
-        flagMsg + 'the argument to below must be a number',
-        undefined,
-        ssfi
-      );
+    if (!doLength && (objType === 'date' && nType !== 'date')) {
+      errorMessage = msgPrefix + 'the argument to below must be a date';
+    } else if (nType !== 'number' && (doLength || objType === 'number')) {
+      errorMessage = msgPrefix + 'the argument to below must be a number';
+    } else if (!doLength && (objType !== 'date' && objType !== 'number')) {
+      var printObj = (objType === 'string') ? "'" + obj + "'" : obj;
+      errorMessage = msgPrefix + 'expected ' + printObj + ' to be a number or a date';
+    } else {
+      shouldThrow = false;
+    }
+
+    if (shouldThrow) {
+      throw new AssertionError(errorMessage, undefined, ssfi);
     }
 
     if (doLength) {
@@ -2996,8 +3083,9 @@ module.exports = function (chai, _) {
     } else {
       this.assert(
           obj < n
-        , 'expected #{this} to be below ' + n
-        , 'expected #{this} to be at least ' + n
+        , 'expected #{this} to be below #{exp}'
+        , 'expected #{this} to be at least #{exp}'
+        , n
       );
     }
   }
@@ -3009,8 +3097,8 @@ module.exports = function (chai, _) {
   /**
    * ### .most(n[, msg])
    *
-   * Asserts that the target is a number less than or equal to the given number
-   * `n`. However, it's often best to assert that the target is equal to its
+   * Asserts that the target is a number or a date less than or equal to the given number
+   * or date `n` respectively. However, it's often best to assert that the target is equal to its
    * expected value.
    *
    *     expect(1).to.equal(1); // Recommended
@@ -3053,21 +3141,29 @@ module.exports = function (chai, _) {
     var obj = flag(this, 'object')
       , doLength = flag(this, 'doLength')
       , flagMsg = flag(this, 'message')
-      , ssfi = flag(this, 'ssfi');
+      , msgPrefix = ((flagMsg) ? flagMsg + ': ' : '')
+      , ssfi = flag(this, 'ssfi')
+      , objType = _.type(obj).toLowerCase()
+      , nType = _.type(n).toLowerCase()
+      , shouldThrow = true;
 
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
+    }
+    
+    if (!doLength && (objType === 'date' && nType !== 'date')) {
+      errorMessage = msgPrefix + 'the argument to most must be a date';
+    } else if (nType !== 'number' && (doLength || objType === 'number')) {
+      errorMessage = msgPrefix + 'the argument to most must be a number';
+    } else if (!doLength && (objType !== 'date' && objType !== 'number')) {
+      var printObj = (objType === 'string') ? "'" + obj + "'" : obj;
+      errorMessage = msgPrefix + 'expected ' + printObj + ' to be a number or a date';
     } else {
-      new Assertion(obj, flagMsg, ssfi, true).is.a('number');
+      shouldThrow = false;
     }
 
-    if (typeof n !== 'number') {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      throw new AssertionError(
-        flagMsg + 'the argument to most must be a number',
-        undefined,
-        ssfi
-      );
+    if (shouldThrow) {
+      throw new AssertionError(errorMessage, undefined, ssfi);
     }
 
     if (doLength) {
@@ -3082,8 +3178,9 @@ module.exports = function (chai, _) {
     } else {
       this.assert(
           obj <= n
-        , 'expected #{this} to be at most ' + n
-        , 'expected #{this} to be above ' + n
+        , 'expected #{this} to be at most #{exp}'
+        , 'expected #{this} to be above #{exp}'
+        , n
       );
     }
   }
@@ -3094,8 +3191,8 @@ module.exports = function (chai, _) {
   /**
    * ### .within(start, finish[, msg])
    *
-   * Asserts that the target is a number greater than or equal to the given
-   * number `start`, and less than or equal to the given number `finish`.
+   * Asserts that the target is a number or a date greater than or equal to the given
+   * number or date `start`, and less than or equal to the given number or date `finish` respectively.
    * However, it's often best to assert that the target is equal to its expected
    * value.
    *
@@ -3137,24 +3234,35 @@ module.exports = function (chai, _) {
   Assertion.addMethod('within', function (start, finish, msg) {
     if (msg) flag(this, 'message', msg);
     var obj = flag(this, 'object')
-      , range  = start + '..' + finish
       , doLength = flag(this, 'doLength')
       , flagMsg = flag(this, 'message')
-      , ssfi = flag(this, 'ssfi');
+      , msgPrefix = ((flagMsg) ? flagMsg + ': ' : '')
+      , ssfi = flag(this, 'ssfi')
+      , objType = _.type(obj).toLowerCase()
+      , startType = _.type(start).toLowerCase()
+      , finishType = _.type(finish).toLowerCase()
+      , shouldThrow = true
+      , range = (startType === 'date' && finishType === 'date')
+          ? start.toUTCString() + '..' + finish.toUTCString()
+          : start + '..' + finish;
 
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
-    } else {
-      new Assertion(obj, flagMsg, ssfi, true).is.a('number');
     }
 
-    if (typeof start !== 'number' || typeof finish !== 'number') {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      throw new AssertionError(
-        flagMsg + 'the arguments to within must be numbers',
-        undefined,
-        ssfi
-      );
+    if (!doLength && (objType === 'date' && (startType !== 'date' || finishType !== 'date'))) {
+      errorMessage = msgPrefix + 'the arguments to within must be dates';
+    } else if ((startType !== 'number' || finishType !== 'number') && (doLength || objType === 'number')) {
+      errorMessage = msgPrefix + 'the arguments to within must be numbers';
+    } else if (!doLength && (objType !== 'date' && objType !== 'number')) {
+      var printObj = (objType === 'string') ? "'" + obj + "'" : obj;
+      errorMessage = msgPrefix + 'expected ' + printObj + ' to be a number or a date';
+    } else {
+      shouldThrow = false;
+    }
+
+    if (shouldThrow) {
+      throw new AssertionError(errorMessage, undefined, ssfi);
     }
 
     if (doLength) {
@@ -3369,6 +3477,7 @@ module.exports = function (chai, _) {
     var isNested = flag(this, 'nested')
       , isOwn = flag(this, 'own')
       , flagMsg = flag(this, 'message')
+      , obj = flag(this, 'object')
       , ssfi = flag(this, 'ssfi');
 
     if (isNested && isOwn) {
@@ -3380,9 +3489,17 @@ module.exports = function (chai, _) {
       );
     }
 
+    if (obj === null || obj === undefined) {
+      flagMsg = flagMsg ? flagMsg + ': ' : '';
+      throw new AssertionError(
+        flagMsg + 'Target cannot be null or undefined.',
+        undefined,
+        ssfi
+      );
+    }
+
     var isDeep = flag(this, 'deep')
       , negate = flag(this, 'negate')
-      , obj = flag(this, 'object')
       , pathInfo = isNested ? _.getPathInfo(obj, name) : null
       , value = isNested ? pathInfo.value : obj[name];
 
@@ -9084,8 +9201,6 @@ module.exports = function compareByInspect(a, b) {
  *
  * @param {Mixed} obj constructed Assertion
  * @param {Array} type A list of allowed types for this assertion
- * @param {Function} ssfi starting point for removing implementation frames from
- *                        stack trace of AssertionError
  * @namespace Utils
  * @name expectTypes
  * @api public
@@ -9095,8 +9210,9 @@ var AssertionError = require('assertion-error');
 var flag = require('./flag');
 var type = require('type-detect');
 
-module.exports = function expectTypes(obj, types, ssfi) {
+module.exports = function expectTypes(obj, types) {
   var flagMsg = flag(obj, 'message');
+  var ssfi = flag(obj, 'ssfi');
 
   flagMsg = flagMsg ? flagMsg + ': ' : '';
 
@@ -9104,7 +9220,7 @@ module.exports = function expectTypes(obj, types, ssfi) {
   types = types.map(function (t) { return t.toLowerCase(); });
   types.sort();
 
-  // Transforms ['lorem', 'ipsum'] into 'a lirum, or an ipsum'
+  // Transforms ['lorem', 'ipsum'] into 'a lorem, or an ipsum'
   var str = types.map(function (t, index) {
     var art = ~[ 'a', 'e', 'i', 'o', 'u' ].indexOf(t.charAt(0)) ? 'an' : 'a';
     var or = types.length > 1 && index === types.length - 1 ? 'or ' : '';
@@ -9122,7 +9238,7 @@ module.exports = function expectTypes(obj, types, ssfi) {
   }
 };
 
-},{"./flag":26,"assertion-error":11,"type-detect":46}],26:[function(require,module,exports){
+},{"./flag":26,"assertion-error":11,"type-detect":56}],26:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9532,7 +9648,7 @@ exports.isProxyEnabled = require('./isProxyEnabled');
 
 exports.isNaN = require('./isNaN');
 
-},{"./addChainableMethod":20,"./addLengthGuard":21,"./addMethod":22,"./addProperty":23,"./compareByInspect":24,"./expectTypes":25,"./flag":26,"./getActual":27,"./getMessage":29,"./getOwnEnumerableProperties":30,"./getOwnEnumerablePropertySymbols":31,"./inspect":34,"./isNaN":35,"./isProxyEnabled":36,"./objDisplay":37,"./overwriteChainableMethod":38,"./overwriteMethod":39,"./overwriteProperty":40,"./proxify":41,"./test":42,"./transferFlags":43,"check-error":47,"deep-eql":44,"get-func-name":49,"pathval":52,"type-detect":46}],34:[function(require,module,exports){
+},{"./addChainableMethod":20,"./addLengthGuard":21,"./addMethod":22,"./addProperty":23,"./compareByInspect":24,"./expectTypes":25,"./flag":26,"./getActual":27,"./getMessage":29,"./getOwnEnumerableProperties":30,"./getOwnEnumerablePropertySymbols":31,"./inspect":34,"./isNaN":35,"./isProxyEnabled":36,"./objDisplay":37,"./overwriteChainableMethod":38,"./overwriteMethod":39,"./overwriteProperty":40,"./proxify":41,"./test":42,"./transferFlags":43,"check-error":44,"deep-eql":46,"get-func-name":48,"pathval":51,"type-detect":56}],34:[function(require,module,exports){
 // This is (almost) directly from Node.js utils
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
 
@@ -9621,7 +9737,7 @@ function formatValue(ctx, value, recurseTimes) {
           var container = document.createElementNS(ns, '_');
 
           container.appendChild(value.cloneNode(false));
-          html = container.innerHTML
+          var html = container.innerHTML
             .replace('><', '>' + value.innerHTML + '<');
           container.innerHTML = '';
           return html;
@@ -9917,7 +10033,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-},{"../config":15,"./getEnumerableProperties":28,"./getProperties":32,"get-func-name":49}],35:[function(require,module,exports){
+},{"../config":15,"./getEnumerableProperties":28,"./getProperties":32,"get-func-name":48}],35:[function(require,module,exports){
 /*!
  * Chai - isNaN utility
  * Copyright(c) 2012-2015 Sakthipriyan Vairamani <thechargingvolcano@gmail.com>
@@ -10488,6 +10604,447 @@ module.exports = function transferFlags(assertion, object, includeAll) {
 
 },{}],44:[function(require,module,exports){
 'use strict';
+
+/* !
+ * Chai - checkError utility
+ * Copyright(c) 2012-2016 Jake Luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+
+/**
+ * ### .checkError
+ *
+ * Checks that an error conforms to a given set of criteria and/or retrieves information about it.
+ *
+ * @api public
+ */
+
+/**
+ * ### .compatibleInstance(thrown, errorLike)
+ *
+ * Checks if two instances are compatible (strict equal).
+ * Returns false if errorLike is not an instance of Error, because instances
+ * can only be compatible if they're both error instances.
+ *
+ * @name compatibleInstance
+ * @param {Error} thrown error
+ * @param {Error|ErrorConstructor} errorLike object to compare against
+ * @namespace Utils
+ * @api public
+ */
+
+function compatibleInstance(thrown, errorLike) {
+  return errorLike instanceof Error && thrown === errorLike;
+}
+
+/**
+ * ### .compatibleConstructor(thrown, errorLike)
+ *
+ * Checks if two constructors are compatible.
+ * This function can receive either an error constructor or
+ * an error instance as the `errorLike` argument.
+ * Constructors are compatible if they're the same or if one is
+ * an instance of another.
+ *
+ * @name compatibleConstructor
+ * @param {Error} thrown error
+ * @param {Error|ErrorConstructor} errorLike object to compare against
+ * @namespace Utils
+ * @api public
+ */
+
+function compatibleConstructor(thrown, errorLike) {
+  if (errorLike instanceof Error) {
+    // If `errorLike` is an instance of any error we compare their constructors
+    return thrown.constructor === errorLike.constructor || thrown instanceof errorLike.constructor;
+  } else if (errorLike.prototype instanceof Error || errorLike === Error) {
+    // If `errorLike` is a constructor that inherits from Error, we compare `thrown` to `errorLike` directly
+    return thrown.constructor === errorLike || thrown instanceof errorLike;
+  }
+
+  return false;
+}
+
+/**
+ * ### .compatibleMessage(thrown, errMatcher)
+ *
+ * Checks if an error's message is compatible with a matcher (String or RegExp).
+ * If the message contains the String or passes the RegExp test,
+ * it is considered compatible.
+ *
+ * @name compatibleMessage
+ * @param {Error} thrown error
+ * @param {String|RegExp} errMatcher to look for into the message
+ * @namespace Utils
+ * @api public
+ */
+
+function compatibleMessage(thrown, errMatcher) {
+  var comparisonString = typeof thrown === 'string' ? thrown : thrown.message;
+  if (errMatcher instanceof RegExp) {
+    return errMatcher.test(comparisonString);
+  } else if (typeof errMatcher === 'string') {
+    return comparisonString.indexOf(errMatcher) !== -1; // eslint-disable-line no-magic-numbers
+  }
+
+  return false;
+}
+
+/**
+ * ### .getFunctionName(constructorFn)
+ *
+ * Returns the name of a function.
+ * This also includes a polyfill function if `constructorFn.name` is not defined.
+ *
+ * @name getFunctionName
+ * @param {Function} constructorFn
+ * @namespace Utils
+ * @api private
+ */
+
+var functionNameMatch = /\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\(\/]+)/;
+function getFunctionName(constructorFn) {
+  var name = '';
+  if (typeof constructorFn.name === 'undefined') {
+    // Here we run a polyfill if constructorFn.name is not defined
+    var match = String(constructorFn).match(functionNameMatch);
+    if (match) {
+      name = match[1];
+    }
+  } else {
+    name = constructorFn.name;
+  }
+
+  return name;
+}
+
+/**
+ * ### .getConstructorName(errorLike)
+ *
+ * Gets the constructor name for an Error instance or constructor itself.
+ *
+ * @name getConstructorName
+ * @param {Error|ErrorConstructor} errorLike
+ * @namespace Utils
+ * @api public
+ */
+
+function getConstructorName(errorLike) {
+  var constructorName = errorLike;
+  if (errorLike instanceof Error) {
+    constructorName = getFunctionName(errorLike.constructor);
+  } else if (typeof errorLike === 'function') {
+    // If `err` is not an instance of Error it is an error constructor itself or another function.
+    // If we've got a common function we get its name, otherwise we may need to create a new instance
+    // of the error just in case it's a poorly-constructed error. Please see chaijs/chai/issues/45 to know more.
+    constructorName = getFunctionName(errorLike).trim() ||
+        getFunctionName(new errorLike()); // eslint-disable-line new-cap
+  }
+
+  return constructorName;
+}
+
+/**
+ * ### .getMessage(errorLike)
+ *
+ * Gets the error message from an error.
+ * If `err` is a String itself, we return it.
+ * If the error has no message, we return an empty string.
+ *
+ * @name getMessage
+ * @param {Error|String} errorLike
+ * @namespace Utils
+ * @api public
+ */
+
+function getMessage(errorLike) {
+  var msg = '';
+  if (errorLike && errorLike.message) {
+    msg = errorLike.message;
+  } else if (typeof errorLike === 'string') {
+    msg = errorLike;
+  }
+
+  return msg;
+}
+
+module.exports = {
+  compatibleInstance: compatibleInstance,
+  compatibleConstructor: compatibleConstructor,
+  compatibleMessage: compatibleMessage,
+  getMessage: getMessage,
+  getConstructorName: getConstructorName,
+};
+
+},{}],45:[function(require,module,exports){
+/* jshint node: true */
+(function () {
+    "use strict";
+
+    function CookieAccessInfo(domain, path, secure, script) {
+        if (this instanceof CookieAccessInfo) {
+            this.domain = domain || undefined;
+            this.path = path || "/";
+            this.secure = !!secure;
+            this.script = !!script;
+            return this;
+        }
+        return new CookieAccessInfo(domain, path, secure, script);
+    }
+    CookieAccessInfo.All = Object.freeze(Object.create(null));
+    exports.CookieAccessInfo = CookieAccessInfo;
+
+    function Cookie(cookiestr, request_domain, request_path) {
+        if (cookiestr instanceof Cookie) {
+            return cookiestr;
+        }
+        if (this instanceof Cookie) {
+            this.name = null;
+            this.value = null;
+            this.expiration_date = Infinity;
+            this.path = String(request_path || "/");
+            this.explicit_path = false;
+            this.domain = request_domain || null;
+            this.explicit_domain = false;
+            this.secure = false; //how to define default?
+            this.noscript = false; //httponly
+            if (cookiestr) {
+                this.parse(cookiestr, request_domain, request_path);
+            }
+            return this;
+        }
+        return new Cookie(cookiestr, request_domain, request_path);
+    }
+    exports.Cookie = Cookie;
+
+    Cookie.prototype.toString = function toString() {
+        var str = [this.name + "=" + this.value];
+        if (this.expiration_date !== Infinity) {
+            str.push("expires=" + (new Date(this.expiration_date)).toGMTString());
+        }
+        if (this.domain) {
+            str.push("domain=" + this.domain);
+        }
+        if (this.path) {
+            str.push("path=" + this.path);
+        }
+        if (this.secure) {
+            str.push("secure");
+        }
+        if (this.noscript) {
+            str.push("httponly");
+        }
+        return str.join("; ");
+    };
+
+    Cookie.prototype.toValueString = function toValueString() {
+        return this.name + "=" + this.value;
+    };
+
+    var cookie_str_splitter = /[:](?=\s*[a-zA-Z0-9_\-]+\s*[=])/g;
+    Cookie.prototype.parse = function parse(str, request_domain, request_path) {
+        if (this instanceof Cookie) {
+            var parts = str.split(";").filter(function (value) {
+                    return !!value;
+                }),
+                pair = parts[0].match(/([^=]+)=([\s\S]*)/),
+                key = pair[1],
+                value = pair[2],
+                i;
+            this.name = key;
+            this.value = value;
+
+            for (i = 1; i < parts.length; i += 1) {
+                pair = parts[i].match(/([^=]+)(?:=([\s\S]*))?/);
+                key = pair[1].trim().toLowerCase();
+                value = pair[2];
+                switch (key) {
+                case "httponly":
+                    this.noscript = true;
+                    break;
+                case "expires":
+                    this.expiration_date = value ?
+                            Number(Date.parse(value)) :
+                            Infinity;
+                    break;
+                case "path":
+                    this.path = value ?
+                            value.trim() :
+                            "";
+                    this.explicit_path = true;
+                    break;
+                case "domain":
+                    this.domain = value ?
+                            value.trim() :
+                            "";
+                    this.explicit_domain = !!this.domain;
+                    break;
+                case "secure":
+                    this.secure = true;
+                    break;
+                }
+            }
+
+            if (!this.explicit_path) {
+               this.path = request_path || "/";
+            }
+            if (!this.explicit_domain) {
+               this.domain = request_domain;
+            }
+
+            return this;
+        }
+        return new Cookie().parse(str, request_domain, request_path);
+    };
+
+    Cookie.prototype.matches = function matches(access_info) {
+        if (access_info === CookieAccessInfo.All) {
+          return true;
+        }
+        if (this.noscript && access_info.script ||
+                this.secure && !access_info.secure ||
+                !this.collidesWith(access_info)) {
+            return false;
+        }
+        return true;
+    };
+
+    Cookie.prototype.collidesWith = function collidesWith(access_info) {
+        if ((this.path && !access_info.path) || (this.domain && !access_info.domain)) {
+            return false;
+        }
+        if (this.path && access_info.path.indexOf(this.path) !== 0) {
+            return false;
+        }
+        if (this.explicit_path && access_info.path.indexOf( this.path ) !== 0) {
+           return false;
+        }
+        var access_domain = access_info.domain && access_info.domain.replace(/^[\.]/,'');
+        var cookie_domain = this.domain && this.domain.replace(/^[\.]/,'');
+        if (cookie_domain === access_domain) {
+            return true;
+        }
+        if (cookie_domain) {
+            if (!this.explicit_domain) {
+                return false; // we already checked if the domains were exactly the same
+            }
+            var wildcard = access_domain.indexOf(cookie_domain);
+            if (wildcard === -1 || wildcard !== access_domain.length - cookie_domain.length) {
+                return false;
+            }
+            return true;
+        }
+        return true;
+    };
+
+    function CookieJar() {
+        var cookies, cookies_list, collidable_cookie;
+        if (this instanceof CookieJar) {
+            cookies = Object.create(null); //name: [Cookie]
+
+            this.setCookie = function setCookie(cookie, request_domain, request_path) {
+                var remove, i;
+                cookie = new Cookie(cookie, request_domain, request_path);
+                //Delete the cookie if the set is past the current time
+                remove = cookie.expiration_date <= Date.now();
+                if (cookies[cookie.name] !== undefined) {
+                    cookies_list = cookies[cookie.name];
+                    for (i = 0; i < cookies_list.length; i += 1) {
+                        collidable_cookie = cookies_list[i];
+                        if (collidable_cookie.collidesWith(cookie)) {
+                            if (remove) {
+                                cookies_list.splice(i, 1);
+                                if (cookies_list.length === 0) {
+                                    delete cookies[cookie.name];
+                                }
+                                return false;
+                            }
+                            cookies_list[i] = cookie;
+                            return cookie;
+                        }
+                    }
+                    if (remove) {
+                        return false;
+                    }
+                    cookies_list.push(cookie);
+                    return cookie;
+                }
+                if (remove) {
+                    return false;
+                }
+                cookies[cookie.name] = [cookie];
+                return cookies[cookie.name];
+            };
+            //returns a cookie
+            this.getCookie = function getCookie(cookie_name, access_info) {
+                var cookie, i;
+                cookies_list = cookies[cookie_name];
+                if (!cookies_list) {
+                    return;
+                }
+                for (i = 0; i < cookies_list.length; i += 1) {
+                    cookie = cookies_list[i];
+                    if (cookie.expiration_date <= Date.now()) {
+                        if (cookies_list.length === 0) {
+                            delete cookies[cookie.name];
+                        }
+                        continue;
+                    }
+
+                    if (cookie.matches(access_info)) {
+                        return cookie;
+                    }
+                }
+            };
+            //returns a list of cookies
+            this.getCookies = function getCookies(access_info) {
+                var matches = [], cookie_name, cookie;
+                for (cookie_name in cookies) {
+                    cookie = this.getCookie(cookie_name, access_info);
+                    if (cookie) {
+                        matches.push(cookie);
+                    }
+                }
+                matches.toString = function toString() {
+                    return matches.join(":");
+                };
+                matches.toValueString = function toValueString() {
+                    return matches.map(function (c) {
+                        return c.toValueString();
+                    }).join(';');
+                };
+                return matches;
+            };
+
+            return this;
+        }
+        return new CookieJar();
+    }
+    exports.CookieJar = CookieJar;
+
+    //returns list of cookies that were set correctly. Cookies that are expired and removed are not returned.
+    CookieJar.prototype.setCookies = function setCookies(cookies, request_domain, request_path) {
+        cookies = Array.isArray(cookies) ?
+                cookies :
+                cookies.split(cookie_str_splitter);
+        var successful = [],
+            i,
+            cookie;
+        cookies = cookies.map(function(item){
+            return new Cookie(item, request_domain, request_path);
+        });
+        for (i = 0; i < cookies.length; i += 1) {
+            cookie = cookies[i];
+            if (this.setCookie(cookie, request_domain, request_path)) {
+                successful.push(cookie);
+            }
+        }
+        return successful;
+    };
+}());
+
+},{}],46:[function(require,module,exports){
+'use strict';
 /* globals Symbol: true, Uint8Array: true, WeakMap: true */
 /*!
  * deep-eql
@@ -10967,7 +11524,7 @@ function isPrimitive(value) {
   return value === null || typeof value !== 'object';
 }
 
-},{"type-detect":45}],45:[function(require,module,exports){
+},{"type-detect":47}],47:[function(require,module,exports){
 (function (global){
 'use strict';
 /* !
@@ -11343,823 +11900,7 @@ module.exports.typeDetect = module.exports;
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],46:[function(require,module,exports){
-(function (global){
-'use strict';
-
-/* !
- * type-detect
- * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-var promiseExists = typeof Promise === 'function';
-var globalObject = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : self; // eslint-disable-line
-var isDom = 'location' in globalObject && 'document' in globalObject;
-var symbolExists = typeof Symbol !== 'undefined';
-var mapExists = typeof Map !== 'undefined';
-var setExists = typeof Set !== 'undefined';
-var weakMapExists = typeof WeakMap !== 'undefined';
-var weakSetExists = typeof WeakSet !== 'undefined';
-var dataViewExists = typeof DataView !== 'undefined';
-var symbolIteratorExists = symbolExists && typeof Symbol.iterator !== 'undefined';
-var symbolToStringTagExists = symbolExists && typeof Symbol.toStringTag !== 'undefined';
-var setEntriesExists = setExists && typeof Set.prototype.entries === 'function';
-var mapEntriesExists = mapExists && typeof Map.prototype.entries === 'function';
-var setIteratorPrototype = setEntriesExists && Object.getPrototypeOf(new Set().entries());
-var mapIteratorPrototype = mapEntriesExists && Object.getPrototypeOf(new Map().entries());
-var arrayIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
-var arrayIteratorPrototype = arrayIteratorExists && Object.getPrototypeOf([][Symbol.iterator]());
-var stringIteratorExists = symbolIteratorExists && typeof String.prototype[Symbol.iterator] === 'function';
-var stringIteratorPrototype = stringIteratorExists && Object.getPrototypeOf(''[Symbol.iterator]());
-var toStringLeftSliceLength = 8;
-var toStringRightSliceLength = -1;
-/**
- * ### typeOf (obj)
- *
- * Uses `Object.prototype.toString` to determine the type of an object,
- * normalising behaviour across engine versions & well optimised.
- *
- * @param {Mixed} object
- * @return {String} object type
- * @api public
- */
-module.exports = function typeDetect(obj) {
-  /* ! Speed optimisation
-   * Pre:
-   *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
-   *   boolean literal    x 1,424,138 ops/sec ±4.54% (75 runs sampled)
-   *   number literal     x 1,653,153 ops/sec ±1.91% (82 runs sampled)
-   *   undefined          x 9,978,660 ops/sec ±1.92% (75 runs sampled)
-   *   function           x 2,556,769 ops/sec ±1.73% (77 runs sampled)
-   * Post:
-   *   string literal     x 38,564,796 ops/sec ±1.15% (79 runs sampled)
-   *   boolean literal    x 31,148,940 ops/sec ±1.10% (79 runs sampled)
-   *   number literal     x 32,679,330 ops/sec ±1.90% (78 runs sampled)
-   *   undefined          x 32,363,368 ops/sec ±1.07% (82 runs sampled)
-   *   function           x 31,296,870 ops/sec ±0.96% (83 runs sampled)
-   */
-  var typeofObj = typeof obj;
-  if (typeofObj !== 'object') {
-    return typeofObj;
-  }
-
-  /* ! Speed optimisation
-   * Pre:
-   *   null               x 28,645,765 ops/sec ±1.17% (82 runs sampled)
-   * Post:
-   *   null               x 36,428,962 ops/sec ±1.37% (84 runs sampled)
-   */
-  if (obj === null) {
-    return 'null';
-  }
-
-  /* ! Spec Conformance
-   * Test: `Object.prototype.toString.call(window)``
-   *  - Node === "[object global]"
-   *  - Chrome === "[object global]"
-   *  - Firefox === "[object Window]"
-   *  - PhantomJS === "[object Window]"
-   *  - Safari === "[object Window]"
-   *  - IE 11 === "[object Window]"
-   *  - IE Edge === "[object Window]"
-   * Test: `Object.prototype.toString.call(this)``
-   *  - Chrome Worker === "[object global]"
-   *  - Firefox Worker === "[object DedicatedWorkerGlobalScope]"
-   *  - Safari Worker === "[object DedicatedWorkerGlobalScope]"
-   *  - IE 11 Worker === "[object WorkerGlobalScope]"
-   *  - IE Edge Worker === "[object WorkerGlobalScope]"
-   */
-  if (obj === globalObject) {
-    return 'global';
-  }
-
-  /* ! Speed optimisation
-   * Pre:
-   *   array literal      x 2,888,352 ops/sec ±0.67% (82 runs sampled)
-   * Post:
-   *   array literal      x 22,479,650 ops/sec ±0.96% (81 runs sampled)
-   */
-  if (
-    Array.isArray(obj) &&
-    (symbolToStringTagExists === false || !(Symbol.toStringTag in obj))
-  ) {
-    return 'Array';
-  }
-
-  if (isDom) {
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/browsers.html#location)
-     * WhatWG HTML$7.7.3 - The `Location` interface
-     * Test: `Object.prototype.toString.call(window.location)``
-     *  - IE <=11 === "[object Object]"
-     *  - IE Edge <=13 === "[object Object]"
-     */
-    if (obj === globalObject.location) {
-      return 'Location';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#document)
-     * WhatWG HTML$3.1.1 - The `Document` object
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26809268)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     *       WhatWG HTML states:
-     *         > For historical reasons, Window objects must also have a
-     *         > writable, configurable, non-enumerable property named
-     *         > HTMLDocument whose value is the Document interface object.
-     * Test: `Object.prototype.toString.call(document)``
-     *  - Chrome === "[object HTMLDocument]"
-     *  - Firefox === "[object HTMLDocument]"
-     *  - Safari === "[object HTMLDocument]"
-     *  - IE <=10 === "[object Document]"
-     *  - IE 11 === "[object HTMLDocument]"
-     *  - IE Edge <=13 === "[object HTMLDocument]"
-     */
-    if (obj === globalObject.document) {
-      return 'Document';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
-     * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
-     *  - IE <=10 === "[object MSMimeTypesCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).mimeTypes) {
-      return 'MimeTypeArray';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
-     * Test: `Object.prototype.toString.call(navigator.plugins)``
-     *  - IE <=10 === "[object MSPluginsCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).plugins) {
-      return 'PluginArray';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
-     * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
-     *  - IE <=10 === "[object HTMLBlockElement]"
-     */
-    if (obj instanceof HTMLElement && obj.tagName === 'BLOCKQUOTE') {
-      return 'HTMLQuoteElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltabledatacellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('td'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (obj instanceof HTMLElement && obj.tagName === 'TD') {
-      return 'HTMLTableDataCellElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltableheadercellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('th'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (obj instanceof HTMLElement && obj.tagName === 'TH') {
-      return 'HTMLTableHeaderCellElement';
-    }
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   Float64Array       x 625,644 ops/sec ±1.58% (80 runs sampled)
-  *   Float32Array       x 1,279,852 ops/sec ±2.91% (77 runs sampled)
-  *   Uint32Array        x 1,178,185 ops/sec ±1.95% (83 runs sampled)
-  *   Uint16Array        x 1,008,380 ops/sec ±2.25% (80 runs sampled)
-  *   Uint8Array         x 1,128,040 ops/sec ±2.11% (81 runs sampled)
-  *   Int32Array         x 1,170,119 ops/sec ±2.88% (80 runs sampled)
-  *   Int16Array         x 1,176,348 ops/sec ±5.79% (86 runs sampled)
-  *   Int8Array          x 1,058,707 ops/sec ±4.94% (77 runs sampled)
-  *   Uint8ClampedArray  x 1,110,633 ops/sec ±4.20% (80 runs sampled)
-  * Post:
-  *   Float64Array       x 7,105,671 ops/sec ±13.47% (64 runs sampled)
-  *   Float32Array       x 5,887,912 ops/sec ±1.46% (82 runs sampled)
-  *   Uint32Array        x 6,491,661 ops/sec ±1.76% (79 runs sampled)
-  *   Uint16Array        x 6,559,795 ops/sec ±1.67% (82 runs sampled)
-  *   Uint8Array         x 6,463,966 ops/sec ±1.43% (85 runs sampled)
-  *   Int32Array         x 5,641,841 ops/sec ±3.49% (81 runs sampled)
-  *   Int16Array         x 6,583,511 ops/sec ±1.98% (80 runs sampled)
-  *   Int8Array          x 6,606,078 ops/sec ±1.74% (81 runs sampled)
-  *   Uint8ClampedArray  x 6,602,224 ops/sec ±1.77% (83 runs sampled)
-  */
-  var stringTag = (symbolToStringTagExists && obj[Symbol.toStringTag]);
-  if (typeof stringTag === 'string') {
-    return stringTag;
-  }
-
-  var objPrototype = Object.getPrototypeOf(obj);
-  /* ! Speed optimisation
-  * Pre:
-  *   regex literal      x 1,772,385 ops/sec ±1.85% (77 runs sampled)
-  *   regex constructor  x 2,143,634 ops/sec ±2.46% (78 runs sampled)
-  * Post:
-  *   regex literal      x 3,928,009 ops/sec ±0.65% (78 runs sampled)
-  *   regex constructor  x 3,931,108 ops/sec ±0.58% (84 runs sampled)
-  */
-  if (objPrototype === RegExp.prototype) {
-    return 'RegExp';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   date               x 2,130,074 ops/sec ±4.42% (68 runs sampled)
-  * Post:
-  *   date               x 3,953,779 ops/sec ±1.35% (77 runs sampled)
-  */
-  if (objPrototype === Date.prototype) {
-    return 'Date';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-promise.prototype-@@tostringtag)
-   * ES6$25.4.5.4 - Promise.prototype[@@toStringTag] should be "Promise":
-   * Test: `Object.prototype.toString.call(Promise.resolve())``
-   *  - Chrome <=47 === "[object Object]"
-   *  - Edge <=20 === "[object Object]"
-   *  - Firefox 29-Latest === "[object Promise]"
-   *  - Safari 7.1-Latest === "[object Promise]"
-   */
-  if (promiseExists && objPrototype === Promise.prototype) {
-    return 'Promise';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   set                x 2,222,186 ops/sec ±1.31% (82 runs sampled)
-  * Post:
-  *   set                x 4,545,879 ops/sec ±1.13% (83 runs sampled)
-  */
-  if (setExists && objPrototype === Set.prototype) {
-    return 'Set';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   map                x 2,396,842 ops/sec ±1.59% (81 runs sampled)
-  * Post:
-  *   map                x 4,183,945 ops/sec ±6.59% (82 runs sampled)
-  */
-  if (mapExists && objPrototype === Map.prototype) {
-    return 'Map';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   weakset            x 1,323,220 ops/sec ±2.17% (76 runs sampled)
-  * Post:
-  *   weakset            x 4,237,510 ops/sec ±2.01% (77 runs sampled)
-  */
-  if (weakSetExists && objPrototype === WeakSet.prototype) {
-    return 'WeakSet';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   weakmap            x 1,500,260 ops/sec ±2.02% (78 runs sampled)
-  * Post:
-  *   weakmap            x 3,881,384 ops/sec ±1.45% (82 runs sampled)
-  */
-  if (weakMapExists && objPrototype === WeakMap.prototype) {
-    return 'WeakMap';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-dataview.prototype-@@tostringtag)
-   * ES6$24.2.4.21 - DataView.prototype[@@toStringTag] should be "DataView":
-   * Test: `Object.prototype.toString.call(new DataView(new ArrayBuffer(1)))``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (dataViewExists && objPrototype === DataView.prototype) {
-    return 'DataView';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%mapiteratorprototype%-@@tostringtag)
-   * ES6$23.1.5.2.2 - %MapIteratorPrototype%[@@toStringTag] should be "Map Iterator":
-   * Test: `Object.prototype.toString.call(new Map().entries())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (mapExists && objPrototype === mapIteratorPrototype) {
-    return 'Map Iterator';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%setiteratorprototype%-@@tostringtag)
-   * ES6$23.2.5.2.2 - %SetIteratorPrototype%[@@toStringTag] should be "Set Iterator":
-   * Test: `Object.prototype.toString.call(new Set().entries())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (setExists && objPrototype === setIteratorPrototype) {
-    return 'Set Iterator';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%arrayiteratorprototype%-@@tostringtag)
-   * ES6$22.1.5.2.2 - %ArrayIteratorPrototype%[@@toStringTag] should be "Array Iterator":
-   * Test: `Object.prototype.toString.call([][Symbol.iterator]())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (arrayIteratorExists && objPrototype === arrayIteratorPrototype) {
-    return 'Array Iterator';
-  }
-
-  /* ! Spec Conformance
-   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%stringiteratorprototype%-@@tostringtag)
-   * ES6$21.1.5.2.2 - %StringIteratorPrototype%[@@toStringTag] should be "String Iterator":
-   * Test: `Object.prototype.toString.call(''[Symbol.iterator]())``
-   *  - Edge <=13 === "[object Object]"
-   */
-  if (stringIteratorExists && objPrototype === stringIteratorPrototype) {
-    return 'String Iterator';
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   object from null   x 2,424,320 ops/sec ±1.67% (76 runs sampled)
-  * Post:
-  *   object from null   x 5,838,000 ops/sec ±0.99% (84 runs sampled)
-  */
-  if (objPrototype === null) {
-    return 'Object';
-  }
-
-  return Object
-    .prototype
-    .toString
-    .call(obj)
-    .slice(toStringLeftSliceLength, toStringRightSliceLength);
-};
-
-module.exports.typeDetect = module.exports;
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{}],47:[function(require,module,exports){
-'use strict';
-
-/* !
- * Chai - checkError utility
- * Copyright(c) 2012-2016 Jake Luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-
-/**
- * ### .checkError
- *
- * Checks that an error conforms to a given set of criteria and/or retrieves information about it.
- *
- * @api public
- */
-
-/**
- * ### .compatibleInstance(thrown, errorLike)
- *
- * Checks if two instances are compatible (strict equal).
- * Returns false if errorLike is not an instance of Error, because instances
- * can only be compatible if they're both error instances.
- *
- * @name compatibleInstance
- * @param {Error} thrown error
- * @param {Error|ErrorConstructor} errorLike object to compare against
- * @namespace Utils
- * @api public
- */
-
-function compatibleInstance(thrown, errorLike) {
-  return errorLike instanceof Error && thrown === errorLike;
-}
-
-/**
- * ### .compatibleConstructor(thrown, errorLike)
- *
- * Checks if two constructors are compatible.
- * This function can receive either an error constructor or
- * an error instance as the `errorLike` argument.
- * Constructors are compatible if they're the same or if one is
- * an instance of another.
- *
- * @name compatibleConstructor
- * @param {Error} thrown error
- * @param {Error|ErrorConstructor} errorLike object to compare against
- * @namespace Utils
- * @api public
- */
-
-function compatibleConstructor(thrown, errorLike) {
-  if (errorLike instanceof Error) {
-    // If `errorLike` is an instance of any error we compare their constructors
-    return thrown.constructor === errorLike.constructor || thrown instanceof errorLike.constructor;
-  } else if (errorLike.prototype instanceof Error || errorLike === Error) {
-    // If `errorLike` is a constructor that inherits from Error, we compare `thrown` to `errorLike` directly
-    return thrown.constructor === errorLike || thrown instanceof errorLike;
-  }
-
-  return false;
-}
-
-/**
- * ### .compatibleMessage(thrown, errMatcher)
- *
- * Checks if an error's message is compatible with a matcher (String or RegExp).
- * If the message contains the String or passes the RegExp test,
- * it is considered compatible.
- *
- * @name compatibleMessage
- * @param {Error} thrown error
- * @param {String|RegExp} errMatcher to look for into the message
- * @namespace Utils
- * @api public
- */
-
-function compatibleMessage(thrown, errMatcher) {
-  var comparisonString = typeof thrown === 'string' ? thrown : thrown.message;
-  if (errMatcher instanceof RegExp) {
-    return errMatcher.test(comparisonString);
-  } else if (typeof errMatcher === 'string') {
-    return comparisonString.indexOf(errMatcher) !== -1; // eslint-disable-line no-magic-numbers
-  }
-
-  return false;
-}
-
-/**
- * ### .getFunctionName(constructorFn)
- *
- * Returns the name of a function.
- * This also includes a polyfill function if `constructorFn.name` is not defined.
- *
- * @name getFunctionName
- * @param {Function} constructorFn
- * @namespace Utils
- * @api private
- */
-
-var functionNameMatch = /\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\(\/]+)/;
-function getFunctionName(constructorFn) {
-  var name = '';
-  if (typeof constructorFn.name === 'undefined') {
-    // Here we run a polyfill if constructorFn.name is not defined
-    var match = String(constructorFn).match(functionNameMatch);
-    if (match) {
-      name = match[1];
-    }
-  } else {
-    name = constructorFn.name;
-  }
-
-  return name;
-}
-
-/**
- * ### .getConstructorName(errorLike)
- *
- * Gets the constructor name for an Error instance or constructor itself.
- *
- * @name getConstructorName
- * @param {Error|ErrorConstructor} errorLike
- * @namespace Utils
- * @api public
- */
-
-function getConstructorName(errorLike) {
-  var constructorName = errorLike;
-  if (errorLike instanceof Error) {
-    constructorName = getFunctionName(errorLike.constructor);
-  } else if (typeof errorLike === 'function') {
-    // If `err` is not an instance of Error it is an error constructor itself or another function.
-    // If we've got a common function we get its name, otherwise we may need to create a new instance
-    // of the error just in case it's a poorly-constructed error. Please see chaijs/chai/issues/45 to know more.
-    constructorName = getFunctionName(errorLike).trim() ||
-        getFunctionName(new errorLike()); // eslint-disable-line new-cap
-  }
-
-  return constructorName;
-}
-
-/**
- * ### .getMessage(errorLike)
- *
- * Gets the error message from an error.
- * If `err` is a String itself, we return it.
- * If the error has no message, we return an empty string.
- *
- * @name getMessage
- * @param {Error|String} errorLike
- * @namespace Utils
- * @api public
- */
-
-function getMessage(errorLike) {
-  var msg = '';
-  if (errorLike && errorLike.message) {
-    msg = errorLike.message;
-  } else if (typeof errorLike === 'string') {
-    msg = errorLike;
-  }
-
-  return msg;
-}
-
-module.exports = {
-  compatibleInstance: compatibleInstance,
-  compatibleConstructor: compatibleConstructor,
-  compatibleMessage: compatibleMessage,
-  getMessage: getMessage,
-  getConstructorName: getConstructorName,
-};
-
 },{}],48:[function(require,module,exports){
-/* jshint node: true */
-(function () {
-    "use strict";
-
-    function CookieAccessInfo(domain, path, secure, script) {
-        if (this instanceof CookieAccessInfo) {
-            this.domain = domain || undefined;
-            this.path = path || "/";
-            this.secure = !!secure;
-            this.script = !!script;
-            return this;
-        }
-        return new CookieAccessInfo(domain, path, secure, script);
-    }
-    CookieAccessInfo.All = Object.freeze(Object.create(null));
-    exports.CookieAccessInfo = CookieAccessInfo;
-
-    function Cookie(cookiestr, request_domain, request_path) {
-        if (cookiestr instanceof Cookie) {
-            return cookiestr;
-        }
-        if (this instanceof Cookie) {
-            this.name = null;
-            this.value = null;
-            this.expiration_date = Infinity;
-            this.path = String(request_path || "/");
-            this.explicit_path = false;
-            this.domain = request_domain || null;
-            this.explicit_domain = false;
-            this.secure = false; //how to define default?
-            this.noscript = false; //httponly
-            if (cookiestr) {
-                this.parse(cookiestr, request_domain, request_path);
-            }
-            return this;
-        }
-        return new Cookie(cookiestr, request_domain, request_path);
-    }
-    exports.Cookie = Cookie;
-
-    Cookie.prototype.toString = function toString() {
-        var str = [this.name + "=" + this.value];
-        if (this.expiration_date !== Infinity) {
-            str.push("expires=" + (new Date(this.expiration_date)).toGMTString());
-        }
-        if (this.domain) {
-            str.push("domain=" + this.domain);
-        }
-        if (this.path) {
-            str.push("path=" + this.path);
-        }
-        if (this.secure) {
-            str.push("secure");
-        }
-        if (this.noscript) {
-            str.push("httponly");
-        }
-        return str.join("; ");
-    };
-
-    Cookie.prototype.toValueString = function toValueString() {
-        return this.name + "=" + this.value;
-    };
-
-    var cookie_str_splitter = /[:](?=\s*[a-zA-Z0-9_\-]+\s*[=])/g;
-    Cookie.prototype.parse = function parse(str, request_domain, request_path) {
-        if (this instanceof Cookie) {
-            var parts = str.split(";").filter(function (value) {
-                    return !!value;
-                }),
-                pair = parts[0].match(/([^=]+)=([\s\S]*)/),
-                key = pair[1],
-                value = pair[2],
-                i;
-            this.name = key;
-            this.value = value;
-
-            for (i = 1; i < parts.length; i += 1) {
-                pair = parts[i].match(/([^=]+)(?:=([\s\S]*))?/);
-                key = pair[1].trim().toLowerCase();
-                value = pair[2];
-                switch (key) {
-                case "httponly":
-                    this.noscript = true;
-                    break;
-                case "expires":
-                    this.expiration_date = value ?
-                            Number(Date.parse(value)) :
-                            Infinity;
-                    break;
-                case "path":
-                    this.path = value ?
-                            value.trim() :
-                            "";
-                    this.explicit_path = true;
-                    break;
-                case "domain":
-                    this.domain = value ?
-                            value.trim() :
-                            "";
-                    this.explicit_domain = !!this.domain;
-                    break;
-                case "secure":
-                    this.secure = true;
-                    break;
-                }
-            }
-
-            if (!this.explicit_path) {
-               this.path = request_path || "/";
-            }
-            if (!this.explicit_domain) {
-               this.domain = request_domain;
-            }
-
-            return this;
-        }
-        return new Cookie().parse(str, request_domain, request_path);
-    };
-
-    Cookie.prototype.matches = function matches(access_info) {
-        if (access_info === CookieAccessInfo.All) {
-          return true;
-        }
-        if (this.noscript && access_info.script ||
-                this.secure && !access_info.secure ||
-                !this.collidesWith(access_info)) {
-            return false;
-        }
-        return true;
-    };
-
-    Cookie.prototype.collidesWith = function collidesWith(access_info) {
-        if ((this.path && !access_info.path) || (this.domain && !access_info.domain)) {
-            return false;
-        }
-        if (this.path && access_info.path.indexOf(this.path) !== 0) {
-            return false;
-        }
-        if (this.explicit_path && access_info.path.indexOf( this.path ) !== 0) {
-           return false;
-        }
-        var access_domain = access_info.domain && access_info.domain.replace(/^[\.]/,'');
-        var cookie_domain = this.domain && this.domain.replace(/^[\.]/,'');
-        if (cookie_domain === access_domain) {
-            return true;
-        }
-        if (cookie_domain) {
-            if (!this.explicit_domain) {
-                return false; // we already checked if the domains were exactly the same
-            }
-            var wildcard = access_domain.indexOf(cookie_domain);
-            if (wildcard === -1 || wildcard !== access_domain.length - cookie_domain.length) {
-                return false;
-            }
-            return true;
-        }
-        return true;
-    };
-
-    function CookieJar() {
-        var cookies, cookies_list, collidable_cookie;
-        if (this instanceof CookieJar) {
-            cookies = Object.create(null); //name: [Cookie]
-
-            this.setCookie = function setCookie(cookie, request_domain, request_path) {
-                var remove, i;
-                cookie = new Cookie(cookie, request_domain, request_path);
-                //Delete the cookie if the set is past the current time
-                remove = cookie.expiration_date <= Date.now();
-                if (cookies[cookie.name] !== undefined) {
-                    cookies_list = cookies[cookie.name];
-                    for (i = 0; i < cookies_list.length; i += 1) {
-                        collidable_cookie = cookies_list[i];
-                        if (collidable_cookie.collidesWith(cookie)) {
-                            if (remove) {
-                                cookies_list.splice(i, 1);
-                                if (cookies_list.length === 0) {
-                                    delete cookies[cookie.name];
-                                }
-                                return false;
-                            }
-                            cookies_list[i] = cookie;
-                            return cookie;
-                        }
-                    }
-                    if (remove) {
-                        return false;
-                    }
-                    cookies_list.push(cookie);
-                    return cookie;
-                }
-                if (remove) {
-                    return false;
-                }
-                cookies[cookie.name] = [cookie];
-                return cookies[cookie.name];
-            };
-            //returns a cookie
-            this.getCookie = function getCookie(cookie_name, access_info) {
-                var cookie, i;
-                cookies_list = cookies[cookie_name];
-                if (!cookies_list) {
-                    return;
-                }
-                for (i = 0; i < cookies_list.length; i += 1) {
-                    cookie = cookies_list[i];
-                    if (cookie.expiration_date <= Date.now()) {
-                        if (cookies_list.length === 0) {
-                            delete cookies[cookie.name];
-                        }
-                        continue;
-                    }
-
-                    if (cookie.matches(access_info)) {
-                        return cookie;
-                    }
-                }
-            };
-            //returns a list of cookies
-            this.getCookies = function getCookies(access_info) {
-                var matches = [], cookie_name, cookie;
-                for (cookie_name in cookies) {
-                    cookie = this.getCookie(cookie_name, access_info);
-                    if (cookie) {
-                        matches.push(cookie);
-                    }
-                }
-                matches.toString = function toString() {
-                    return matches.join(":");
-                };
-                matches.toValueString = function toValueString() {
-                    return matches.map(function (c) {
-                        return c.toValueString();
-                    }).join(';');
-                };
-                return matches;
-            };
-
-            return this;
-        }
-        return new CookieJar();
-    }
-    exports.CookieJar = CookieJar;
-
-    //returns list of cookies that were set correctly. Cookies that are expired and removed are not returned.
-    CookieJar.prototype.setCookies = function setCookies(cookies, request_domain, request_path) {
-        cookies = Array.isArray(cookies) ?
-                cookies :
-                cookies.split(cookie_str_splitter);
-        var successful = [],
-            i,
-            cookie;
-        cookies = cookies.map(function(item){
-            return new Cookie(item, request_domain, request_path);
-        });
-        for (i = 0; i < cookies.length; i += 1) {
-            cookie = cookies[i];
-            if (this.setCookie(cookie, request_domain, request_path)) {
-                successful.push(cookie);
-            }
-        }
-        return successful;
-    };
-}());
-
-},{}],49:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -12205,7 +11946,7 @@ function getFuncName(aFunc) {
 
 module.exports = getFuncName;
 
-},{}],50:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 
 var v4 = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}';
@@ -12227,7 +11968,7 @@ ip.v6 = function (opts) {
 	return opts.exact ? new RegExp('^' + v6 + '$') : new RegExp(v6, 'g');
 };
 
-},{}],51:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 'use strict';
 var ipRegex = require('ip-regex');
 
@@ -12243,7 +11984,7 @@ ip.v6 = function (str) {
 	return ipRegex.v6({exact: true}).test(str);
 };
 
-},{"ip-regex":50}],52:[function(require,module,exports){
+},{"ip-regex":49}],51:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -12536,7 +12277,7 @@ module.exports = {
   setPathValue: setPathValue,
 };
 
-},{}],53:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -13074,7 +12815,7 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],54:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -13160,7 +12901,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],55:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -13247,13 +12988,388 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],56:[function(require,module,exports){
+},{}],55:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":54,"./encode":55}],57:[function(require,module,exports){
+},{"./decode":53,"./encode":54}],56:[function(require,module,exports){
+(function (global){
+'use strict';
+
+/* !
+ * type-detect
+ * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
+ * MIT Licensed
+ */
+var promiseExists = typeof Promise === 'function';
+var globalObject = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : self; // eslint-disable-line
+var isDom = 'location' in globalObject && 'document' in globalObject;
+var symbolExists = typeof Symbol !== 'undefined';
+var mapExists = typeof Map !== 'undefined';
+var setExists = typeof Set !== 'undefined';
+var weakMapExists = typeof WeakMap !== 'undefined';
+var weakSetExists = typeof WeakSet !== 'undefined';
+var dataViewExists = typeof DataView !== 'undefined';
+var symbolIteratorExists = symbolExists && typeof Symbol.iterator !== 'undefined';
+var symbolToStringTagExists = symbolExists && typeof Symbol.toStringTag !== 'undefined';
+var setEntriesExists = setExists && typeof Set.prototype.entries === 'function';
+var mapEntriesExists = mapExists && typeof Map.prototype.entries === 'function';
+var setIteratorPrototype = setEntriesExists && Object.getPrototypeOf(new Set().entries());
+var mapIteratorPrototype = mapEntriesExists && Object.getPrototypeOf(new Map().entries());
+var arrayIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
+var arrayIteratorPrototype = arrayIteratorExists && Object.getPrototypeOf([][Symbol.iterator]());
+var stringIteratorExists = symbolIteratorExists && typeof String.prototype[Symbol.iterator] === 'function';
+var stringIteratorPrototype = stringIteratorExists && Object.getPrototypeOf(''[Symbol.iterator]());
+var toStringLeftSliceLength = 8;
+var toStringRightSliceLength = -1;
+/**
+ * ### typeOf (obj)
+ *
+ * Uses `Object.prototype.toString` to determine the type of an object,
+ * normalising behaviour across engine versions & well optimised.
+ *
+ * @param {Mixed} object
+ * @return {String} object type
+ * @api public
+ */
+module.exports = function typeDetect(obj) {
+  /* ! Speed optimisation
+   * Pre:
+   *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
+   *   boolean literal    x 1,424,138 ops/sec ±4.54% (75 runs sampled)
+   *   number literal     x 1,653,153 ops/sec ±1.91% (82 runs sampled)
+   *   undefined          x 9,978,660 ops/sec ±1.92% (75 runs sampled)
+   *   function           x 2,556,769 ops/sec ±1.73% (77 runs sampled)
+   * Post:
+   *   string literal     x 38,564,796 ops/sec ±1.15% (79 runs sampled)
+   *   boolean literal    x 31,148,940 ops/sec ±1.10% (79 runs sampled)
+   *   number literal     x 32,679,330 ops/sec ±1.90% (78 runs sampled)
+   *   undefined          x 32,363,368 ops/sec ±1.07% (82 runs sampled)
+   *   function           x 31,296,870 ops/sec ±0.96% (83 runs sampled)
+   */
+  var typeofObj = typeof obj;
+  if (typeofObj !== 'object') {
+    return typeofObj;
+  }
+
+  /* ! Speed optimisation
+   * Pre:
+   *   null               x 28,645,765 ops/sec ±1.17% (82 runs sampled)
+   * Post:
+   *   null               x 36,428,962 ops/sec ±1.37% (84 runs sampled)
+   */
+  if (obj === null) {
+    return 'null';
+  }
+
+  /* ! Spec Conformance
+   * Test: `Object.prototype.toString.call(window)``
+   *  - Node === "[object global]"
+   *  - Chrome === "[object global]"
+   *  - Firefox === "[object Window]"
+   *  - PhantomJS === "[object Window]"
+   *  - Safari === "[object Window]"
+   *  - IE 11 === "[object Window]"
+   *  - IE Edge === "[object Window]"
+   * Test: `Object.prototype.toString.call(this)``
+   *  - Chrome Worker === "[object global]"
+   *  - Firefox Worker === "[object DedicatedWorkerGlobalScope]"
+   *  - Safari Worker === "[object DedicatedWorkerGlobalScope]"
+   *  - IE 11 Worker === "[object WorkerGlobalScope]"
+   *  - IE Edge Worker === "[object WorkerGlobalScope]"
+   */
+  if (obj === globalObject) {
+    return 'global';
+  }
+
+  /* ! Speed optimisation
+   * Pre:
+   *   array literal      x 2,888,352 ops/sec ±0.67% (82 runs sampled)
+   * Post:
+   *   array literal      x 22,479,650 ops/sec ±0.96% (81 runs sampled)
+   */
+  if (
+    Array.isArray(obj) &&
+    (symbolToStringTagExists === false || !(Symbol.toStringTag in obj))
+  ) {
+    return 'Array';
+  }
+
+  if (isDom) {
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/browsers.html#location)
+     * WhatWG HTML$7.7.3 - The `Location` interface
+     * Test: `Object.prototype.toString.call(window.location)``
+     *  - IE <=11 === "[object Object]"
+     *  - IE Edge <=13 === "[object Object]"
+     */
+    if (obj === globalObject.location) {
+      return 'Location';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#document)
+     * WhatWG HTML$3.1.1 - The `Document` object
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26809268)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     *       WhatWG HTML states:
+     *         > For historical reasons, Window objects must also have a
+     *         > writable, configurable, non-enumerable property named
+     *         > HTMLDocument whose value is the Document interface object.
+     * Test: `Object.prototype.toString.call(document)``
+     *  - Chrome === "[object HTMLDocument]"
+     *  - Firefox === "[object HTMLDocument]"
+     *  - Safari === "[object HTMLDocument]"
+     *  - IE <=10 === "[object Document]"
+     *  - IE 11 === "[object HTMLDocument]"
+     *  - IE Edge <=13 === "[object HTMLDocument]"
+     */
+    if (obj === globalObject.document) {
+      return 'Document';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
+     * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
+     * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
+     *  - IE <=10 === "[object MSMimeTypesCollection]"
+     */
+    if (obj === (globalObject.navigator || {}).mimeTypes) {
+      return 'MimeTypeArray';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+     * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
+     * Test: `Object.prototype.toString.call(navigator.plugins)``
+     *  - IE <=10 === "[object MSPluginsCollection]"
+     */
+    if (obj === (globalObject.navigator || {}).plugins) {
+      return 'PluginArray';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+     * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
+     * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
+     *  - IE <=10 === "[object HTMLBlockElement]"
+     */
+    if (obj instanceof HTMLElement && obj.tagName === 'BLOCKQUOTE') {
+      return 'HTMLQuoteElement';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#htmltabledatacellelement)
+     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     * Test: Object.prototype.toString.call(document.createElement('td'))
+     *  - Chrome === "[object HTMLTableCellElement]"
+     *  - Firefox === "[object HTMLTableCellElement]"
+     *  - Safari === "[object HTMLTableCellElement]"
+     */
+    if (obj instanceof HTMLElement && obj.tagName === 'TD') {
+      return 'HTMLTableDataCellElement';
+    }
+
+    /* ! Spec Conformance
+     * (https://html.spec.whatwg.org/#htmltableheadercellelement)
+     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
+     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+     *       which suggests that browsers should use HTMLTableCellElement for
+     *       both TD and TH elements. WhatWG separates these.
+     * Test: Object.prototype.toString.call(document.createElement('th'))
+     *  - Chrome === "[object HTMLTableCellElement]"
+     *  - Firefox === "[object HTMLTableCellElement]"
+     *  - Safari === "[object HTMLTableCellElement]"
+     */
+    if (obj instanceof HTMLElement && obj.tagName === 'TH') {
+      return 'HTMLTableHeaderCellElement';
+    }
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   Float64Array       x 625,644 ops/sec ±1.58% (80 runs sampled)
+  *   Float32Array       x 1,279,852 ops/sec ±2.91% (77 runs sampled)
+  *   Uint32Array        x 1,178,185 ops/sec ±1.95% (83 runs sampled)
+  *   Uint16Array        x 1,008,380 ops/sec ±2.25% (80 runs sampled)
+  *   Uint8Array         x 1,128,040 ops/sec ±2.11% (81 runs sampled)
+  *   Int32Array         x 1,170,119 ops/sec ±2.88% (80 runs sampled)
+  *   Int16Array         x 1,176,348 ops/sec ±5.79% (86 runs sampled)
+  *   Int8Array          x 1,058,707 ops/sec ±4.94% (77 runs sampled)
+  *   Uint8ClampedArray  x 1,110,633 ops/sec ±4.20% (80 runs sampled)
+  * Post:
+  *   Float64Array       x 7,105,671 ops/sec ±13.47% (64 runs sampled)
+  *   Float32Array       x 5,887,912 ops/sec ±1.46% (82 runs sampled)
+  *   Uint32Array        x 6,491,661 ops/sec ±1.76% (79 runs sampled)
+  *   Uint16Array        x 6,559,795 ops/sec ±1.67% (82 runs sampled)
+  *   Uint8Array         x 6,463,966 ops/sec ±1.43% (85 runs sampled)
+  *   Int32Array         x 5,641,841 ops/sec ±3.49% (81 runs sampled)
+  *   Int16Array         x 6,583,511 ops/sec ±1.98% (80 runs sampled)
+  *   Int8Array          x 6,606,078 ops/sec ±1.74% (81 runs sampled)
+  *   Uint8ClampedArray  x 6,602,224 ops/sec ±1.77% (83 runs sampled)
+  */
+  var stringTag = (symbolToStringTagExists && obj[Symbol.toStringTag]);
+  if (typeof stringTag === 'string') {
+    return stringTag;
+  }
+
+  var objPrototype = Object.getPrototypeOf(obj);
+  /* ! Speed optimisation
+  * Pre:
+  *   regex literal      x 1,772,385 ops/sec ±1.85% (77 runs sampled)
+  *   regex constructor  x 2,143,634 ops/sec ±2.46% (78 runs sampled)
+  * Post:
+  *   regex literal      x 3,928,009 ops/sec ±0.65% (78 runs sampled)
+  *   regex constructor  x 3,931,108 ops/sec ±0.58% (84 runs sampled)
+  */
+  if (objPrototype === RegExp.prototype) {
+    return 'RegExp';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   date               x 2,130,074 ops/sec ±4.42% (68 runs sampled)
+  * Post:
+  *   date               x 3,953,779 ops/sec ±1.35% (77 runs sampled)
+  */
+  if (objPrototype === Date.prototype) {
+    return 'Date';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-promise.prototype-@@tostringtag)
+   * ES6$25.4.5.4 - Promise.prototype[@@toStringTag] should be "Promise":
+   * Test: `Object.prototype.toString.call(Promise.resolve())``
+   *  - Chrome <=47 === "[object Object]"
+   *  - Edge <=20 === "[object Object]"
+   *  - Firefox 29-Latest === "[object Promise]"
+   *  - Safari 7.1-Latest === "[object Promise]"
+   */
+  if (promiseExists && objPrototype === Promise.prototype) {
+    return 'Promise';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   set                x 2,222,186 ops/sec ±1.31% (82 runs sampled)
+  * Post:
+  *   set                x 4,545,879 ops/sec ±1.13% (83 runs sampled)
+  */
+  if (setExists && objPrototype === Set.prototype) {
+    return 'Set';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   map                x 2,396,842 ops/sec ±1.59% (81 runs sampled)
+  * Post:
+  *   map                x 4,183,945 ops/sec ±6.59% (82 runs sampled)
+  */
+  if (mapExists && objPrototype === Map.prototype) {
+    return 'Map';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   weakset            x 1,323,220 ops/sec ±2.17% (76 runs sampled)
+  * Post:
+  *   weakset            x 4,237,510 ops/sec ±2.01% (77 runs sampled)
+  */
+  if (weakSetExists && objPrototype === WeakSet.prototype) {
+    return 'WeakSet';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   weakmap            x 1,500,260 ops/sec ±2.02% (78 runs sampled)
+  * Post:
+  *   weakmap            x 3,881,384 ops/sec ±1.45% (82 runs sampled)
+  */
+  if (weakMapExists && objPrototype === WeakMap.prototype) {
+    return 'WeakMap';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-dataview.prototype-@@tostringtag)
+   * ES6$24.2.4.21 - DataView.prototype[@@toStringTag] should be "DataView":
+   * Test: `Object.prototype.toString.call(new DataView(new ArrayBuffer(1)))``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (dataViewExists && objPrototype === DataView.prototype) {
+    return 'DataView';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%mapiteratorprototype%-@@tostringtag)
+   * ES6$23.1.5.2.2 - %MapIteratorPrototype%[@@toStringTag] should be "Map Iterator":
+   * Test: `Object.prototype.toString.call(new Map().entries())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (mapExists && objPrototype === mapIteratorPrototype) {
+    return 'Map Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%setiteratorprototype%-@@tostringtag)
+   * ES6$23.2.5.2.2 - %SetIteratorPrototype%[@@toStringTag] should be "Set Iterator":
+   * Test: `Object.prototype.toString.call(new Set().entries())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (setExists && objPrototype === setIteratorPrototype) {
+    return 'Set Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%arrayiteratorprototype%-@@tostringtag)
+   * ES6$22.1.5.2.2 - %ArrayIteratorPrototype%[@@toStringTag] should be "Array Iterator":
+   * Test: `Object.prototype.toString.call([][Symbol.iterator]())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (arrayIteratorExists && objPrototype === arrayIteratorPrototype) {
+    return 'Array Iterator';
+  }
+
+  /* ! Spec Conformance
+   * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%stringiteratorprototype%-@@tostringtag)
+   * ES6$21.1.5.2.2 - %StringIteratorPrototype%[@@toStringTag] should be "String Iterator":
+   * Test: `Object.prototype.toString.call(''[Symbol.iterator]())``
+   *  - Edge <=13 === "[object Object]"
+   */
+  if (stringIteratorExists && objPrototype === stringIteratorPrototype) {
+    return 'String Iterator';
+  }
+
+  /* ! Speed optimisation
+  * Pre:
+  *   object from null   x 2,424,320 ops/sec ±1.67% (76 runs sampled)
+  * Post:
+  *   object from null   x 5,838,000 ops/sec ±0.99% (84 runs sampled)
+  */
+  if (objPrototype === null) {
+    return 'Object';
+  }
+
+  return Object
+    .prototype
+    .toString
+    .call(obj)
+    .slice(toStringLeftSliceLength, toStringRightSliceLength);
+};
+
+module.exports.typeDetect = module.exports;
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],57:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -13987,7 +14103,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":58,"punycode":53,"querystring":56}],58:[function(require,module,exports){
+},{"./util":58,"punycode":52,"querystring":55}],58:[function(require,module,exports){
 'use strict';
 
 module.exports = {
