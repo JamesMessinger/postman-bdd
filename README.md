@@ -156,6 +156,8 @@ Postman has a command-line test runner called [Newman](http://www.getpostman.com
 
 ![Newman](docs/newman.gif)
 
+> **NOTE:** Global variables that you create in the Postman app **don't** automatically exist in the Newman CLI.  This includes the `postmanBDD` variable.  You can import global variables into Newman using the [`--globals`command line argument](https://github.com/postmanlabs/newman#command-line-options).  Another option is to [install Postman BDD](#installation) as the first request in your collection; that way the collection works anywhere you run it, without relying on the existence of global variables.
+
 
 Contributing
 --------------------------
