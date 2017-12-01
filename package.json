@@ -46,8 +46,7 @@
   },
   "dependencies": {
     "chai": "^4.1.0",
-    "cookiejar": "^2.1.1",
-    "is-ip": "^1.0.0"
+    "cookiejar": "^2.1.1"
   },
   "devDependencies": {
     "codacy-coverage": "^2.0.1",
