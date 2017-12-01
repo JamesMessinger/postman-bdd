@@ -1,17 +1,19 @@
 /*!
- * Postman BDD v5.0.2 (July 17th 2017)
- *
+ * Postman BDD v5.0.3 (December 1st 2017)
+ * 
  * https://bigstickcarpet.github.io/postman-bdd
- *
+ * 
  * @author  James Messinger (http://bigstickcarpet.com)
  * @license MIT
  */
 (function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 'use strict';
 
-var isIP = require('is-ip');
 var url = require('url');
 var cookies = require('./cookies');
+
+var ipV4Pattern = /^(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}$/;
+var ipV6Pattern = /^(?:(?:[0-9a-fA-F:]){1,4}(?:(?::(?:[0-9a-fA-F]){1,4}|:)){2,7})+$/;
 
 var contentTypes = {
   json: 'application/json',
@@ -130,8 +132,10 @@ function chaiHttp (chai, _) {
    * @name ip
    */
   Assertion.addProperty('ip', function () {
+    var isIP = ipV4Pattern.test(this._obj) || ipV6Pattern.test(this._obj);
+
     this.assert(
-      isIP(this._obj),
+      isIP,
       'expected #{this} to be an ip',
       'expected #{this} to not be an ip'
     );
@@ -459,7 +463,7 @@ function wasRedirected (obj) {
   return redirectCodes.indexOf(status) >= 0 || redirects && redirects.length;
 }
 
-},{"./cookies":3,"is-ip":50,"url":57}],2:[function(require,module,exports){
+},{"./cookies":3,"url":54}],2:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -1378,7 +1382,7 @@ var used = [];
  * Chai version
  */
 
-exports.version = '4.1.0';
+exports.version = '4.1.2';
 
 /*!
  * Assertion Error
@@ -1874,7 +1878,7 @@ module.exports = function (chai, _) {
    *     Object.prototype.b = 2;
    *
    *     expect({a: 1}).to.have.own.property('a');
-   *     expect({a: 1}).to.have.property('b').but.not.own.property('b');
+   *     expect({a: 1}).to.have.property('b').but.not.own.property('b'); 
    *
    *     expect({a: 1}).to.own.include({a: 1});
    *     expect({a: 1}).to.include({b: 2}).but.not.own.include({b: 2});
@@ -2007,7 +2011,7 @@ module.exports = function (chai, _) {
    *     expect(1, 'nooo why fail??').to.be.a('string');
    *
    * `.a` can also be used as a language chain to improve the readability of
-   * your assertions.
+   * your assertions. 
    *
    *     expect({b: 2}).to.have.a.property('b');
    *
@@ -2121,7 +2125,7 @@ module.exports = function (chai, _) {
    *
    *     expect('foobar').to.not.include('taco');
    *     expect([1, 2, 3]).to.not.include(4);
-   *
+   * 
    * However, it's dangerous to negate `.include` when the target is an object.
    * The problem is that it creates uncertain expectations by asserting that the
    * target object doesn't have all of `val`'s key/value pairs but may or may
@@ -2194,53 +2198,18 @@ module.exports = function (chai, _) {
 
   function include (val, msg) {
     if (msg) flag(this, 'message', msg);
-
-    _.expectTypes(this, [
-      'array', 'object', 'string',
-      'map', 'set', 'weakset',
-    ]);
-
+    
     var obj = flag(this, 'object')
-      , objType = _.type(obj).toLowerCase();
+      , objType = _.type(obj).toLowerCase()
+      , flagMsg = flag(this, 'message')
+      , negate = flag(this, 'negate')
+      , ssfi = flag(this, 'ssfi')
+      , isDeep = flag(this, 'deep')
+      , descriptor = isDeep ? 'deep ' : '';
 
-    // This block is for asserting a subset of properties in an object.
-    if (objType === 'object') {
-      var props = Object.keys(val)
-        , negate = flag(this, 'negate')
-        , firstErr = null
-        , numErrs = 0;
+    flagMsg = flagMsg ? flagMsg + ': ' : '';
 
-      props.forEach(function (prop) {
-        var propAssertion = new Assertion(obj);
-        _.transferFlags(this, propAssertion, true);
-        flag(propAssertion, 'lockSsfi', true);
-
-        if (!negate || props.length === 1) {
-          propAssertion.property(prop, val[prop]);
-          return;
-        }
-
-        try {
-          propAssertion.property(prop, val[prop]);
-        } catch (err) {
-          if (!_.checkError.compatibleConstructor(err, AssertionError)) throw err;
-          if (firstErr === null) firstErr = err;
-          numErrs++;
-        }
-      }, this);
-
-      // When validating .not.include with multiple properties, we only want
-      // to throw an assertion error if all of the properties are included,
-      // in which case we throw the first property assertion error that we
-      // encountered.
-      if (negate && props.length > 1 && numErrs === props.length) throw firstErr;
-
-      return;
-    }
-
-    var isDeep = flag(this, 'deep')
-      , descriptor = isDeep ? 'deep ' : ''
-      , included = false;
+    var included = false;
 
     switch (objType) {
       case 'string':
@@ -2249,10 +2218,6 @@ module.exports = function (chai, _) {
 
       case 'weakset':
         if (isDeep) {
-          var flagMsg = flag(this, 'message')
-            , ssfi = flag(this, 'ssfi');
-          flagMsg = flagMsg ? flagMsg + ': ' : '';
-
           throw new AssertionError(
             flagMsg + 'unable to use .deep.include with WeakSet',
             undefined,
@@ -2289,6 +2254,53 @@ module.exports = function (chai, _) {
           included = obj.indexOf(val) !== -1;
         }
         break;
+
+      default:
+        // This block is for asserting a subset of properties in an object.
+        // `_.expectTypes` isn't used here because `.include` should work with
+        // objects with a custom `@@toStringTag`.
+        if (val !== Object(val)) {
+          throw new AssertionError(
+            flagMsg + 'object tested must be an array, a map, an object,'
+              + ' a set, a string, or a weakset, but ' + objType + ' given',
+            undefined,
+            ssfi
+          );
+        }
+
+        var props = Object.keys(val)
+          , firstErr = null
+          , numErrs = 0;
+  
+        props.forEach(function (prop) {
+          var propAssertion = new Assertion(obj);
+          _.transferFlags(this, propAssertion, true);
+          flag(propAssertion, 'lockSsfi', true);
+  
+          if (!negate || props.length === 1) {
+            propAssertion.property(prop, val[prop]);
+            return;
+          }
+  
+          try {
+            propAssertion.property(prop, val[prop]);
+          } catch (err) {
+            if (!_.checkError.compatibleConstructor(err, AssertionError)) {
+              throw err;
+            }
+            if (firstErr === null) firstErr = err;
+            numErrs++;
+          }
+        }, this);
+  
+        // When validating .not.include with multiple properties, we only want
+        // to throw an assertion error if all of the properties are included,
+        // in which case we throw the first property assertion error that we
+        // encountered.
+        if (negate && props.length > 1 && numErrs === props.length) {
+          throw firstErr;
+        }
+        return;
     }
 
     // Assert inclusion in collection or substring in a string.
@@ -2692,7 +2704,7 @@ module.exports = function (chai, _) {
    *
    *     expect(1).to.equal(1);
    *     expect('foo').to.equal('foo');
-   *
+   * 
    * Add `.deep` earlier in the chain to use deep equality instead. See the
    * `deep-eql` project page for info on the deep equality algorithm:
    * https://github.com/chaijs/deep-eql.
@@ -2864,7 +2876,7 @@ module.exports = function (chai, _) {
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
     }
-
+    
     if (!doLength && (objType === 'date' && nType !== 'date')) {
       errorMessage = msgPrefix + 'the argument to above must be a date';
     } else if (nType !== 'number' && (doLength || objType === 'number')) {
@@ -3150,7 +3162,7 @@ module.exports = function (chai, _) {
     if (doLength) {
       new Assertion(obj, flagMsg, ssfi, true).to.have.property('length');
     }
-
+    
     if (!doLength && (objType === 'date' && nType !== 'date')) {
       errorMessage = msgPrefix + 'the argument to most must be a date';
     } else if (nType !== 'number' && (doLength || objType === 'number')) {
@@ -3326,28 +3338,25 @@ module.exports = function (chai, _) {
     var target = flag(this, 'object')
     var ssfi = flag(this, 'ssfi');
     var flagMsg = flag(this, 'message');
-    var validInstanceOfTarget = constructor === Object(constructor) && (
-        typeof constructor === 'function' ||
-        (typeof Symbol !== 'undefined' &&
-         typeof Symbol.hasInstance !== 'undefined' &&
-         Symbol.hasInstance in constructor)
-    );
 
-    if (!validInstanceOfTarget) {
-      flagMsg = flagMsg ? flagMsg + ': ' : '';
-      var constructorType = constructor === null ? 'null' : typeof constructor;
-      throw new AssertionError(
-        flagMsg + 'The instanceof assertion needs a constructor but ' + constructorType + ' was given.',
-        undefined,
-        ssfi
-      );
+    try {
+      var isInstanceOf = target instanceof constructor;
+    } catch (err) {
+      if (err instanceof TypeError) {
+        flagMsg = flagMsg ? flagMsg + ': ' : '';
+        throw new AssertionError(
+          flagMsg + 'The instanceof assertion needs a constructor but '
+            + _.type(constructor) + ' was given.',
+          undefined,
+          ssfi
+        );
+      }
+      throw err;
     }
-
-    var isInstanceOf = target instanceof constructor
 
     var name = _.getName(constructor);
     if (name === null) {
-        name = 'an unnamed constructor';
+      name = 'an unnamed constructor';
     }
 
     this.assert(
@@ -3389,7 +3398,7 @@ module.exports = function (chai, _) {
    *
    *     expect({a: 1}).to.have.own.property('a');
    *     expect({a: 1}).to.have.own.property('a', 1);
-   *     expect({a: 1}).to.have.property('b').but.not.own.property('b');
+   *     expect({a: 1}).to.have.property('b').but.not.own.property('b'); 
    *
    * `.deep` and `.own` can be combined.
    *
@@ -3416,7 +3425,7 @@ module.exports = function (chai, _) {
    * Add `.not` earlier in the chain to negate `.property`.
    *
    *     expect({a: 1}).to.not.have.property('b');
-   *
+   * 
    * However, it's dangerous to negate `.property` when providing `val`. The
    * problem is that it creates uncertain expectations by asserting that the
    * target either doesn't have a property with the given key `name`, or that it
@@ -3454,7 +3463,7 @@ module.exports = function (chai, _) {
    *
    *     // Not recommended
    *     expect({a: 1}).to.have.property('b', undefined, 'nooo why fail??');
-   *
+   * 
    * The above assertion isn't the same thing as not providing `val`. Instead,
    * it's asserting that the target object has a `b` property that's equal to
    * `undefined`.
@@ -3573,7 +3582,7 @@ module.exports = function (chai, _) {
    * Add `.not` earlier in the chain to negate `.ownPropertyDescriptor`.
    *
    *     expect({a: 1}).to.not.have.ownPropertyDescriptor('b');
-   *
+   * 
    * However, it's dangerous to negate `.ownPropertyDescriptor` when providing
    * a `descriptor`. The problem is that it creates uncertain expectations by
    * asserting that the target either doesn't have a property descriptor with
@@ -3644,7 +3653,7 @@ module.exports = function (chai, _) {
    *       writable: true,
    *       value: 2,
    *     });
-   *
+   * 
    *     // Recommended
    *     expect({a: 1}, 'nooo why fail??').to.have.ownPropertyDescriptor('b');
    *
@@ -3861,7 +3870,7 @@ module.exports = function (chai, _) {
    * ### .keys(key1[, key2[, ...]])
    *
    * Asserts that the target object, array, map, or set has the given keys. Only
-   * the target's own inherited properties are included in the search.
+   * the target's own inherited properties are included in the search. 
    *
    * When the target is an object or array, keys can be provided as one or more
    * string arguments, a single array argument, or a single object argument. In
@@ -4096,7 +4105,7 @@ module.exports = function (chai, _) {
    *
    * When no arguments are provided, `.throw` invokes the target function and
    * asserts that an error is thrown.
-   *
+   * 
    *     var badFn = function () { throw new TypeError('Illegal salmon!'); };
    *
    *     expect(badFn).to.throw();
@@ -4148,11 +4157,11 @@ module.exports = function (chai, _) {
    *     expect(badFn).to.throw(err, /salmon/);
    *
    * Add `.not` earlier in the chain to negate `.throw`.
-   *
+   *     
    *     var goodFn = function () {};
    *
    *     expect(goodFn).to.not.throw();
-   *
+   * 
    * However, it's dangerous to negate `.throw` when providing any arguments.
    * The problem is that it creates uncertain expectations by asserting that the
    * target either doesn't throw an error, or that it throws an error but of a
@@ -4500,7 +4509,7 @@ module.exports = function (chai, _) {
    * first argument, and asserts that the value returned is truthy.
    *
    *     expect(1).to.satisfy(function(num) {
-   *       return num > 0;
+   *       return num > 0; 
    *     });
    *
    * Add `.not` earlier in the chain to negate `.satisfy`.
@@ -4969,7 +4978,7 @@ module.exports = function (chai, _) {
    *
    *     expect(subtractTwo).to.decrease(myObj, 'val').by(2); // Recommended
    *     expect(subtractTwo).to.not.increase(myObj, 'val'); // Not recommended
-   *
+   * 
    * When the subject is expected to stay the same, it's often best to assert
    * exactly that.
    *
@@ -5066,7 +5075,7 @@ module.exports = function (chai, _) {
    *
    * When two arguments are provided, `.decrease` asserts that the value of the
    * given object `subject`'s `prop` property is lesser after invoking the
-   * target function compared to beforehand.
+   * target function compared to beforehand. 
    *
    *     var myObj = {val: 1}
    *       , subtractTwo = function () { myObj.val -= 2; };
@@ -5088,7 +5097,7 @@ module.exports = function (chai, _) {
    *
    *     expect(addTwo).to.increase(myObj, 'val').by(2); // Recommended
    *     expect(addTwo).to.not.decrease(myObj, 'val'); // Not recommended
-   *
+   * 
    * When the subject is expected to stay the same, it's often best to assert
    * exactly that.
    *
@@ -6465,24 +6474,24 @@ module.exports = function (chai, util) {
 
   /**
    * ### .nestedInclude(haystack, needle, [message])
-   *
-   * Asserts that 'haystack' includes 'needle'.
-   * Can be used to assert the inclusion of a subset of properties in an
+   * 
+   * Asserts that 'haystack' includes 'needle'. 
+   * Can be used to assert the inclusion of a subset of properties in an 
    * object.
-   * Enables the use of dot- and bracket-notation for referencing nested
+   * Enables the use of dot- and bracket-notation for referencing nested 
    * properties.
    * '[]' and '.' in property names can be escaped using double backslashes.
-   *
+   * 
    *     assert.nestedInclude({'.a': {'b': 'x'}}, {'\\.a.[b]': 'x'});
    *     assert.nestedInclude({'a': {'[b]': 'x'}}, {'a.\\[b\\]': 'x'});
-   *
+   * 
    * @name nestedInclude
    * @param {Object} haystack
    * @param {Object} needle
    * @param {String} message
    * @namespace Assert
-   * @api public
-   */
+   * @api public 
+   */ 
 
   assert.nestedInclude = function (exp, inc, msg) {
     new Assertion(exp, msg, assert.nestedInclude, true).nested.include(inc);
@@ -6490,24 +6499,24 @@ module.exports = function (chai, util) {
 
   /**
    * ### .notNestedInclude(haystack, needle, [message])
-   *
-   * Asserts that 'haystack' does not include 'needle'.
-   * Can be used to assert the absence of a subset of properties in an
+   * 
+   * Asserts that 'haystack' does not include 'needle'. 
+   * Can be used to assert the absence of a subset of properties in an 
    * object.
-   * Enables the use of dot- and bracket-notation for referencing nested
-   * properties.
+   * Enables the use of dot- and bracket-notation for referencing nested 
+   * properties. 
    * '[]' and '.' in property names can be escaped using double backslashes.
-   *
+   * 
    *     assert.notNestedInclude({'.a': {'b': 'x'}}, {'\\.a.b': 'y'});
    *     assert.notNestedInclude({'a': {'[b]': 'x'}}, {'a.\\[b\\]': 'y'});
-   *
+   * 
    * @name notNestedInclude
    * @param {Object} haystack
    * @param {Object} needle
    * @param {String} message
    * @namespace Assert
-   * @api public
-   */
+   * @api public 
+   */ 
 
   assert.notNestedInclude = function (exp, inc, msg) {
     new Assertion(exp, msg, assert.notNestedInclude, true)
@@ -6516,23 +6525,23 @@ module.exports = function (chai, util) {
 
   /**
    * ### .deepNestedInclude(haystack, needle, [message])
-   *
+   * 
    * Asserts that 'haystack' includes 'needle'.
-   * Can be used to assert the inclusion of a subset of properties in an
+   * Can be used to assert the inclusion of a subset of properties in an 
    * object while checking for deep equality.
-   * Enables the use of dot- and bracket-notation for referencing nested
+   * Enables the use of dot- and bracket-notation for referencing nested 
    * properties.
    * '[]' and '.' in property names can be escaped using double backslashes.
-   *
+   * 
    *     assert.deepNestedInclude({a: {b: [{x: 1}]}}, {'a.b[0]': {x: 1}});
    *     assert.deepNestedInclude({'.a': {'[b]': {x: 1}}}, {'\\.a.\\[b\\]': {x: 1}});
-   *
+   *    
    * @name deepNestedInclude
    * @param {Object} haystack
    * @param {Object} needle
    * @param {String} message
    * @namespace Assert
-   * @api public
+   * @api public 
    */
 
   assert.deepNestedInclude = function(exp, inc, msg) {
@@ -6542,23 +6551,23 @@ module.exports = function (chai, util) {
 
   /**
    * ### .notDeepNestedInclude(haystack, needle, [message])
-   *
+   * 
    * Asserts that 'haystack' does not include 'needle'.
-   * Can be used to assert the absence of a subset of properties in an
+   * Can be used to assert the absence of a subset of properties in an 
    * object while checking for deep equality.
-   * Enables the use of dot- and bracket-notation for referencing nested
+   * Enables the use of dot- and bracket-notation for referencing nested 
    * properties.
    * '[]' and '.' in property names can be escaped using double backslashes.
-   *
+   * 
    *     assert.notDeepNestedInclude({a: {b: [{x: 1}]}}, {'a.b[0]': {y: 1}})
    *     assert.notDeepNestedInclude({'.a': {'[b]': {x: 1}}}, {'\\.a.\\[b\\]': {y: 2}});
-   *
+   *    
    * @name notDeepNestedInclude
    * @param {Object} haystack
    * @param {Object} needle
    * @param {String} message
    * @namespace Assert
-   * @api public
+   * @api public 
    */
 
   assert.notDeepNestedInclude = function(exp, inc, msg) {
@@ -6568,13 +6577,13 @@ module.exports = function (chai, util) {
 
   /**
    * ### .ownInclude(haystack, needle, [message])
-   *
+   * 
    * Asserts that 'haystack' includes 'needle'.
-   * Can be used to assert the inclusion of a subset of properties in an
+   * Can be used to assert the inclusion of a subset of properties in an 
    * object while ignoring inherited properties.
-   *
+   * 
    *     assert.ownInclude({ a: 1 }, { a: 1 });
-   *
+   * 
    * @name ownInclude
    * @param {Object} haystack
    * @param {Object} needle
@@ -6589,15 +6598,15 @@ module.exports = function (chai, util) {
 
   /**
    * ### .notOwnInclude(haystack, needle, [message])
-   *
+   * 
    * Asserts that 'haystack' includes 'needle'.
-   * Can be used to assert the absence of a subset of properties in an
+   * Can be used to assert the absence of a subset of properties in an 
    * object while ignoring inherited properties.
-   *
+   * 
    *     Object.prototype.b = 2;
-   *
+   * 
    *     assert.notOwnInclude({ a: 1 }, { b: 2 });
-   *
+   * 
    * @name notOwnInclude
    * @param {Object} haystack
    * @param {Object} needle
@@ -6612,13 +6621,13 @@ module.exports = function (chai, util) {
 
   /**
    * ### .deepOwnInclude(haystack, needle, [message])
-   *
+   * 
    * Asserts that 'haystack' includes 'needle'.
-   * Can be used to assert the inclusion of a subset of properties in an
+   * Can be used to assert the inclusion of a subset of properties in an 
    * object while ignoring inherited properties and checking for deep equality.
-   *
+   * 
    *      assert.deepOwnInclude({a: {b: 2}}, {a: {b: 2}});
-   *
+   *      
    * @name deepOwnInclude
    * @param {Object} haystack
    * @param {Object} needle
@@ -6634,13 +6643,13 @@ module.exports = function (chai, util) {
 
    /**
    * ### .notDeepOwnInclude(haystack, needle, [message])
-   *
+   * 
    * Asserts that 'haystack' includes 'needle'.
-   * Can be used to assert the absence of a subset of properties in an
+   * Can be used to assert the absence of a subset of properties in an 
    * object while ignoring inherited properties and checking for deep equality.
-   *
+   * 
    *      assert.notDeepOwnInclude({a: {b: 2}}, {a: {c: 3}});
-   *
+   *      
    * @name notDeepOwnInclude
    * @param {Object} haystack
    * @param {Object} needle
@@ -7126,10 +7135,10 @@ module.exports = function (chai, util) {
    * You can also provide a single object instead of a `keys` array and its keys
    * will be used as the expected set of keys.
    *
-   *     assert.hasAnyKey({foo: 1, bar: 2, baz: 3}, ['foo', 'iDontExist', 'baz']);
-   *     assert.hasAnyKey({foo: 1, bar: 2, baz: 3}, {foo: 30, iDontExist: 99, baz: 1337]);
-   *     assert.hasAnyKey(new Map([[{foo: 1}, 'bar'], ['key', 'value']]), [{foo: 1}, 'thisKeyDoesNotExist']);
-   *     assert.hasAnyKey(new Set([{foo: 'bar'}, 'anotherKey'], [{foo: 'bar'}, 'thisKeyDoesNotExist']);
+   *     assert.hasAnyKeys({foo: 1, bar: 2, baz: 3}, ['foo', 'iDontExist', 'baz']);
+   *     assert.hasAnyKeys({foo: 1, bar: 2, baz: 3}, {foo: 30, iDontExist: 99, baz: 1337});
+   *     assert.hasAnyKeys(new Map([[{foo: 1}, 'bar'], ['key', 'value']]), [{foo: 1}, 'key']);
+   *     assert.hasAnyKeys(new Set([{foo: 'bar'}, 'anotherKey']), [{foo: 'bar'}, 'anotherKey']);
    *
    * @name hasAnyKeys
    * @param {Mixed} object
@@ -9117,7 +9126,7 @@ var transferFlags = require('./transferFlags');
  */
 
 module.exports = function addProperty(ctx, name, getter) {
-  getter = getter === undefined ? new Function() : getter;
+  getter = getter === undefined ? function () {} : getter;
 
   Object.defineProperty(ctx, name,
     { get: function propertyGetter() {
@@ -9175,7 +9184,7 @@ var inspect = require('./inspect');
  *
  * @param {Mixed} first element to compare
  * @param {Mixed} second element to compare
- * @returns {Number} -1 if 'a' should come before 'b'; otherwise 1
+ * @returns {Number} -1 if 'a' should come before 'b'; otherwise 1 
  * @name compareByInspect
  * @namespace Utils
  * @api public
@@ -9238,7 +9247,7 @@ module.exports = function expectTypes(obj, types) {
   }
 };
 
-},{"./flag":26,"assertion-error":11,"type-detect":56}],26:[function(require,module,exports){
+},{"./flag":26,"assertion-error":11,"type-detect":53}],26:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9648,7 +9657,7 @@ exports.isProxyEnabled = require('./isProxyEnabled');
 
 exports.isNaN = require('./isNaN');
 
-},{"./addChainableMethod":20,"./addLengthGuard":21,"./addMethod":22,"./addProperty":23,"./compareByInspect":24,"./expectTypes":25,"./flag":26,"./getActual":27,"./getMessage":29,"./getOwnEnumerableProperties":30,"./getOwnEnumerablePropertySymbols":31,"./inspect":34,"./isNaN":35,"./isProxyEnabled":36,"./objDisplay":37,"./overwriteChainableMethod":38,"./overwriteMethod":39,"./overwriteProperty":40,"./proxify":41,"./test":42,"./transferFlags":43,"check-error":44,"deep-eql":46,"get-func-name":48,"pathval":51,"type-detect":56}],34:[function(require,module,exports){
+},{"./addChainableMethod":20,"./addLengthGuard":21,"./addMethod":22,"./addProperty":23,"./compareByInspect":24,"./expectTypes":25,"./flag":26,"./getActual":27,"./getMessage":29,"./getOwnEnumerableProperties":30,"./getOwnEnumerablePropertySymbols":31,"./inspect":34,"./isNaN":35,"./isProxyEnabled":36,"./objDisplay":37,"./overwriteChainableMethod":38,"./overwriteMethod":39,"./overwriteProperty":40,"./proxify":41,"./test":42,"./transferFlags":43,"check-error":44,"deep-eql":46,"get-func-name":47,"pathval":48,"type-detect":53}],34:[function(require,module,exports){
 // This is (almost) directly from Node.js utils
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
 
@@ -10033,7 +10042,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-},{"../config":15,"./getEnumerableProperties":28,"./getProperties":32,"get-func-name":48}],35:[function(require,module,exports){
+},{"../config":15,"./getEnumerableProperties":28,"./getProperties":32,"get-func-name":47}],35:[function(require,module,exports){
 /*!
  * Chai - isNaN utility
  * Copyright(c) 2012-2015 Sakthipriyan Vairamani <thechargingvolcano@gmail.com>
@@ -10082,7 +10091,7 @@ var config = require('../config');
  */
 
 module.exports = function isProxyEnabled() {
-  return config.useProxy &&
+  return config.useProxy && 
     typeof Proxy !== 'undefined' &&
     typeof Reflect !== 'undefined';
 };
@@ -10419,7 +10428,7 @@ var isProxyEnabled = require('./isProxyEnabled');
  * the list of existing properties. However, if a nonChainableMethodName is
  * provided, then the root cause is instead a failure to invoke a non-chainable
  * method prior to reading the non-existent property.
- *
+ * 
  * If proxies are unsupported or disabled via the user's Chai config, then
  * return object without modification.
  *
@@ -11045,57 +11054,33 @@ module.exports = {
 
 },{}],46:[function(require,module,exports){
 'use strict';
-/* globals Symbol: true, Uint8Array: true, WeakMap: true */
+/* globals Symbol: false, Uint8Array: false, WeakMap: false */
 /*!
  * deep-eql
  * Copyright(c) 2013 Jake Luer <jake@alogicalparadox.com>
  * MIT Licensed
  */
 
-/*!
- * Module dependencies
- */
-
 var type = require('type-detect');
 function FakeMap() {
-  this.clear();
+  this._key = 'chai/deep-eql__' + Math.random() + Date.now();
 }
+
 FakeMap.prototype = {
-  clear: function clearMap() {
-    this.keys = [];
-    this.values = [];
-    return this;
+  get: function getMap(key) {
+    return key[this._key];
   },
   set: function setMap(key, value) {
-    var index = this.keys.indexOf(key);
-    if (index >= 0) {
-      this.values[index] = value;
-    } else {
-      this.keys.push(key);
-      this.values.push(value);
+    if (Object.isExtensible(key)) {
+      Object.defineProperty(key, this._key, {
+        value: value,
+        configurable: true,
+      });
     }
-    return this;
-  },
-  get: function getMap(key) {
-    return this.values[this.keys.indexOf(key)];
-  },
-  delete: function deleteMap(key) {
-    var index = this.keys.indexOf(key);
-    if (index >= 0) {
-      this.values = this.values.slice(0, index).concat(this.values.slice(index + 1));
-      this.keys = this.keys.slice(0, index).concat(this.keys.slice(index + 1));
-    }
-    return this;
   },
 };
 
-var MemoizeMap = null;
-if (typeof WeakMap === 'function') {
-  MemoizeMap = WeakMap;
-} else {
-  MemoizeMap = FakeMap;
-}
-
+var MemoizeMap = typeof WeakMap === 'function' ? WeakMap : FakeMap;
 /*!
  * Check to see if the MemoizeMap has recorded a result of the two operands
  *
@@ -11524,383 +11509,7 @@ function isPrimitive(value) {
   return value === null || typeof value !== 'object';
 }
 
-},{"type-detect":47}],47:[function(require,module,exports){
-(function (global){
-'use strict';
-/* !
- * type-detect
- * Copyright(c) 2013 jake luer <jake@alogicalparadox.com>
- * MIT Licensed
- */
-var getPrototypeOfExists = typeof Object.getPrototypeOf === 'function';
-var promiseExists = typeof Promise === 'function';
-var globalObject = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : self; // eslint-disable-line
-var isDom = 'location' in globalObject && 'document' in globalObject;
-var htmlElementExists = typeof HTMLElement !== 'undefined';
-var isArrayExists = typeof Array.isArray === 'function';
-var symbolExists = typeof Symbol !== 'undefined';
-var mapExists = typeof Map !== 'undefined';
-var setExists = typeof Set !== 'undefined';
-var weakMapExists = typeof WeakMap !== 'undefined';
-var weakSetExists = typeof WeakSet !== 'undefined';
-var dataViewExists = typeof DataView !== 'undefined';
-var symbolIteratorExists = symbolExists && typeof Symbol.iterator !== 'undefined';
-var symbolToStringTagExists = symbolExists && typeof Symbol.toStringTag !== 'undefined';
-var setEntriesExists = setExists && typeof Set.prototype.entries === 'function';
-var mapEntriesExists = mapExists && typeof Map.prototype.entries === 'function';
-var setIteratorPrototype = getPrototypeOfExists && setEntriesExists && Object.getPrototypeOf(new Set().entries());
-var mapIteratorPrototype = getPrototypeOfExists && mapEntriesExists && Object.getPrototypeOf(new Map().entries());
-var arrayIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
-var arrayIteratorPrototype = arrayIteratorExists && Object.getPrototypeOf([][Symbol.iterator]());
-var stringIteratorExists = symbolIteratorExists && typeof Array.prototype[Symbol.iterator] === 'function';
-var stringIteratorPrototype = stringIteratorExists && Object.getPrototypeOf(''[Symbol.iterator]());
-var toStringLeftSliceLength = 8;
-var toStringRightSliceLength = -1;
-/**
- * ### typeOf (obj)
- *
- * Uses `Object.prototype.toString` to determine the type of an object,
- * normalising behaviour across engine versions & well optimised.
- *
- * @param {Mixed} object
- * @return {String} object type
- * @api public
- */
-module.exports = function typeDetect(obj) {
-  /* ! Speed optimisation
-   * Pre:
-   *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
-   *   boolean literal    x 1,424,138 ops/sec ±4.54% (75 runs sampled)
-   *   number literal     x 1,653,153 ops/sec ±1.91% (82 runs sampled)
-   *   undefined          x 9,978,660 ops/sec ±1.92% (75 runs sampled)
-   *   function           x 2,556,769 ops/sec ±1.73% (77 runs sampled)
-   * Post:
-   *   string literal     x 38,564,796 ops/sec ±1.15% (79 runs sampled)
-   *   boolean literal    x 31,148,940 ops/sec ±1.10% (79 runs sampled)
-   *   number literal     x 32,679,330 ops/sec ±1.90% (78 runs sampled)
-   *   undefined          x 32,363,368 ops/sec ±1.07% (82 runs sampled)
-   *   function           x 31,296,870 ops/sec ±0.96% (83 runs sampled)
-   */
-  var typeofObj = typeof obj;
-  if (typeofObj !== 'object') {
-    return typeofObj;
-  }
-
-  /* ! Speed optimisation
-   * Pre:
-   *   null               x 28,645,765 ops/sec ±1.17% (82 runs sampled)
-   * Post:
-   *   null               x 36,428,962 ops/sec ±1.37% (84 runs sampled)
-   */
-  if (obj === null) {
-    return 'null';
-  }
-
-  /* ! Spec Conformance
-   * Test: `Object.prototype.toString.call(window)``
-   *  - Node === "[object global]"
-   *  - Chrome === "[object global]"
-   *  - Firefox === "[object Window]"
-   *  - PhantomJS === "[object Window]"
-   *  - Safari === "[object Window]"
-   *  - IE 11 === "[object Window]"
-   *  - IE Edge === "[object Window]"
-   * Test: `Object.prototype.toString.call(this)``
-   *  - Chrome Worker === "[object global]"
-   *  - Firefox Worker === "[object DedicatedWorkerGlobalScope]"
-   *  - Safari Worker === "[object DedicatedWorkerGlobalScope]"
-   *  - IE 11 Worker === "[object WorkerGlobalScope]"
-   *  - IE Edge Worker === "[object WorkerGlobalScope]"
-   */
-  if (obj === globalObject) {
-    return 'global';
-  }
-
-  /* ! Speed optimisation
-   * Pre:
-   *   array literal      x 2,888,352 ops/sec ±0.67% (82 runs sampled)
-   * Post:
-   *   array literal      x 22,479,650 ops/sec ±0.96% (81 runs sampled)
-   */
-  if (isArrayExists && Array.isArray(obj)) {
-    return 'Array';
-  }
-
-  if (isDom) {
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/browsers.html#location)
-     * WhatWG HTML$7.7.3 - The `Location` interface
-     * Test: `Object.prototype.toString.call(window.location)``
-     *  - IE <=11 === "[object Object]"
-     *  - IE Edge <=13 === "[object Object]"
-     */
-    if (obj === globalObject.location) {
-      return 'Location';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#document)
-     * WhatWG HTML$3.1.1 - The `Document` object
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-26809268)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     *       WhatWG HTML states:
-     *         > For historical reasons, Window objects must also have a
-     *         > writable, configurable, non-enumerable property named
-     *         > HTMLDocument whose value is the Document interface object.
-     * Test: `Object.prototype.toString.call(document)``
-     *  - Chrome === "[object HTMLDocument]"
-     *  - Firefox === "[object HTMLDocument]"
-     *  - Safari === "[object HTMLDocument]"
-     *  - IE <=10 === "[object Document]"
-     *  - IE 11 === "[object HTMLDocument]"
-     *  - IE Edge <=13 === "[object HTMLDocument]"
-     */
-    if (obj === globalObject.document) {
-      return 'Document';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
-     * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
-     *  - IE <=10 === "[object MSMimeTypesCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).mimeTypes) {
-      return 'MimeTypeArray';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
-     * Test: `Object.prototype.toString.call(navigator.plugins)``
-     *  - IE <=10 === "[object MSPluginsCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).plugins) {
-      return 'PluginArray';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
-     * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
-     *  - IE <=10 === "[object HTMLBlockElement]"
-     */
-    if (htmlElementExists && obj instanceof HTMLElement && obj.tagName === 'BLOCKQUOTE') {
-      return 'HTMLQuoteElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltabledatacellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('td'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (htmlElementExists && obj instanceof HTMLElement && obj.tagName === 'TD') {
-      return 'HTMLTableDataCellElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltableheadercellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('th'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (htmlElementExists && obj instanceof HTMLElement && obj.tagName === 'TH') {
-      return 'HTMLTableHeaderCellElement';
-    }
-  }
-
-  /* ! Speed optimisation
-  * Pre:
-  *   Float64Array       x 625,644 ops/sec ±1.58% (80 runs sampled)
-  *   Float32Array       x 1,279,852 ops/sec ±2.91% (77 runs sampled)
-  *   Uint32Array        x 1,178,185 ops/sec ±1.95% (83 runs sampled)
-  *   Uint16Array        x 1,008,380 ops/sec ±2.25% (80 runs sampled)
-  *   Uint8Array         x 1,128,040 ops/sec ±2.11% (81 runs sampled)
-  *   Int32Array         x 1,170,119 ops/sec ±2.88% (80 runs sampled)
-  *   Int16Array         x 1,176,348 ops/sec ±5.79% (86 runs sampled)
-  *   Int8Array          x 1,058,707 ops/sec ±4.94% (77 runs sampled)
-  *   Uint8ClampedArray  x 1,110,633 ops/sec ±4.20% (80 runs sampled)
-  * Post:
-  *   Float64Array       x 7,105,671 ops/sec ±13.47% (64 runs sampled)
-  *   Float32Array       x 5,887,912 ops/sec ±1.46% (82 runs sampled)
-  *   Uint32Array        x 6,491,661 ops/sec ±1.76% (79 runs sampled)
-  *   Uint16Array        x 6,559,795 ops/sec ±1.67% (82 runs sampled)
-  *   Uint8Array         x 6,463,966 ops/sec ±1.43% (85 runs sampled)
-  *   Int32Array         x 5,641,841 ops/sec ±3.49% (81 runs sampled)
-  *   Int16Array         x 6,583,511 ops/sec ±1.98% (80 runs sampled)
-  *   Int8Array          x 6,606,078 ops/sec ±1.74% (81 runs sampled)
-  *   Uint8ClampedArray  x 6,602,224 ops/sec ±1.77% (83 runs sampled)
-  */
-  var stringTag = (symbolToStringTagExists && obj[Symbol.toStringTag]);
-  if (typeof stringTag === 'string') {
-    return stringTag;
-  }
-
-  if (getPrototypeOfExists) {
-    var objPrototype = Object.getPrototypeOf(obj);
-    /* ! Speed optimisation
-    * Pre:
-    *   regex literal      x 1,772,385 ops/sec ±1.85% (77 runs sampled)
-    *   regex constructor  x 2,143,634 ops/sec ±2.46% (78 runs sampled)
-    * Post:
-    *   regex literal      x 3,928,009 ops/sec ±0.65% (78 runs sampled)
-    *   regex constructor  x 3,931,108 ops/sec ±0.58% (84 runs sampled)
-    */
-    if (objPrototype === RegExp.prototype) {
-      return 'RegExp';
-    }
-
-    /* ! Speed optimisation
-    * Pre:
-    *   date               x 2,130,074 ops/sec ±4.42% (68 runs sampled)
-    * Post:
-    *   date               x 3,953,779 ops/sec ±1.35% (77 runs sampled)
-    */
-    if (objPrototype === Date.prototype) {
-      return 'Date';
-    }
-
-    /* ! Spec Conformance
-     * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-promise.prototype-@@tostringtag)
-     * ES6$25.4.5.4 - Promise.prototype[@@toStringTag] should be "Promise":
-     * Test: `Object.prototype.toString.call(Promise.resolve())``
-     *  - Chrome <=47 === "[object Object]"
-     *  - Edge <=20 === "[object Object]"
-     *  - Firefox 29-Latest === "[object Promise]"
-     *  - Safari 7.1-Latest === "[object Promise]"
-     */
-    if (promiseExists && objPrototype === Promise.prototype) {
-      return 'Promise';
-    }
-
-    /* ! Speed optimisation
-    * Pre:
-    *   set                x 2,222,186 ops/sec ±1.31% (82 runs sampled)
-    * Post:
-    *   set                x 4,545,879 ops/sec ±1.13% (83 runs sampled)
-    */
-    if (setExists && objPrototype === Set.prototype) {
-      return 'Set';
-    }
-
-    /* ! Speed optimisation
-    * Pre:
-    *   map                x 2,396,842 ops/sec ±1.59% (81 runs sampled)
-    * Post:
-    *   map                x 4,183,945 ops/sec ±6.59% (82 runs sampled)
-    */
-    if (mapExists && objPrototype === Map.prototype) {
-      return 'Map';
-    }
-
-    /* ! Speed optimisation
-    * Pre:
-    *   weakset            x 1,323,220 ops/sec ±2.17% (76 runs sampled)
-    * Post:
-    *   weakset            x 4,237,510 ops/sec ±2.01% (77 runs sampled)
-    */
-    if (weakSetExists && objPrototype === WeakSet.prototype) {
-      return 'WeakSet';
-    }
-
-    /* ! Speed optimisation
-    * Pre:
-    *   weakmap            x 1,500,260 ops/sec ±2.02% (78 runs sampled)
-    * Post:
-    *   weakmap            x 3,881,384 ops/sec ±1.45% (82 runs sampled)
-    */
-    if (weakMapExists && objPrototype === WeakMap.prototype) {
-      return 'WeakMap';
-    }
-
-    /* ! Spec Conformance
-     * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-dataview.prototype-@@tostringtag)
-     * ES6$24.2.4.21 - DataView.prototype[@@toStringTag] should be "DataView":
-     * Test: `Object.prototype.toString.call(new DataView(new ArrayBuffer(1)))``
-     *  - Edge <=13 === "[object Object]"
-     */
-    if (dataViewExists && objPrototype === DataView.prototype) {
-      return 'DataView';
-    }
-
-    /* ! Spec Conformance
-     * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%mapiteratorprototype%-@@tostringtag)
-     * ES6$23.1.5.2.2 - %MapIteratorPrototype%[@@toStringTag] should be "Map Iterator":
-     * Test: `Object.prototype.toString.call(new Map().entries())``
-     *  - Edge <=13 === "[object Object]"
-     */
-    if (mapExists && objPrototype === mapIteratorPrototype) {
-      return 'Map Iterator';
-    }
-
-    /* ! Spec Conformance
-     * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%setiteratorprototype%-@@tostringtag)
-     * ES6$23.2.5.2.2 - %SetIteratorPrototype%[@@toStringTag] should be "Set Iterator":
-     * Test: `Object.prototype.toString.call(new Set().entries())``
-     *  - Edge <=13 === "[object Object]"
-     */
-    if (setExists && objPrototype === setIteratorPrototype) {
-      return 'Set Iterator';
-    }
-
-    /* ! Spec Conformance
-     * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%arrayiteratorprototype%-@@tostringtag)
-     * ES6$22.1.5.2.2 - %ArrayIteratorPrototype%[@@toStringTag] should be "Array Iterator":
-     * Test: `Object.prototype.toString.call([][Symbol.iterator]())``
-     *  - Edge <=13 === "[object Object]"
-     */
-    if (arrayIteratorExists && objPrototype === arrayIteratorPrototype) {
-      return 'Array Iterator';
-    }
-
-    /* ! Spec Conformance
-     * (http://www.ecma-international.org/ecma-262/6.0/index.html#sec-%stringiteratorprototype%-@@tostringtag)
-     * ES6$21.1.5.2.2 - %StringIteratorPrototype%[@@toStringTag] should be "String Iterator":
-     * Test: `Object.prototype.toString.call(''[Symbol.iterator]())``
-     *  - Edge <=13 === "[object Object]"
-     */
-    if (stringIteratorExists && objPrototype === stringIteratorPrototype) {
-      return 'String Iterator';
-    }
-
-    /* ! Speed optimisation
-    * Pre:
-    *   object from null   x 2,424,320 ops/sec ±1.67% (76 runs sampled)
-    * Post:
-    *   object from null   x 5,838,000 ops/sec ±0.99% (84 runs sampled)
-    */
-    if (objPrototype === null) {
-      return 'Object';
-    }
-  }
-
-  return Object
-    .prototype
-    .toString
-    .call(obj)
-    .slice(toStringLeftSliceLength, toStringRightSliceLength);
-};
-
-module.exports.typeDetect = module.exports;
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
-},{}],48:[function(require,module,exports){
+},{"type-detect":53}],47:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -11946,45 +11555,7 @@ function getFuncName(aFunc) {
 
 module.exports = getFuncName;
 
-},{}],49:[function(require,module,exports){
-'use strict';
-
-var v4 = '(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])(?:\\.(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])){3}';
-var v6 = '(?:(?:[0-9a-fA-F:]){1,4}(?:(?::(?:[0-9a-fA-F]){1,4}|:)){2,7})+';
-
-var ip = module.exports = function (opts) {
-	opts = opts || {};
-	return opts.exact ? new RegExp('(?:^' + v4 + '$)|(?:^' + v6 + '$)') :
-	                    new RegExp('(?:' + v4 + ')|(?:' + v6 + ')', 'g');
-};
-
-ip.v4 = function (opts) {
-	opts = opts || {};
-	return opts.exact ? new RegExp('^' + v4 + '$') : new RegExp(v4, 'g');
-};
-
-ip.v6 = function (opts) {
-	opts = opts || {};
-	return opts.exact ? new RegExp('^' + v6 + '$') : new RegExp(v6, 'g');
-};
-
-},{}],50:[function(require,module,exports){
-'use strict';
-var ipRegex = require('ip-regex');
-
-var ip = module.exports = function (str) {
-	return ipRegex({exact: true}).test(str);
-};
-
-ip.v4 = function (str) {
-	return ipRegex.v4({exact: true}).test(str);
-};
-
-ip.v6 = function (str) {
-	return ipRegex.v6({exact: true}).test(str);
-};
-
-},{"ip-regex":49}],51:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -12277,7 +11848,7 @@ module.exports = {
   setPathValue: setPathValue,
 };
 
-},{}],52:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/punycode v1.4.1 by @mathias */
 ;(function(root) {
@@ -12815,7 +12386,7 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],53:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12901,7 +12472,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],54:[function(require,module,exports){
+},{}],51:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -12988,15 +12559,19 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],55:[function(require,module,exports){
+},{}],52:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":53,"./encode":54}],56:[function(require,module,exports){
+},{"./decode":50,"./encode":51}],53:[function(require,module,exports){
 (function (global){
-'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(global.typeDetect = factory());
+}(this, (function () { 'use strict';
 
 /* !
  * type-detect
@@ -13004,8 +12579,20 @@ exports.encode = exports.stringify = require('./encode');
  * MIT Licensed
  */
 var promiseExists = typeof Promise === 'function';
-var globalObject = typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : self; // eslint-disable-line
-var isDom = 'location' in globalObject && 'document' in globalObject;
+
+/* eslint-disable no-undef */
+var globalObject = typeof self === 'object' ? self : global; // eslint-disable-line id-blacklist
+
+/*
+ * All of these attributes must be available on the global object for the current environment
+ * to be considered a DOM environment (browser)
+ */
+var isDom = typeof window === 'object' &&
+  'document' in window &&
+  'navigator' in window &&
+  'HTMLElement' in window;
+/* eslint-enable */
+
 var symbolExists = typeof Symbol !== 'undefined';
 var mapExists = typeof Map !== 'undefined';
 var setExists = typeof Set !== 'undefined';
@@ -13034,7 +12621,7 @@ var toStringRightSliceLength = -1;
  * @return {String} object type
  * @api public
  */
-module.exports = function typeDetect(obj) {
+function typeDetect(obj) {
   /* ! Speed optimisation
    * Pre:
    *   string literal     x 3,039,035 ops/sec ±1.62% (78 runs sampled)
@@ -13158,7 +12745,7 @@ module.exports = function typeDetect(obj) {
      * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
      *  - IE <=10 === "[object HTMLBlockElement]"
      */
-    if (obj instanceof HTMLElement && obj.tagName === 'BLOCKQUOTE') {
+    if (obj instanceof globalObject.HTMLElement && obj.tagName === 'BLOCKQUOTE') {
       return 'HTMLQuoteElement';
     }
 
@@ -13174,7 +12761,7 @@ module.exports = function typeDetect(obj) {
      *  - Firefox === "[object HTMLTableCellElement]"
      *  - Safari === "[object HTMLTableCellElement]"
      */
-    if (obj instanceof HTMLElement && obj.tagName === 'TD') {
+    if (obj instanceof globalObject.HTMLElement && obj.tagName === 'TD') {
       return 'HTMLTableDataCellElement';
     }
 
@@ -13190,7 +12777,7 @@ module.exports = function typeDetect(obj) {
      *  - Firefox === "[object HTMLTableCellElement]"
      *  - Safari === "[object HTMLTableCellElement]"
      */
-    if (obj instanceof HTMLElement && obj.tagName === 'TH') {
+    if (obj instanceof globalObject.HTMLElement && obj.tagName === 'TH') {
       return 'HTMLTableHeaderCellElement';
     }
   }
@@ -13363,13 +12950,15 @@ module.exports = function typeDetect(obj) {
     .toString
     .call(obj)
     .slice(toStringLeftSliceLength, toStringRightSliceLength);
-};
+}
 
-module.exports.typeDetect = module.exports;
+return typeDetect;
+
+})));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 
-},{}],57:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -14103,7 +13692,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":58,"punycode":52,"querystring":55}],58:[function(require,module,exports){
+},{"./util":55,"punycode":49,"querystring":52}],55:[function(require,module,exports){
 'use strict';
 
 module.exports = {
