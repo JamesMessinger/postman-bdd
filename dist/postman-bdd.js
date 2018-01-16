@@ -1,5 +1,5 @@
 /*!
- * Postman BDD v5.0.3 (December 1st 2017)
+ * Postman BDD v5.0.4 (January 16th 2018)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
