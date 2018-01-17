@@ -57,7 +57,7 @@
     "istanbul": "^0.4.2",
     "newman": "^3.9.2",
     "npm-check": "^5.5.2",
-    "simplifyify": "^3.3.0",
+    "simplifyify": "^4.0.0",
     "tap-spec": "4.1.1",
     "tape": "^4.8.0",
     "tv4": "^1.3.0",
