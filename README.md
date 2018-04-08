@@ -4,7 +4,7 @@
 [![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/bigstickcarpet/postman-bdd?svg=true&branch=master&failingText=Windows%20build%20failing&passingText=Windows%20build%20passing)](https://ci.appveyor.com/project/BigstickCarpet/postman-bdd)
 
 [![Coverage Status](https://coveralls.io/repos/BigstickCarpet/postman-bdd/badge.svg?branch=master&service=github)](https://coveralls.io/r/BigstickCarpet/postman-bdd)
-[![Codacy Score](https://www.codacy.com/project/badge/ac55fea9e51b4f29ac83c4cd7ed30020)](https://www.codacy.com/public/jamesmessinger/postman-bdd)
+[![Codacy Score](https://api.codacy.com/project/badge/Grade/ac55fea9e51b4f29ac83c4cd7ed30020)](https://www.codacy.com/public/jamesmessinger/postman-bdd)
 [![Inline docs](http://inch-ci.org/github/BigstickCarpet/postman-bdd.svg?branch=master&style=shields)](http://inch-ci.org/github/BigstickCarpet/postman-bdd)
 [![Dependencies](https://david-dm.org/BigstickCarpet/postman-bdd.svg)](https://david-dm.org/BigstickCarpet/postman-bdd)
 
