@@ -33,7 +33,7 @@
   ],
   "scripts": {
     "lint": "eslint lib test --fix",
-    "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify && cp dist/*.* dist/v5",
+    "build": "simplifyify lib/index.js --outfile dist/postman-bdd.js --standalone postmanBDD --bundle --debug --minify && copy /Y dist\\*.* dist\\v5",
     "test": "npm run tape && npm run newman && npm run lint && tsc types/index.d.ts",
     "cover": "istanbul cover tape \"test/**/*.spec.js\" tap-spec && npm run newman",
     "tape": "tape \"test/**/*.spec.js\" | tap-spec",
