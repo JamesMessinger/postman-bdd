@@ -1,12 +1,12 @@
 /*!
- * Postman BDD v5.0.5 (January 17th 2018)
+ * Postman BDD v5.0.6 (April 8th 2018)
  * 
  * https://bigstickcarpet.github.io/postman-bdd
  * 
  * @author  James Messinger (http://bigstickcarpet.com)
  * @license MIT
  */
-(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function(f){if(typeof exports==="object"&&typeof module!=="undefined"){module.exports=f()}else if(typeof define==="function"&&define.amd){define([],f)}else{var g;if(typeof window!=="undefined"){g=window}else if(typeof global!=="undefined"){g=global}else if(typeof self!=="undefined"){g=self}else{g=this}g.postmanBDD = f()}})(function(){var define,module,exports;return (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 'use strict';
 
 var url = require('url');
@@ -660,7 +660,7 @@ module.exports = {
   },
 };
 
-},{"cookiejar":45}],4:[function(require,module,exports){
+},{"cookiejar":46}],4:[function(require,module,exports){
 'use strict';
 
 var Runnable = require('./runnable');
@@ -770,7 +770,7 @@ function initChai () {
   chai.use(assertions);
 }
 
-},{"./assertions":1,"./bdd":2,"./log":6,"./options":7,"./response":8,"chai":12}],6:[function(require,module,exports){
+},{"./assertions":1,"./bdd":2,"./log":6,"./options":7,"./response":8,"chai":13}],6:[function(require,module,exports){
 'use strict';
 
 var options = require('./options');
@@ -1317,8 +1317,8 @@ function AssertionError (message, _props, ssf) {
   }
 
   // capture stack trace
-  ssf = ssf || arguments.callee;
-  if (ssf && Error.captureStackTrace) {
+  ssf = ssf || AssertionError;
+  if (Error.captureStackTrace) {
     Error.captureStackTrace(this, ssf);
   } else {
     try {
@@ -1367,9 +1367,547 @@ AssertionError.prototype.toJSON = function (stack) {
 };
 
 },{}],12:[function(require,module,exports){
+(function (global){
+/*! https://mths.be/punycode v1.4.1 by @mathias */
+;(function(root) {
+
+	/** Detect free variables */
+	var freeExports = typeof exports == 'object' && exports &&
+		!exports.nodeType && exports;
+	var freeModule = typeof module == 'object' && module &&
+		!module.nodeType && module;
+	var freeGlobal = typeof global == 'object' && global;
+	if (
+		freeGlobal.global === freeGlobal ||
+		freeGlobal.window === freeGlobal ||
+		freeGlobal.self === freeGlobal
+	) {
+		root = freeGlobal;
+	}
+
+	/**
+	 * The `punycode` object.
+	 * @name punycode
+	 * @type Object
+	 */
+	var punycode,
+
+	/** Highest positive signed 32-bit float value */
+	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
+
+	/** Bootstring parameters */
+	base = 36,
+	tMin = 1,
+	tMax = 26,
+	skew = 38,
+	damp = 700,
+	initialBias = 72,
+	initialN = 128, // 0x80
+	delimiter = '-', // '\x2D'
+
+	/** Regular expressions */
+	regexPunycode = /^xn--/,
+	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
+	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
+
+	/** Error messages */
+	errors = {
+		'overflow': 'Overflow: input needs wider integers to process',
+		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
+		'invalid-input': 'Invalid input'
+	},
+
+	/** Convenience shortcuts */
+	baseMinusTMin = base - tMin,
+	floor = Math.floor,
+	stringFromCharCode = String.fromCharCode,
+
+	/** Temporary variable */
+	key;
+
+	/*--------------------------------------------------------------------------*/
+
+	/**
+	 * A generic error utility function.
+	 * @private
+	 * @param {String} type The error type.
+	 * @returns {Error} Throws a `RangeError` with the applicable error message.
+	 */
+	function error(type) {
+		throw new RangeError(errors[type]);
+	}
+
+	/**
+	 * A generic `Array#map` utility function.
+	 * @private
+	 * @param {Array} array The array to iterate over.
+	 * @param {Function} callback The function that gets called for every array
+	 * item.
+	 * @returns {Array} A new array of values returned by the callback function.
+	 */
+	function map(array, fn) {
+		var length = array.length;
+		var result = [];
+		while (length--) {
+			result[length] = fn(array[length]);
+		}
+		return result;
+	}
+
+	/**
+	 * A simple `Array#map`-like wrapper to work with domain name strings or email
+	 * addresses.
+	 * @private
+	 * @param {String} domain The domain name or email address.
+	 * @param {Function} callback The function that gets called for every
+	 * character.
+	 * @returns {Array} A new string of characters returned by the callback
+	 * function.
+	 */
+	function mapDomain(string, fn) {
+		var parts = string.split('@');
+		var result = '';
+		if (parts.length > 1) {
+			// In email addresses, only the domain name should be punycoded. Leave
+			// the local part (i.e. everything up to `@`) intact.
+			result = parts[0] + '@';
+			string = parts[1];
+		}
+		// Avoid `split(regex)` for IE8 compatibility. See #17.
+		string = string.replace(regexSeparators, '\x2E');
+		var labels = string.split('.');
+		var encoded = map(labels, fn).join('.');
+		return result + encoded;
+	}
+
+	/**
+	 * Creates an array containing the numeric code points of each Unicode
+	 * character in the string. While JavaScript uses UCS-2 internally,
+	 * this function will convert a pair of surrogate halves (each of which
+	 * UCS-2 exposes as separate characters) into a single code point,
+	 * matching UTF-16.
+	 * @see `punycode.ucs2.encode`
+	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+	 * @memberOf punycode.ucs2
+	 * @name decode
+	 * @param {String} string The Unicode input string (UCS-2).
+	 * @returns {Array} The new array of code points.
+	 */
+	function ucs2decode(string) {
+		var output = [],
+		    counter = 0,
+		    length = string.length,
+		    value,
+		    extra;
+		while (counter < length) {
+			value = string.charCodeAt(counter++);
+			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
+				// high surrogate, and there is a next character
+				extra = string.charCodeAt(counter++);
+				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
+					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
+				} else {
+					// unmatched surrogate; only append this code unit, in case the next
+					// code unit is the high surrogate of a surrogate pair
+					output.push(value);
+					counter--;
+				}
+			} else {
+				output.push(value);
+			}
+		}
+		return output;
+	}
+
+	/**
+	 * Creates a string based on an array of numeric code points.
+	 * @see `punycode.ucs2.decode`
+	 * @memberOf punycode.ucs2
+	 * @name encode
+	 * @param {Array} codePoints The array of numeric code points.
+	 * @returns {String} The new Unicode string (UCS-2).
+	 */
+	function ucs2encode(array) {
+		return map(array, function(value) {
+			var output = '';
+			if (value > 0xFFFF) {
+				value -= 0x10000;
+				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
+				value = 0xDC00 | value & 0x3FF;
+			}
+			output += stringFromCharCode(value);
+			return output;
+		}).join('');
+	}
+
+	/**
+	 * Converts a basic code point into a digit/integer.
+	 * @see `digitToBasic()`
+	 * @private
+	 * @param {Number} codePoint The basic numeric code point value.
+	 * @returns {Number} The numeric value of a basic code point (for use in
+	 * representing integers) in the range `0` to `base - 1`, or `base` if
+	 * the code point does not represent a value.
+	 */
+	function basicToDigit(codePoint) {
+		if (codePoint - 48 < 10) {
+			return codePoint - 22;
+		}
+		if (codePoint - 65 < 26) {
+			return codePoint - 65;
+		}
+		if (codePoint - 97 < 26) {
+			return codePoint - 97;
+		}
+		return base;
+	}
+
+	/**
+	 * Converts a digit/integer into a basic code point.
+	 * @see `basicToDigit()`
+	 * @private
+	 * @param {Number} digit The numeric value of a basic code point.
+	 * @returns {Number} The basic code point whose value (when used for
+	 * representing integers) is `digit`, which needs to be in the range
+	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
+	 * used; else, the lowercase form is used. The behavior is undefined
+	 * if `flag` is non-zero and `digit` has no uppercase form.
+	 */
+	function digitToBasic(digit, flag) {
+		//  0..25 map to ASCII a..z or A..Z
+		// 26..35 map to ASCII 0..9
+		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
+	}
+
+	/**
+	 * Bias adaptation function as per section 3.4 of RFC 3492.
+	 * https://tools.ietf.org/html/rfc3492#section-3.4
+	 * @private
+	 */
+	function adapt(delta, numPoints, firstTime) {
+		var k = 0;
+		delta = firstTime ? floor(delta / damp) : delta >> 1;
+		delta += floor(delta / numPoints);
+		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
+			delta = floor(delta / baseMinusTMin);
+		}
+		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
+	}
+
+	/**
+	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
+	 * symbols.
+	 * @memberOf punycode
+	 * @param {String} input The Punycode string of ASCII-only symbols.
+	 * @returns {String} The resulting string of Unicode symbols.
+	 */
+	function decode(input) {
+		// Don't use UCS-2
+		var output = [],
+		    inputLength = input.length,
+		    out,
+		    i = 0,
+		    n = initialN,
+		    bias = initialBias,
+		    basic,
+		    j,
+		    index,
+		    oldi,
+		    w,
+		    k,
+		    digit,
+		    t,
+		    /** Cached calculation results */
+		    baseMinusT;
+
+		// Handle the basic code points: let `basic` be the number of input code
+		// points before the last delimiter, or `0` if there is none, then copy
+		// the first basic code points to the output.
+
+		basic = input.lastIndexOf(delimiter);
+		if (basic < 0) {
+			basic = 0;
+		}
+
+		for (j = 0; j < basic; ++j) {
+			// if it's not a basic code point
+			if (input.charCodeAt(j) >= 0x80) {
+				error('not-basic');
+			}
+			output.push(input.charCodeAt(j));
+		}
+
+		// Main decoding loop: start just after the last delimiter if any basic code
+		// points were copied; start at the beginning otherwise.
+
+		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
+
+			// `index` is the index of the next character to be consumed.
+			// Decode a generalized variable-length integer into `delta`,
+			// which gets added to `i`. The overflow checking is easier
+			// if we increase `i` as we go, then subtract off its starting
+			// value at the end to obtain `delta`.
+			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
+
+				if (index >= inputLength) {
+					error('invalid-input');
+				}
+
+				digit = basicToDigit(input.charCodeAt(index++));
+
+				if (digit >= base || digit > floor((maxInt - i) / w)) {
+					error('overflow');
+				}
+
+				i += digit * w;
+				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+
+				if (digit < t) {
+					break;
+				}
+
+				baseMinusT = base - t;
+				if (w > floor(maxInt / baseMinusT)) {
+					error('overflow');
+				}
+
+				w *= baseMinusT;
+
+			}
+
+			out = output.length + 1;
+			bias = adapt(i - oldi, out, oldi == 0);
+
+			// `i` was supposed to wrap around from `out` to `0`,
+			// incrementing `n` each time, so we'll fix that now:
+			if (floor(i / out) > maxInt - n) {
+				error('overflow');
+			}
+
+			n += floor(i / out);
+			i %= out;
+
+			// Insert `n` at position `i` of the output
+			output.splice(i++, 0, n);
+
+		}
+
+		return ucs2encode(output);
+	}
+
+	/**
+	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
+	 * Punycode string of ASCII-only symbols.
+	 * @memberOf punycode
+	 * @param {String} input The string of Unicode symbols.
+	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
+	 */
+	function encode(input) {
+		var n,
+		    delta,
+		    handledCPCount,
+		    basicLength,
+		    bias,
+		    j,
+		    m,
+		    q,
+		    k,
+		    t,
+		    currentValue,
+		    output = [],
+		    /** `inputLength` will hold the number of code points in `input`. */
+		    inputLength,
+		    /** Cached calculation results */
+		    handledCPCountPlusOne,
+		    baseMinusT,
+		    qMinusT;
+
+		// Convert the input in UCS-2 to Unicode
+		input = ucs2decode(input);
+
+		// Cache the length
+		inputLength = input.length;
+
+		// Initialize the state
+		n = initialN;
+		delta = 0;
+		bias = initialBias;
+
+		// Handle the basic code points
+		for (j = 0; j < inputLength; ++j) {
+			currentValue = input[j];
+			if (currentValue < 0x80) {
+				output.push(stringFromCharCode(currentValue));
+			}
+		}
+
+		handledCPCount = basicLength = output.length;
+
+		// `handledCPCount` is the number of code points that have been handled;
+		// `basicLength` is the number of basic code points.
+
+		// Finish the basic string - if it is not empty - with a delimiter
+		if (basicLength) {
+			output.push(delimiter);
+		}
+
+		// Main encoding loop:
+		while (handledCPCount < inputLength) {
+
+			// All non-basic code points < n have been handled already. Find the next
+			// larger one:
+			for (m = maxInt, j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+				if (currentValue >= n && currentValue < m) {
+					m = currentValue;
+				}
+			}
+
+			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
+			// but guard against overflow
+			handledCPCountPlusOne = handledCPCount + 1;
+			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
+				error('overflow');
+			}
+
+			delta += (m - n) * handledCPCountPlusOne;
+			n = m;
+
+			for (j = 0; j < inputLength; ++j) {
+				currentValue = input[j];
+
+				if (currentValue < n && ++delta > maxInt) {
+					error('overflow');
+				}
+
+				if (currentValue == n) {
+					// Represent delta as a generalized variable-length integer
+					for (q = delta, k = base; /* no condition */; k += base) {
+						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
+						if (q < t) {
+							break;
+						}
+						qMinusT = q - t;
+						baseMinusT = base - t;
+						output.push(
+							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
+						);
+						q = floor(qMinusT / baseMinusT);
+					}
+
+					output.push(stringFromCharCode(digitToBasic(q, 0)));
+					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
+					delta = 0;
+					++handledCPCount;
+				}
+			}
+
+			++delta;
+			++n;
+
+		}
+		return output.join('');
+	}
+
+	/**
+	 * Converts a Punycode string representing a domain name or an email address
+	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
+	 * it doesn't matter if you call it on a string that has already been
+	 * converted to Unicode.
+	 * @memberOf punycode
+	 * @param {String} input The Punycoded domain name or email address to
+	 * convert to Unicode.
+	 * @returns {String} The Unicode representation of the given Punycode
+	 * string.
+	 */
+	function toUnicode(input) {
+		return mapDomain(input, function(string) {
+			return regexPunycode.test(string)
+				? decode(string.slice(4).toLowerCase())
+				: string;
+		});
+	}
+
+	/**
+	 * Converts a Unicode string representing a domain name or an email address to
+	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
+	 * i.e. it doesn't matter if you call it with a domain that's already in
+	 * ASCII.
+	 * @memberOf punycode
+	 * @param {String} input The domain name or email address to convert, as a
+	 * Unicode string.
+	 * @returns {String} The Punycode representation of the given domain name or
+	 * email address.
+	 */
+	function toASCII(input) {
+		return mapDomain(input, function(string) {
+			return regexNonASCII.test(string)
+				? 'xn--' + encode(string)
+				: string;
+		});
+	}
+
+	/*--------------------------------------------------------------------------*/
+
+	/** Define the public API */
+	punycode = {
+		/**
+		 * A string representing the current Punycode.js version number.
+		 * @memberOf punycode
+		 * @type String
+		 */
+		'version': '1.4.1',
+		/**
+		 * An object of methods to convert from JavaScript's internal character
+		 * representation (UCS-2) to Unicode code points, and back.
+		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
+		 * @memberOf punycode
+		 * @type Object
+		 */
+		'ucs2': {
+			'decode': ucs2decode,
+			'encode': ucs2encode
+		},
+		'decode': decode,
+		'encode': encode,
+		'toASCII': toASCII,
+		'toUnicode': toUnicode
+	};
+
+	/** Expose `punycode` */
+	// Some AMD build optimizers, like r.js, check for specific condition patterns
+	// like the following:
+	if (
+		typeof define == 'function' &&
+		typeof define.amd == 'object' &&
+		define.amd
+	) {
+		define('punycode', function() {
+			return punycode;
+		});
+	} else if (freeExports && freeModule) {
+		if (module.exports == freeExports) {
+			// in Node.js, io.js, or RingoJS v0.8.0+
+			freeModule.exports = punycode;
+		} else {
+			// in Narwhal or RingoJS v0.7.0-
+			for (key in punycode) {
+				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
+			}
+		}
+	} else {
+		// in Rhino or a web browser
+		root.punycode = punycode;
+	}
+
+}(this));
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+
+},{}],13:[function(require,module,exports){
 module.exports = require('./lib/chai');
 
-},{"./lib/chai":13}],13:[function(require,module,exports){
+},{"./lib/chai":14}],14:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -1463,7 +2001,7 @@ exports.use(should);
 var assert = require('./chai/interface/assert');
 exports.use(assert);
 
-},{"./chai/assertion":14,"./chai/config":15,"./chai/core/assertions":16,"./chai/interface/assert":17,"./chai/interface/expect":18,"./chai/interface/should":19,"./chai/utils":33,"assertion-error":11}],14:[function(require,module,exports){
+},{"./chai/assertion":15,"./chai/config":16,"./chai/core/assertions":17,"./chai/interface/assert":18,"./chai/interface/expect":19,"./chai/interface/should":20,"./chai/utils":34,"assertion-error":11}],15:[function(require,module,exports){
 /*!
  * chai
  * http://chaijs.com
@@ -1630,7 +2168,7 @@ module.exports = function (_chai, util) {
   });
 };
 
-},{"./config":15}],15:[function(require,module,exports){
+},{"./config":16}],16:[function(require,module,exports){
 module.exports = {
 
   /**
@@ -1726,7 +2264,7 @@ module.exports = {
   proxyExcludedKeys: ['then', 'inspect', 'toJSON']
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 /*!
  * chai
  * http://chaijs.com
@@ -5457,7 +5995,7 @@ module.exports = function (chai, _) {
   });
 };
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8557,7 +9095,7 @@ module.exports = function (chai, util) {
   ('isNotEmpty', 'notEmpty');
 };
 
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8593,7 +9131,7 @@ module.exports = function (chai, util) {
   };
 };
 
-},{}],19:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8799,7 +9337,7 @@ module.exports = function (chai, util) {
   chai.Should = loadShould;
 };
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /*!
  * Chai - addChainingMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -8953,7 +9491,7 @@ module.exports = function addChainableMethod(ctx, name, method, chainingBehavior
   });
 };
 
-},{"../../chai":13,"./addLengthGuard":21,"./flag":26,"./proxify":41,"./transferFlags":43}],21:[function(require,module,exports){
+},{"../../chai":14,"./addLengthGuard":22,"./flag":27,"./proxify":42,"./transferFlags":44}],22:[function(require,module,exports){
 var config = require('../config');
 
 var fnLengthDesc = Object.getOwnPropertyDescriptor(function () {}, 'length');
@@ -9017,7 +9555,7 @@ module.exports = function addLengthGuard (fn, assertionName, isChainable) {
   return fn;
 };
 
-},{"../config":15}],22:[function(require,module,exports){
+},{"../config":16}],23:[function(require,module,exports){
 /*!
  * Chai - addMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9087,7 +9625,7 @@ module.exports = function addMethod(ctx, name, method) {
   ctx[name] = proxify(methodWrapper, name);
 };
 
-},{"../../chai":13,"./addLengthGuard":21,"./flag":26,"./proxify":41,"./transferFlags":43}],23:[function(require,module,exports){
+},{"../../chai":14,"./addLengthGuard":22,"./flag":27,"./proxify":42,"./transferFlags":44}],24:[function(require,module,exports){
 /*!
  * Chai - addProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9161,7 +9699,7 @@ module.exports = function addProperty(ctx, name, getter) {
   });
 };
 
-},{"../../chai":13,"./flag":26,"./isProxyEnabled":36,"./transferFlags":43}],24:[function(require,module,exports){
+},{"../../chai":14,"./flag":27,"./isProxyEnabled":37,"./transferFlags":44}],25:[function(require,module,exports){
 /*!
  * Chai - compareByInspect utility
  * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
@@ -9194,7 +9732,7 @@ module.exports = function compareByInspect(a, b) {
   return inspect(a) < inspect(b) ? -1 : 1;
 };
 
-},{"./inspect":34}],25:[function(require,module,exports){
+},{"./inspect":35}],26:[function(require,module,exports){
 /*!
  * Chai - expectTypes utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9247,7 +9785,7 @@ module.exports = function expectTypes(obj, types) {
   }
 };
 
-},{"./flag":26,"assertion-error":11,"type-detect":53}],26:[function(require,module,exports){
+},{"./flag":27,"assertion-error":11,"type-detect":53}],27:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9282,7 +9820,7 @@ module.exports = function flag(obj, key, value) {
   }
 };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 /*!
  * Chai - getActual utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9304,7 +9842,7 @@ module.exports = function getActual(obj, args) {
   return args.length > 4 ? args[4] : obj._obj;
 };
 
-},{}],28:[function(require,module,exports){
+},{}],29:[function(require,module,exports){
 /*!
  * Chai - getEnumerableProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9332,7 +9870,7 @@ module.exports = function getEnumerableProperties(object) {
   return result;
 };
 
-},{}],29:[function(require,module,exports){
+},{}],30:[function(require,module,exports){
 /*!
  * Chai - message composition utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9385,7 +9923,7 @@ module.exports = function getMessage(obj, args) {
   return flagMsg ? flagMsg + ': ' + msg : msg;
 };
 
-},{"./flag":26,"./getActual":27,"./inspect":34,"./objDisplay":37}],30:[function(require,module,exports){
+},{"./flag":27,"./getActual":28,"./inspect":35,"./objDisplay":38}],31:[function(require,module,exports){
 /*!
  * Chai - getOwnEnumerableProperties utility
  * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
@@ -9416,7 +9954,7 @@ module.exports = function getOwnEnumerableProperties(obj) {
   return Object.keys(obj).concat(getOwnEnumerablePropertySymbols(obj));
 };
 
-},{"./getOwnEnumerablePropertySymbols":31}],31:[function(require,module,exports){
+},{"./getOwnEnumerablePropertySymbols":32}],32:[function(require,module,exports){
 /*!
  * Chai - getOwnEnumerablePropertySymbols utility
  * Copyright(c) 2011-2016 Jake Luer <jake@alogicalparadox.com>
@@ -9445,7 +9983,7 @@ module.exports = function getOwnEnumerablePropertySymbols(obj) {
   });
 };
 
-},{}],32:[function(require,module,exports){
+},{}],33:[function(require,module,exports){
 /*!
  * Chai - getProperties utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -9483,7 +10021,7 @@ module.exports = function getProperties(object) {
   return result;
 };
 
-},{}],33:[function(require,module,exports){
+},{}],34:[function(require,module,exports){
 /*!
  * chai
  * Copyright(c) 2011 Jake Luer <jake@alogicalparadox.com>
@@ -9657,7 +10195,7 @@ exports.isProxyEnabled = require('./isProxyEnabled');
 
 exports.isNaN = require('./isNaN');
 
-},{"./addChainableMethod":20,"./addLengthGuard":21,"./addMethod":22,"./addProperty":23,"./compareByInspect":24,"./expectTypes":25,"./flag":26,"./getActual":27,"./getMessage":29,"./getOwnEnumerableProperties":30,"./getOwnEnumerablePropertySymbols":31,"./inspect":34,"./isNaN":35,"./isProxyEnabled":36,"./objDisplay":37,"./overwriteChainableMethod":38,"./overwriteMethod":39,"./overwriteProperty":40,"./proxify":41,"./test":42,"./transferFlags":43,"check-error":44,"deep-eql":46,"get-func-name":47,"pathval":48,"type-detect":53}],34:[function(require,module,exports){
+},{"./addChainableMethod":21,"./addLengthGuard":22,"./addMethod":23,"./addProperty":24,"./compareByInspect":25,"./expectTypes":26,"./flag":27,"./getActual":28,"./getMessage":30,"./getOwnEnumerableProperties":31,"./getOwnEnumerablePropertySymbols":32,"./inspect":35,"./isNaN":36,"./isProxyEnabled":37,"./objDisplay":38,"./overwriteChainableMethod":39,"./overwriteMethod":40,"./overwriteProperty":41,"./proxify":42,"./test":43,"./transferFlags":44,"check-error":45,"deep-eql":47,"get-func-name":48,"pathval":49,"type-detect":53}],35:[function(require,module,exports){
 // This is (almost) directly from Node.js utils
 // https://github.com/joyent/node/blob/f8c335d0caf47f16d31413f89aa28eda3878e3aa/lib/util.js
 
@@ -10042,7 +10580,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 
-},{"../config":15,"./getEnumerableProperties":28,"./getProperties":32,"get-func-name":47}],35:[function(require,module,exports){
+},{"../config":16,"./getEnumerableProperties":29,"./getProperties":33,"get-func-name":48}],36:[function(require,module,exports){
 /*!
  * Chai - isNaN utility
  * Copyright(c) 2012-2015 Sakthipriyan Vairamani <thechargingvolcano@gmail.com>
@@ -10070,7 +10608,7 @@ function isNaN(value) {
 // If ECMAScript 6's Number.isNaN is present, prefer that.
 module.exports = Number.isNaN || isNaN;
 
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 var config = require('../config');
 
 /*!
@@ -10096,7 +10634,7 @@ module.exports = function isProxyEnabled() {
     typeof Reflect !== 'undefined';
 };
 
-},{"../config":15}],37:[function(require,module,exports){
+},{"../config":16}],38:[function(require,module,exports){
 /*!
  * Chai - flag utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -10148,7 +10686,7 @@ module.exports = function objDisplay(obj) {
   }
 };
 
-},{"../config":15,"./inspect":34}],38:[function(require,module,exports){
+},{"../config":16,"./inspect":35}],39:[function(require,module,exports){
 /*!
  * Chai - overwriteChainableMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -10219,7 +10757,7 @@ module.exports = function overwriteChainableMethod(ctx, name, method, chainingBe
   };
 };
 
-},{"../../chai":13,"./transferFlags":43}],39:[function(require,module,exports){
+},{"../../chai":14,"./transferFlags":44}],40:[function(require,module,exports){
 /*!
  * Chai - overwriteMethod utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -10313,7 +10851,7 @@ module.exports = function overwriteMethod(ctx, name, method) {
   ctx[name] = proxify(overwritingMethodWrapper, name);
 };
 
-},{"../../chai":13,"./addLengthGuard":21,"./flag":26,"./proxify":41,"./transferFlags":43}],40:[function(require,module,exports){
+},{"../../chai":14,"./addLengthGuard":22,"./flag":27,"./proxify":42,"./transferFlags":44}],41:[function(require,module,exports){
 /*!
  * Chai - overwriteProperty utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -10407,7 +10945,7 @@ module.exports = function overwriteProperty(ctx, name, getter) {
   });
 };
 
-},{"../../chai":13,"./flag":26,"./isProxyEnabled":36,"./transferFlags":43}],41:[function(require,module,exports){
+},{"../../chai":14,"./flag":27,"./isProxyEnabled":37,"./transferFlags":44}],42:[function(require,module,exports){
 var config = require('../config');
 var flag = require('./flag');
 var getProperties = require('./getProperties');
@@ -10534,7 +11072,7 @@ function stringDistance(strA, strB, memo) {
   return memo[strA.length][strB.length];
 }
 
-},{"../config":15,"./flag":26,"./getProperties":32,"./isProxyEnabled":36}],42:[function(require,module,exports){
+},{"../config":16,"./flag":27,"./getProperties":33,"./isProxyEnabled":37}],43:[function(require,module,exports){
 /*!
  * Chai - test utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -10564,7 +11102,7 @@ module.exports = function test(obj, args) {
   return negate ? !expr : expr;
 };
 
-},{"./flag":26}],43:[function(require,module,exports){
+},{"./flag":27}],44:[function(require,module,exports){
 /*!
  * Chai - transferFlags utility
  * Copyright(c) 2012-2014 Jake Luer <jake@alogicalparadox.com>
@@ -10611,7 +11149,7 @@ module.exports = function transferFlags(assertion, object, includeAll) {
   }
 };
 
-},{}],44:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -10785,7 +11323,7 @@ module.exports = {
   getConstructorName: getConstructorName,
 };
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 /* jshint node: true */
 (function () {
     "use strict";
@@ -11052,7 +11590,7 @@ module.exports = {
     };
 }());
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 'use strict';
 /* globals Symbol: false, Uint8Array: false, WeakMap: false */
 /*!
@@ -11509,7 +12047,7 @@ function isPrimitive(value) {
   return value === null || typeof value !== 'object';
 }
 
-},{"type-detect":53}],47:[function(require,module,exports){
+},{"type-detect":53}],48:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -11555,7 +12093,7 @@ function getFuncName(aFunc) {
 
 module.exports = getFuncName;
 
-},{}],48:[function(require,module,exports){
+},{}],49:[function(require,module,exports){
 'use strict';
 
 /* !
@@ -11848,544 +12386,6 @@ module.exports = {
   setPathValue: setPathValue,
 };
 
-},{}],49:[function(require,module,exports){
-(function (global){
-/*! https://mths.be/punycode v1.4.1 by @mathias */
-;(function(root) {
-
-	/** Detect free variables */
-	var freeExports = typeof exports == 'object' && exports &&
-		!exports.nodeType && exports;
-	var freeModule = typeof module == 'object' && module &&
-		!module.nodeType && module;
-	var freeGlobal = typeof global == 'object' && global;
-	if (
-		freeGlobal.global === freeGlobal ||
-		freeGlobal.window === freeGlobal ||
-		freeGlobal.self === freeGlobal
-	) {
-		root = freeGlobal;
-	}
-
-	/**
-	 * The `punycode` object.
-	 * @name punycode
-	 * @type Object
-	 */
-	var punycode,
-
-	/** Highest positive signed 32-bit float value */
-	maxInt = 2147483647, // aka. 0x7FFFFFFF or 2^31-1
-
-	/** Bootstring parameters */
-	base = 36,
-	tMin = 1,
-	tMax = 26,
-	skew = 38,
-	damp = 700,
-	initialBias = 72,
-	initialN = 128, // 0x80
-	delimiter = '-', // '\x2D'
-
-	/** Regular expressions */
-	regexPunycode = /^xn--/,
-	regexNonASCII = /[^\x20-\x7E]/, // unprintable ASCII chars + non-ASCII chars
-	regexSeparators = /[\x2E\u3002\uFF0E\uFF61]/g, // RFC 3490 separators
-
-	/** Error messages */
-	errors = {
-		'overflow': 'Overflow: input needs wider integers to process',
-		'not-basic': 'Illegal input >= 0x80 (not a basic code point)',
-		'invalid-input': 'Invalid input'
-	},
-
-	/** Convenience shortcuts */
-	baseMinusTMin = base - tMin,
-	floor = Math.floor,
-	stringFromCharCode = String.fromCharCode,
-
-	/** Temporary variable */
-	key;
-
-	/*--------------------------------------------------------------------------*/
-
-	/**
-	 * A generic error utility function.
-	 * @private
-	 * @param {String} type The error type.
-	 * @returns {Error} Throws a `RangeError` with the applicable error message.
-	 */
-	function error(type) {
-		throw new RangeError(errors[type]);
-	}
-
-	/**
-	 * A generic `Array#map` utility function.
-	 * @private
-	 * @param {Array} array The array to iterate over.
-	 * @param {Function} callback The function that gets called for every array
-	 * item.
-	 * @returns {Array} A new array of values returned by the callback function.
-	 */
-	function map(array, fn) {
-		var length = array.length;
-		var result = [];
-		while (length--) {
-			result[length] = fn(array[length]);
-		}
-		return result;
-	}
-
-	/**
-	 * A simple `Array#map`-like wrapper to work with domain name strings or email
-	 * addresses.
-	 * @private
-	 * @param {String} domain The domain name or email address.
-	 * @param {Function} callback The function that gets called for every
-	 * character.
-	 * @returns {Array} A new string of characters returned by the callback
-	 * function.
-	 */
-	function mapDomain(string, fn) {
-		var parts = string.split('@');
-		var result = '';
-		if (parts.length > 1) {
-			// In email addresses, only the domain name should be punycoded. Leave
-			// the local part (i.e. everything up to `@`) intact.
-			result = parts[0] + '@';
-			string = parts[1];
-		}
-		// Avoid `split(regex)` for IE8 compatibility. See #17.
-		string = string.replace(regexSeparators, '\x2E');
-		var labels = string.split('.');
-		var encoded = map(labels, fn).join('.');
-		return result + encoded;
-	}
-
-	/**
-	 * Creates an array containing the numeric code points of each Unicode
-	 * character in the string. While JavaScript uses UCS-2 internally,
-	 * this function will convert a pair of surrogate halves (each of which
-	 * UCS-2 exposes as separate characters) into a single code point,
-	 * matching UTF-16.
-	 * @see `punycode.ucs2.encode`
-	 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-	 * @memberOf punycode.ucs2
-	 * @name decode
-	 * @param {String} string The Unicode input string (UCS-2).
-	 * @returns {Array} The new array of code points.
-	 */
-	function ucs2decode(string) {
-		var output = [],
-		    counter = 0,
-		    length = string.length,
-		    value,
-		    extra;
-		while (counter < length) {
-			value = string.charCodeAt(counter++);
-			if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-				// high surrogate, and there is a next character
-				extra = string.charCodeAt(counter++);
-				if ((extra & 0xFC00) == 0xDC00) { // low surrogate
-					output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-				} else {
-					// unmatched surrogate; only append this code unit, in case the next
-					// code unit is the high surrogate of a surrogate pair
-					output.push(value);
-					counter--;
-				}
-			} else {
-				output.push(value);
-			}
-		}
-		return output;
-	}
-
-	/**
-	 * Creates a string based on an array of numeric code points.
-	 * @see `punycode.ucs2.decode`
-	 * @memberOf punycode.ucs2
-	 * @name encode
-	 * @param {Array} codePoints The array of numeric code points.
-	 * @returns {String} The new Unicode string (UCS-2).
-	 */
-	function ucs2encode(array) {
-		return map(array, function(value) {
-			var output = '';
-			if (value > 0xFFFF) {
-				value -= 0x10000;
-				output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-				value = 0xDC00 | value & 0x3FF;
-			}
-			output += stringFromCharCode(value);
-			return output;
-		}).join('');
-	}
-
-	/**
-	 * Converts a basic code point into a digit/integer.
-	 * @see `digitToBasic()`
-	 * @private
-	 * @param {Number} codePoint The basic numeric code point value.
-	 * @returns {Number} The numeric value of a basic code point (for use in
-	 * representing integers) in the range `0` to `base - 1`, or `base` if
-	 * the code point does not represent a value.
-	 */
-	function basicToDigit(codePoint) {
-		if (codePoint - 48 < 10) {
-			return codePoint - 22;
-		}
-		if (codePoint - 65 < 26) {
-			return codePoint - 65;
-		}
-		if (codePoint - 97 < 26) {
-			return codePoint - 97;
-		}
-		return base;
-	}
-
-	/**
-	 * Converts a digit/integer into a basic code point.
-	 * @see `basicToDigit()`
-	 * @private
-	 * @param {Number} digit The numeric value of a basic code point.
-	 * @returns {Number} The basic code point whose value (when used for
-	 * representing integers) is `digit`, which needs to be in the range
-	 * `0` to `base - 1`. If `flag` is non-zero, the uppercase form is
-	 * used; else, the lowercase form is used. The behavior is undefined
-	 * if `flag` is non-zero and `digit` has no uppercase form.
-	 */
-	function digitToBasic(digit, flag) {
-		//  0..25 map to ASCII a..z or A..Z
-		// 26..35 map to ASCII 0..9
-		return digit + 22 + 75 * (digit < 26) - ((flag != 0) << 5);
-	}
-
-	/**
-	 * Bias adaptation function as per section 3.4 of RFC 3492.
-	 * https://tools.ietf.org/html/rfc3492#section-3.4
-	 * @private
-	 */
-	function adapt(delta, numPoints, firstTime) {
-		var k = 0;
-		delta = firstTime ? floor(delta / damp) : delta >> 1;
-		delta += floor(delta / numPoints);
-		for (/* no initialization */; delta > baseMinusTMin * tMax >> 1; k += base) {
-			delta = floor(delta / baseMinusTMin);
-		}
-		return floor(k + (baseMinusTMin + 1) * delta / (delta + skew));
-	}
-
-	/**
-	 * Converts a Punycode string of ASCII-only symbols to a string of Unicode
-	 * symbols.
-	 * @memberOf punycode
-	 * @param {String} input The Punycode string of ASCII-only symbols.
-	 * @returns {String} The resulting string of Unicode symbols.
-	 */
-	function decode(input) {
-		// Don't use UCS-2
-		var output = [],
-		    inputLength = input.length,
-		    out,
-		    i = 0,
-		    n = initialN,
-		    bias = initialBias,
-		    basic,
-		    j,
-		    index,
-		    oldi,
-		    w,
-		    k,
-		    digit,
-		    t,
-		    /** Cached calculation results */
-		    baseMinusT;
-
-		// Handle the basic code points: let `basic` be the number of input code
-		// points before the last delimiter, or `0` if there is none, then copy
-		// the first basic code points to the output.
-
-		basic = input.lastIndexOf(delimiter);
-		if (basic < 0) {
-			basic = 0;
-		}
-
-		for (j = 0; j < basic; ++j) {
-			// if it's not a basic code point
-			if (input.charCodeAt(j) >= 0x80) {
-				error('not-basic');
-			}
-			output.push(input.charCodeAt(j));
-		}
-
-		// Main decoding loop: start just after the last delimiter if any basic code
-		// points were copied; start at the beginning otherwise.
-
-		for (index = basic > 0 ? basic + 1 : 0; index < inputLength; /* no final expression */) {
-
-			// `index` is the index of the next character to be consumed.
-			// Decode a generalized variable-length integer into `delta`,
-			// which gets added to `i`. The overflow checking is easier
-			// if we increase `i` as we go, then subtract off its starting
-			// value at the end to obtain `delta`.
-			for (oldi = i, w = 1, k = base; /* no condition */; k += base) {
-
-				if (index >= inputLength) {
-					error('invalid-input');
-				}
-
-				digit = basicToDigit(input.charCodeAt(index++));
-
-				if (digit >= base || digit > floor((maxInt - i) / w)) {
-					error('overflow');
-				}
-
-				i += digit * w;
-				t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-
-				if (digit < t) {
-					break;
-				}
-
-				baseMinusT = base - t;
-				if (w > floor(maxInt / baseMinusT)) {
-					error('overflow');
-				}
-
-				w *= baseMinusT;
-
-			}
-
-			out = output.length + 1;
-			bias = adapt(i - oldi, out, oldi == 0);
-
-			// `i` was supposed to wrap around from `out` to `0`,
-			// incrementing `n` each time, so we'll fix that now:
-			if (floor(i / out) > maxInt - n) {
-				error('overflow');
-			}
-
-			n += floor(i / out);
-			i %= out;
-
-			// Insert `n` at position `i` of the output
-			output.splice(i++, 0, n);
-
-		}
-
-		return ucs2encode(output);
-	}
-
-	/**
-	 * Converts a string of Unicode symbols (e.g. a domain name label) to a
-	 * Punycode string of ASCII-only symbols.
-	 * @memberOf punycode
-	 * @param {String} input The string of Unicode symbols.
-	 * @returns {String} The resulting Punycode string of ASCII-only symbols.
-	 */
-	function encode(input) {
-		var n,
-		    delta,
-		    handledCPCount,
-		    basicLength,
-		    bias,
-		    j,
-		    m,
-		    q,
-		    k,
-		    t,
-		    currentValue,
-		    output = [],
-		    /** `inputLength` will hold the number of code points in `input`. */
-		    inputLength,
-		    /** Cached calculation results */
-		    handledCPCountPlusOne,
-		    baseMinusT,
-		    qMinusT;
-
-		// Convert the input in UCS-2 to Unicode
-		input = ucs2decode(input);
-
-		// Cache the length
-		inputLength = input.length;
-
-		// Initialize the state
-		n = initialN;
-		delta = 0;
-		bias = initialBias;
-
-		// Handle the basic code points
-		for (j = 0; j < inputLength; ++j) {
-			currentValue = input[j];
-			if (currentValue < 0x80) {
-				output.push(stringFromCharCode(currentValue));
-			}
-		}
-
-		handledCPCount = basicLength = output.length;
-
-		// `handledCPCount` is the number of code points that have been handled;
-		// `basicLength` is the number of basic code points.
-
-		// Finish the basic string - if it is not empty - with a delimiter
-		if (basicLength) {
-			output.push(delimiter);
-		}
-
-		// Main encoding loop:
-		while (handledCPCount < inputLength) {
-
-			// All non-basic code points < n have been handled already. Find the next
-			// larger one:
-			for (m = maxInt, j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-				if (currentValue >= n && currentValue < m) {
-					m = currentValue;
-				}
-			}
-
-			// Increase `delta` enough to advance the decoder's <n,i> state to <m,0>,
-			// but guard against overflow
-			handledCPCountPlusOne = handledCPCount + 1;
-			if (m - n > floor((maxInt - delta) / handledCPCountPlusOne)) {
-				error('overflow');
-			}
-
-			delta += (m - n) * handledCPCountPlusOne;
-			n = m;
-
-			for (j = 0; j < inputLength; ++j) {
-				currentValue = input[j];
-
-				if (currentValue < n && ++delta > maxInt) {
-					error('overflow');
-				}
-
-				if (currentValue == n) {
-					// Represent delta as a generalized variable-length integer
-					for (q = delta, k = base; /* no condition */; k += base) {
-						t = k <= bias ? tMin : (k >= bias + tMax ? tMax : k - bias);
-						if (q < t) {
-							break;
-						}
-						qMinusT = q - t;
-						baseMinusT = base - t;
-						output.push(
-							stringFromCharCode(digitToBasic(t + qMinusT % baseMinusT, 0))
-						);
-						q = floor(qMinusT / baseMinusT);
-					}
-
-					output.push(stringFromCharCode(digitToBasic(q, 0)));
-					bias = adapt(delta, handledCPCountPlusOne, handledCPCount == basicLength);
-					delta = 0;
-					++handledCPCount;
-				}
-			}
-
-			++delta;
-			++n;
-
-		}
-		return output.join('');
-	}
-
-	/**
-	 * Converts a Punycode string representing a domain name or an email address
-	 * to Unicode. Only the Punycoded parts of the input will be converted, i.e.
-	 * it doesn't matter if you call it on a string that has already been
-	 * converted to Unicode.
-	 * @memberOf punycode
-	 * @param {String} input The Punycoded domain name or email address to
-	 * convert to Unicode.
-	 * @returns {String} The Unicode representation of the given Punycode
-	 * string.
-	 */
-	function toUnicode(input) {
-		return mapDomain(input, function(string) {
-			return regexPunycode.test(string)
-				? decode(string.slice(4).toLowerCase())
-				: string;
-		});
-	}
-
-	/**
-	 * Converts a Unicode string representing a domain name or an email address to
-	 * Punycode. Only the non-ASCII parts of the domain name will be converted,
-	 * i.e. it doesn't matter if you call it with a domain that's already in
-	 * ASCII.
-	 * @memberOf punycode
-	 * @param {String} input The domain name or email address to convert, as a
-	 * Unicode string.
-	 * @returns {String} The Punycode representation of the given domain name or
-	 * email address.
-	 */
-	function toASCII(input) {
-		return mapDomain(input, function(string) {
-			return regexNonASCII.test(string)
-				? 'xn--' + encode(string)
-				: string;
-		});
-	}
-
-	/*--------------------------------------------------------------------------*/
-
-	/** Define the public API */
-	punycode = {
-		/**
-		 * A string representing the current Punycode.js version number.
-		 * @memberOf punycode
-		 * @type String
-		 */
-		'version': '1.4.1',
-		/**
-		 * An object of methods to convert from JavaScript's internal character
-		 * representation (UCS-2) to Unicode code points, and back.
-		 * @see <https://mathiasbynens.be/notes/javascript-encoding>
-		 * @memberOf punycode
-		 * @type Object
-		 */
-		'ucs2': {
-			'decode': ucs2decode,
-			'encode': ucs2encode
-		},
-		'decode': decode,
-		'encode': encode,
-		'toASCII': toASCII,
-		'toUnicode': toUnicode
-	};
-
-	/** Expose `punycode` */
-	// Some AMD build optimizers, like r.js, check for specific condition patterns
-	// like the following:
-	if (
-		typeof define == 'function' &&
-		typeof define.amd == 'object' &&
-		define.amd
-	) {
-		define('punycode', function() {
-			return punycode;
-		});
-	} else if (freeExports && freeModule) {
-		if (module.exports == freeExports) {
-			// in Node.js, io.js, or RingoJS v0.8.0+
-			freeModule.exports = punycode;
-		} else {
-			// in Narwhal or RingoJS v0.7.0-
-			for (key in punycode) {
-				punycode.hasOwnProperty(key) && (freeExports[key] = punycode[key]);
-			}
-		}
-	} else {
-		// in Rhino or a web browser
-		root.punycode = punycode;
-	}
-
-}(this));
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-
 },{}],50:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -12583,16 +12583,6 @@ var promiseExists = typeof Promise === 'function';
 /* eslint-disable no-undef */
 var globalObject = typeof self === 'object' ? self : global; // eslint-disable-line id-blacklist
 
-/*
- * All of these attributes must be available on the global object for the current environment
- * to be considered a DOM environment (browser)
- */
-var isDom = typeof window === 'object' &&
-  'document' in window &&
-  'navigator' in window &&
-  'HTMLElement' in window;
-/* eslint-enable */
-
 var symbolExists = typeof Symbol !== 'undefined';
 var mapExists = typeof Map !== 'undefined';
 var setExists = typeof Set !== 'undefined';
@@ -12684,7 +12674,9 @@ function typeDetect(obj) {
     return 'Array';
   }
 
-  if (isDom) {
+  // Not caching existence of `window` and related properties due to potential
+  // for `window` to be unset before tests in quasi-browser environments.
+  if (typeof window === 'object' && window !== null) {
     /* ! Spec Conformance
      * (https://html.spec.whatwg.org/multipage/browsers.html#location)
      * WhatWG HTML$7.7.3 - The `Location` interface
@@ -12692,7 +12684,7 @@ function typeDetect(obj) {
      *  - IE <=11 === "[object Object]"
      *  - IE Edge <=13 === "[object Object]"
      */
-    if (obj === globalObject.location) {
+    if (typeof window.location === 'object' && obj === window.location) {
       return 'Location';
     }
 
@@ -12715,70 +12707,78 @@ function typeDetect(obj) {
      *  - IE 11 === "[object HTMLDocument]"
      *  - IE Edge <=13 === "[object HTMLDocument]"
      */
-    if (obj === globalObject.document) {
+    if (typeof window.document === 'object' && obj === window.document) {
       return 'Document';
     }
 
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
-     * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
-     *  - IE <=10 === "[object MSMimeTypesCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).mimeTypes) {
-      return 'MimeTypeArray';
+    if (typeof window.navigator === 'object') {
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/multipage/webappapis.html#mimetypearray)
+       * WhatWG HTML$8.6.1.5 - Plugins - Interface MimeTypeArray
+       * Test: `Object.prototype.toString.call(navigator.mimeTypes)``
+       *  - IE <=10 === "[object MSMimeTypesCollection]"
+       */
+      if (typeof window.navigator.mimeTypes === 'object' &&
+          obj === window.navigator.mimeTypes) {
+        return 'MimeTypeArray';
+      }
+
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+       * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
+       * Test: `Object.prototype.toString.call(navigator.plugins)``
+       *  - IE <=10 === "[object MSPluginsCollection]"
+       */
+      if (typeof window.navigator.plugins === 'object' &&
+          obj === window.navigator.plugins) {
+        return 'PluginArray';
+      }
     }
 
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$8.6.1.5 - Plugins - Interface PluginArray
-     * Test: `Object.prototype.toString.call(navigator.plugins)``
-     *  - IE <=10 === "[object MSPluginsCollection]"
-     */
-    if (obj === (globalObject.navigator || {}).plugins) {
-      return 'PluginArray';
-    }
+    if ((typeof window.HTMLElement === 'function' ||
+        typeof window.HTMLElement === 'object') &&
+        obj instanceof window.HTMLElement) {
+      /* ! Spec Conformance
+      * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
+      * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
+      * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
+      *  - IE <=10 === "[object HTMLBlockElement]"
+      */
+      if (obj.tagName === 'BLOCKQUOTE') {
+        return 'HTMLQuoteElement';
+      }
 
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/multipage/webappapis.html#pluginarray)
-     * WhatWG HTML$4.4.4 - The `blockquote` element - Interface `HTMLQuoteElement`
-     * Test: `Object.prototype.toString.call(document.createElement('blockquote'))``
-     *  - IE <=10 === "[object HTMLBlockElement]"
-     */
-    if (obj instanceof globalObject.HTMLElement && obj.tagName === 'BLOCKQUOTE') {
-      return 'HTMLQuoteElement';
-    }
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/#htmltabledatacellelement)
+       * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
+       * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+       *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+       *       which suggests that browsers should use HTMLTableCellElement for
+       *       both TD and TH elements. WhatWG separates these.
+       * Test: Object.prototype.toString.call(document.createElement('td'))
+       *  - Chrome === "[object HTMLTableCellElement]"
+       *  - Firefox === "[object HTMLTableCellElement]"
+       *  - Safari === "[object HTMLTableCellElement]"
+       */
+      if (obj.tagName === 'TD') {
+        return 'HTMLTableDataCellElement';
+      }
 
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltabledatacellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableDataCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('td'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (obj instanceof globalObject.HTMLElement && obj.tagName === 'TD') {
-      return 'HTMLTableDataCellElement';
-    }
-
-    /* ! Spec Conformance
-     * (https://html.spec.whatwg.org/#htmltableheadercellelement)
-     * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
-     * Note: Most browsers currently adher to the W3C DOM Level 2 spec
-     *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
-     *       which suggests that browsers should use HTMLTableCellElement for
-     *       both TD and TH elements. WhatWG separates these.
-     * Test: Object.prototype.toString.call(document.createElement('th'))
-     *  - Chrome === "[object HTMLTableCellElement]"
-     *  - Firefox === "[object HTMLTableCellElement]"
-     *  - Safari === "[object HTMLTableCellElement]"
-     */
-    if (obj instanceof globalObject.HTMLElement && obj.tagName === 'TH') {
-      return 'HTMLTableHeaderCellElement';
+      /* ! Spec Conformance
+       * (https://html.spec.whatwg.org/#htmltableheadercellelement)
+       * WhatWG HTML$4.9.9 - The `td` element - Interface `HTMLTableHeaderCellElement`
+       * Note: Most browsers currently adher to the W3C DOM Level 2 spec
+       *       (https://www.w3.org/TR/DOM-Level-2-HTML/html.html#ID-82915075)
+       *       which suggests that browsers should use HTMLTableCellElement for
+       *       both TD and TH elements. WhatWG separates these.
+       * Test: Object.prototype.toString.call(document.createElement('th'))
+       *  - Chrome === "[object HTMLTableCellElement]"
+       *  - Firefox === "[object HTMLTableCellElement]"
+       *  - Safari === "[object HTMLTableCellElement]"
+       */
+      if (obj.tagName === 'TH') {
+        return 'HTMLTableHeaderCellElement';
+      }
     }
   }
 
@@ -13692,7 +13692,7 @@ Url.prototype.parseHost = function() {
   if (host) this.hostname = host;
 };
 
-},{"./util":55,"punycode":49,"querystring":52}],55:[function(require,module,exports){
+},{"./util":55,"punycode":12,"querystring":52}],55:[function(require,module,exports){
 'use strict';
 
 module.exports = {
